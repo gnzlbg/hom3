@@ -1,0 +1,1003 @@
+// !$*UTF8*$!
+{
+       archiveVersion = 1;
+       classes = {
+       };
+       objectVersion = 46;
+       objects = {
+
+/* Begin PBXAggregateTarget section */
+              98B98FD3E8B7488AB07CF125 /* ALL_BUILD */ = {
+                     isa = PBXAggregateTarget;
+                     buildConfigurationList = EF2AD29A73464A769946F0E9 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */;
+                     buildPhases = (
+                            F064A89FAC084389B1412216 /* CMake Rules */,
+                     );
+                     dependencies = (
+                            49C7C7EB355A497BB61AB57B /* PBXTargetDependency */,
+                            8F4F0C7B91754996B942BD90 /* PBXTargetDependency */,
+                            0E179AFA7B214703A3C659B9 /* PBXTargetDependency */,
+                     );
+                     name = ALL_BUILD;
+                     productName = ALL_BUILD;
+              };
+              0FA764FCEACA4EFD84871506 /* RUN_TESTS */ = {
+                     isa = PBXAggregateTarget;
+                     buildConfigurationList = D376ACEB04CA404EBB5C348D /* Build configuration list for PBXAggregateTarget "RUN_TESTS" */;
+                     buildPhases = (
+                            9630D99A067B4F218697670A /* CMake PostBuild Rules */,
+                     );
+                     dependencies = (
+                     );
+                     name = RUN_TESTS;
+                     productName = RUN_TESTS;
+              };
+              6D831883C56447B5A10C63B7 /* ZERO_CHECK */ = {
+                     isa = PBXAggregateTarget;
+                     buildConfigurationList = 1C0A58E55E4A4AEE9CF877F1 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */;
+                     buildPhases = (
+                            7F09F8095F85409693A59D05 /* CMake Rules */,
+                     );
+                     dependencies = (
+                     );
+                     name = ZERO_CHECK;
+                     productName = ZERO_CHECK;
+              };
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildFile section */
+062CF73E27484FC490FA3805 /* /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/src/gtest-all.cc */ = {isa = PBXBuildFile; fileRef = DDCAAD5CFAD9493DA7EDD97F /* /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/src/gtest-all.cc */; settings = { COMPILER_FLAGS = "-arch x86_64 -Wall -Wextra -std=c++11 -stdlib=libc++ -I/Users/gnzlbg/src/libcxx/libcxx/include -pedantic -Wshadow -Woverloaded-virtual -pedantic-errors -Wcast-align -Wcomment -Wcast-qual  -Wchar-subscripts  -Wdisabled-optimization -Wfloat-equal -Wformat -Wformat=2 -Winvalid-pch -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wimport  -Winit-self  -Winline -Wreturn-type  -Wmissing-braces -Wmissing-field-initializers -Wmissing-include-dirs  -Wredundant-decls -Wpacked -Wparentheses  -Wpointer-arith -Wsequence-point  -Wsign-compare  -Wstack-protector -Wstrict-aliasing -Wstrict-aliasing=2 -Wswitch -Wswitch-default  -Wtrigraphs -Wuninitialized -Wunknown-pragmas  -Wunreachable-code -Wunused -Wunused-function -Wunused-label  -Wunused-parameter -Wunused-value  -Wunused-variable -Wvariadic-macros -Wvolatile-register-var  -Wwrite-strings -Woverloaded-virtual -Wsign-promo -Wstrict-overflow=5 -Wswitch-default -DGTEST_USE_OWN_TR1_TUPLE=1 -fdiagnostics-show-template-tree -ftemplate-backtrace-limit=0 -Wno-attributes  -DGTEST_HAS_PTHREAD=1  "; }; };
+0E1B514485734D4A90638580 /* /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/CMakeLists.txt */ = {isa = PBXBuildFile; fileRef = 1BADC99CEDD643FE9FB46D9F /* /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/CMakeLists.txt */; settings = { COMPILER_FLAGS = "-arch x86_64 -Wall -Wextra -std=c++11 -stdlib=libc++ -I/Users/gnzlbg/src/libcxx/libcxx/include -pedantic -Wshadow -Woverloaded-virtual -pedantic-errors -Wcast-align -Wcomment -Wcast-qual  -Wchar-subscripts  -Wdisabled-optimization -Wfloat-equal -Wformat -Wformat=2 -Winvalid-pch -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wimport  -Winit-self  -Winline -Wreturn-type  -Wmissing-braces -Wmissing-field-initializers -Wmissing-include-dirs  -Wredundant-decls -Wpacked -Wparentheses  -Wpointer-arith -Wsequence-point  -Wsign-compare  -Wstack-protector -Wstrict-aliasing -Wstrict-aliasing=2 -Wswitch -Wswitch-default  -Wtrigraphs -Wuninitialized -Wunknown-pragmas  -Wunreachable-code -Wunused -Wunused-function -Wunused-label  -Wunused-parameter -Wunused-value  -Wunused-variable -Wvariadic-macros -Wvolatile-register-var  -Wwrite-strings -Woverloaded-virtual -Wsign-promo -Wstrict-overflow=5 -Wswitch-default -DGTEST_USE_OWN_TR1_TUPLE=1 -fdiagnostics-show-template-tree -ftemplate-backtrace-limit=0 -Wno-attributes  -DGTEST_HAS_PTHREAD=1  "; }; };
+477D70E279454E74875B2AA3 /* /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/src/gtest_main.cc */ = {isa = PBXBuildFile; fileRef = E3A28AA963D64869BE2E9671 /* /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/src/gtest_main.cc */; settings = { COMPILER_FLAGS = "-arch x86_64 -Wall -Wextra -std=c++11 -stdlib=libc++ -I/Users/gnzlbg/src/libcxx/libcxx/include -pedantic -Wshadow -Woverloaded-virtual -pedantic-errors -Wcast-align -Wcomment -Wcast-qual  -Wchar-subscripts  -Wdisabled-optimization -Wfloat-equal -Wformat -Wformat=2 -Winvalid-pch -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wimport  -Winit-self  -Winline -Wreturn-type  -Wmissing-braces -Wmissing-field-initializers -Wmissing-include-dirs  -Wredundant-decls -Wpacked -Wparentheses  -Wpointer-arith -Wsequence-point  -Wsign-compare  -Wstack-protector -Wstrict-aliasing -Wstrict-aliasing=2 -Wswitch -Wswitch-default  -Wtrigraphs -Wuninitialized -Wunknown-pragmas  -Wunreachable-code -Wunused -Wunused-function -Wunused-label  -Wunused-parameter -Wunused-value  -Wunused-variable -Wvariadic-macros -Wvolatile-register-var  -Wwrite-strings -Woverloaded-virtual -Wsign-promo -Wstrict-overflow=5 -Wswitch-default -DGTEST_USE_OWN_TR1_TUPLE=1 -fdiagnostics-show-template-tree -ftemplate-backtrace-limit=0 -Wno-attributes  -DGTEST_HAS_PTHREAD=1  "; }; };
+23A09E69BE0D4DE68FFB3E7E /* /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/CMakeLists.txt */ = {isa = PBXBuildFile; fileRef = 1BADC99CEDD643FE9FB46D9F /* /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/CMakeLists.txt */; settings = { COMPILER_FLAGS = "-arch x86_64 -Wall -Wextra -std=c++11 -stdlib=libc++ -I/Users/gnzlbg/src/libcxx/libcxx/include -pedantic -Wshadow -Woverloaded-virtual -pedantic-errors -Wcast-align -Wcomment -Wcast-qual  -Wchar-subscripts  -Wdisabled-optimization -Wfloat-equal -Wformat -Wformat=2 -Winvalid-pch -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wimport  -Winit-self  -Winline -Wreturn-type  -Wmissing-braces -Wmissing-field-initializers -Wmissing-include-dirs  -Wredundant-decls -Wpacked -Wparentheses  -Wpointer-arith -Wsequence-point  -Wsign-compare  -Wstack-protector -Wstrict-aliasing -Wstrict-aliasing=2 -Wswitch -Wswitch-default  -Wtrigraphs -Wuninitialized -Wunknown-pragmas  -Wunreachable-code -Wunused -Wunused-function -Wunused-label  -Wunused-parameter -Wunused-value  -Wunused-variable -Wvariadic-macros -Wvolatile-register-var  -Wwrite-strings -Woverloaded-virtual -Wsign-promo -Wstrict-overflow=5 -Wswitch-default -DGTEST_USE_OWN_TR1_TUPLE=1 -fdiagnostics-show-template-tree -ftemplate-backtrace-limit=0 -Wno-attributes  -DGTEST_HAS_PTHREAD=1  "; }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXBuildStyle section */
+              478A0A541959446E9D5BB268 /*  */ = {
+                     isa = PBXBuildStyle;
+              };
+              B7DD442956E94D87A967B739 /* Debug */ = {
+                     isa = PBXBuildStyle;
+                     buildSettings = {
+                            COPY_PHASE_STRIP = NO;
+                     };
+                     name = Debug;
+              };
+              3C1E6BE2FA9D4A3E8CA88917 /* Release */ = {
+                     isa = PBXBuildStyle;
+                     buildSettings = {
+                            COPY_PHASE_STRIP = NO;
+                     };
+                     name = Release;
+              };
+              0D46A50264EA4D4EBBDEC4E7 /* MinSizeRel */ = {
+                     isa = PBXBuildStyle;
+                     buildSettings = {
+                            COPY_PHASE_STRIP = NO;
+                     };
+                     name = MinSizeRel;
+              };
+              B3826EF16A6E458B879F7470 /* RelWithDebInfo */ = {
+                     isa = PBXBuildStyle;
+                     buildSettings = {
+                            COPY_PHASE_STRIP = NO;
+                     };
+                     name = RelWithDebInfo;
+              };
+/* End PBXBuildStyle section */
+
+/* Begin PBXContainerItemProxy section */
+              DE39D459C87249DDAEF924C5 /* PBXContainerItemProxy */ = {
+                     isa = PBXContainerItemProxy;
+                     containerPortal = 4E268170BDBA4E0E93820EC0 /* Project object */;
+                     proxyType = 1;
+                     remoteGlobalIDString = 2333A74BD98F42EA8C311A48;
+                     remoteInfo = gtest_main;
+              };
+              9ABD7C8CD4C44AF9AD8770C0 /* PBXContainerItemProxy */ = {
+                     isa = PBXContainerItemProxy;
+                     containerPortal = 4E268170BDBA4E0E93820EC0 /* Project object */;
+                     proxyType = 1;
+                     remoteGlobalIDString = F59AB92F5CF34D489AD37C75;
+                     remoteInfo = gtest;
+              };
+              AA292881431B4F309B392BF1 /* PBXContainerItemProxy */ = {
+                     isa = PBXContainerItemProxy;
+                     containerPortal = 4E268170BDBA4E0E93820EC0 /* Project object */;
+                     proxyType = 1;
+                     remoteGlobalIDString = 6D831883C56447B5A10C63B7;
+                     remoteInfo = ZERO_CHECK;
+              };
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+1BADC99CEDD643FE9FB46D9F /* /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = "sourcecode.text"; name = "CMakeLists.txt"; path = "CMakeLists.txt"; sourceTree = SOURCE_ROOT; };
+DDCAAD5CFAD9493DA7EDD97F /* /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/src/gtest-all.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = "sourcecode.cpp.cpp"; name = "gtest-all.cc"; path = "src/gtest-all.cc"; sourceTree = SOURCE_ROOT; };
+0660568B3D614B03B177FAE7 /* gtest */ = {isa = PBXFileReference; explicitFileType = "archive.ar"; path = "libgtest.a"; refType = 0; sourceTree = BUILT_PRODUCTS_DIR; };
+E3A28AA963D64869BE2E9671 /* /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/src/gtest_main.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = "sourcecode.cpp.cpp"; name = "gtest_main.cc"; path = "src/gtest_main.cc"; sourceTree = SOURCE_ROOT; };
+7E12142C998046B191660CD3 /* gtest_main */ = {isa = PBXFileReference; explicitFileType = "archive.ar"; path = "libgtest_main.a"; refType = 0; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+              94778AF66A604372B63BB5B7  = {
+                     isa = PBXGroup;
+                     children = (
+                            86E67A2D03EC4513A4481C56 /* Sources */,
+                            782962B02C2D41DBB67EC15A /* Resources */,
+                            14FDF8C2AD104EE6974B7453 /* Products */,
+                     );
+                     sourceTree = "<group>";
+              };
+              86E67A2D03EC4513A4481C56 /* Sources */ = {
+                     isa = PBXGroup;
+                     children = (
+                            32621D7A72ED4AFB8D8BC719 /* ALL_BUILD */,
+                            A8C1E88C6717450B91480542 /* ZERO_CHECK */,
+                            C3512E516B0F44F7BAB2C11D /* gtest */,
+                            549E89A2023D4693A3C68BEF /* gtest_main */,
+                     );
+                     name = Sources;
+                     sourceTree = "<group>";
+              };
+              782962B02C2D41DBB67EC15A /* Resources */ = {
+                     isa = PBXGroup;
+                     children = (
+                     );
+                     name = Resources;
+                     sourceTree = "<group>";
+              };
+              32621D7A72ED4AFB8D8BC719 /* ALL_BUILD */ = {
+                     isa = PBXGroup;
+                     children = (
+                            93DC1338AC4C42B2A5003FBE /* CMake Rules */,
+                            1BADC99CEDD643FE9FB46D9F /* /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/CMakeLists.txt */,
+                     );
+                     name = ALL_BUILD;
+                     sourceTree = "<group>";
+              };
+              93DC1338AC4C42B2A5003FBE /* CMake Rules */ = {
+                     isa = PBXGroup;
+                     children = (
+                     );
+                     name = "CMake Rules";
+                     sourceTree = "<group>";
+              };
+              A8C1E88C6717450B91480542 /* ZERO_CHECK */ = {
+                     isa = PBXGroup;
+                     children = (
+                            2803CA13D3134B4A8C2FD6CF /* CMake Rules */,
+                            1BADC99CEDD643FE9FB46D9F /* /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/CMakeLists.txt */,
+                     );
+                     name = ZERO_CHECK;
+                     sourceTree = "<group>";
+              };
+              2803CA13D3134B4A8C2FD6CF /* CMake Rules */ = {
+                     isa = PBXGroup;
+                     children = (
+                     );
+                     name = "CMake Rules";
+                     sourceTree = "<group>";
+              };
+              C3512E516B0F44F7BAB2C11D /* gtest */ = {
+                     isa = PBXGroup;
+                     children = (
+                            0EF9078F7C074CCBBE4B4558 /* Source Files */,
+                            1BADC99CEDD643FE9FB46D9F /* /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/CMakeLists.txt */,
+                     );
+                     name = gtest;
+                     sourceTree = "<group>";
+              };
+              0EF9078F7C074CCBBE4B4558 /* Source Files */ = {
+                     isa = PBXGroup;
+                     children = (
+                            DDCAAD5CFAD9493DA7EDD97F /* /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/src/gtest-all.cc */,
+                     );
+                     name = "Source Files";
+                     sourceTree = "<group>";
+              };
+              549E89A2023D4693A3C68BEF /* gtest_main */ = {
+                     isa = PBXGroup;
+                     children = (
+                            F634735859E34BA1B72D4831 /* Source Files */,
+                            1BADC99CEDD643FE9FB46D9F /* /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/CMakeLists.txt */,
+                     );
+                     name = gtest_main;
+                     sourceTree = "<group>";
+              };
+              F634735859E34BA1B72D4831 /* Source Files */ = {
+                     isa = PBXGroup;
+                     children = (
+                            E3A28AA963D64869BE2E9671 /* /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/src/gtest_main.cc */,
+                     );
+                     name = "Source Files";
+                     sourceTree = "<group>";
+              };
+              14FDF8C2AD104EE6974B7453 /* Products */ = {
+                     isa = PBXGroup;
+                     children = (
+                            0660568B3D614B03B177FAE7 /* gtest */,
+                            7E12142C998046B191660CD3 /* gtest_main */,
+                     );
+                     name = Products;
+                     sourceTree = "<group>";
+              };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+              F59AB92F5CF34D489AD37C75 /* gtest */ = {
+                     isa = PBXNativeTarget;
+                     buildConfigurationList = 06843DF3B5BC468EBDAF856A /* Build configuration list for PBXNativeTarget "gtest" */;
+                     buildPhases = (
+                            6228B031AB2849B6BAD2B7F3 /* Sources */,
+                            98BC7D7AE9294AE095EA7CBE /* CMake PostBuild Rules */,
+                     );
+                     buildRules = (
+                     );
+                     dependencies = (
+                            0E179AFA7B214703A3C659B9 /* PBXTargetDependency */,
+                     );
+                     name = gtest;
+                     productName = gtest;
+                     productReference = 0660568B3D614B03B177FAE7 /* gtest */;
+                     productType = "com.apple.product-type.library.static";
+              };
+              2333A74BD98F42EA8C311A48 /* gtest_main */ = {
+                     isa = PBXNativeTarget;
+                     buildConfigurationList = 4AD5686FBE7348BE8A66DA42 /* Build configuration list for PBXNativeTarget "gtest_main" */;
+                     buildPhases = (
+                            9EB1D27D63444D40AF71085B /* Sources */,
+                            C199A5025E7B437F92C3FB55 /* CMake PostBuild Rules */,
+                     );
+                     buildRules = (
+                     );
+                     dependencies = (
+                            8F4F0C7B91754996B942BD90 /* PBXTargetDependency */,
+                            0E179AFA7B214703A3C659B9 /* PBXTargetDependency */,
+                     );
+                     name = gtest_main;
+                     productName = gtest_main;
+                     productReference = 7E12142C998046B191660CD3 /* gtest_main */;
+                     productType = "com.apple.product-type.library.static";
+              };
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+              4E268170BDBA4E0E93820EC0 /* Project object */ = {
+                     isa = PBXProject;
+                     attributes = {
+                            BuildIndependentTargetsInParallel = YES;
+                     };
+                     buildConfigurationList = 3CC9156270B9441C8BBDA72C /* Build configuration list for PBXProject  "gtest" */;
+                     buildSettings = {
+                     };
+                     buildStyles = (
+                            B7DD442956E94D87A967B739 /* Debug */,
+                            3C1E6BE2FA9D4A3E8CA88917 /* Release */,
+                            0D46A50264EA4D4EBBDEC4E7 /* MinSizeRel */,
+                            B3826EF16A6E458B879F7470 /* RelWithDebInfo */,
+                     );
+                     compatibilityVersion = "Xcode 3.2";
+                     hasScannedForEncodings = 0;
+                     mainGroup = 94778AF66A604372B63BB5B7;
+                     projectDirPath = ".";
+                     projectRoot = "";
+                     targets = (
+                            98B98FD3E8B7488AB07CF125 /* ALL_BUILD */,
+                            0FA764FCEACA4EFD84871506 /* RUN_TESTS */,
+                            6D831883C56447B5A10C63B7 /* ZERO_CHECK */,
+                            F59AB92F5CF34D489AD37C75 /* gtest */,
+                            2333A74BD98F42EA8C311A48 /* gtest_main */,
+                     );
+              };
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+              03906A3CEDB64F51A72DCF05 /*  */ = {
+                     isa = PBXShellScriptBuildPhase;
+                     buildActionMask = 2147483647;
+                     files = (
+                     );
+                     inputPaths = (
+                     );
+                     outputPaths = (
+                     );
+                     runOnlyForDeploymentPostprocessing = 0;
+                     shellPath = /bin/sh;
+                     shellScript = "# shell script goes here
+exit 0";
+                     showEnvVarsInLog = 0;
+              };
+              F064A89FAC084389B1412216 /* CMake Rules */ = {
+                     isa = PBXShellScriptBuildPhase;
+                     buildActionMask = 2147483647;
+                     files = (
+                     );
+                     name = "CMake Rules";
+                     runOnlyForDeploymentPostprocessing = 0;
+                     shellPath = /bin/sh;
+                     shellScript = "make -C /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0 -f /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/CMakeScripts/ALL_BUILD_cmakeRulesBuildPhase.make$CONFIGURATION all";
+                     showEnvVarsInLog = 0;
+              };
+              199F4E392B0A47E18F9A71C0 /*  */ = {
+                     isa = PBXShellScriptBuildPhase;
+                     buildActionMask = 2147483647;
+                     files = (
+                     );
+                     inputPaths = (
+                     );
+                     outputPaths = (
+                     );
+                     runOnlyForDeploymentPostprocessing = 0;
+                     shellPath = /bin/sh;
+                     shellScript = "# shell script goes here
+exit 0";
+                     showEnvVarsInLog = 0;
+              };
+              9630D99A067B4F218697670A /* CMake PostBuild Rules */ = {
+                     isa = PBXShellScriptBuildPhase;
+                     buildActionMask = 2147483647;
+                     files = (
+                     );
+                     name = "CMake PostBuild Rules";
+                     runOnlyForDeploymentPostprocessing = 0;
+                     shellPath = /bin/sh;
+                     shellScript = "make -C /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0 -f /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/CMakeScripts/RUN_TESTS_postBuildPhase.make$CONFIGURATION all";
+                     showEnvVarsInLog = 0;
+              };
+              CAD2B9C4A6D74D46818143D9 /*  */ = {
+                     isa = PBXShellScriptBuildPhase;
+                     buildActionMask = 2147483647;
+                     files = (
+                     );
+                     inputPaths = (
+                     );
+                     outputPaths = (
+                     );
+                     runOnlyForDeploymentPostprocessing = 0;
+                     shellPath = /bin/sh;
+                     shellScript = "# shell script goes here
+exit 0";
+                     showEnvVarsInLog = 0;
+              };
+              7F09F8095F85409693A59D05 /* CMake Rules */ = {
+                     isa = PBXShellScriptBuildPhase;
+                     buildActionMask = 2147483647;
+                     files = (
+                     );
+                     name = "CMake Rules";
+                     runOnlyForDeploymentPostprocessing = 0;
+                     shellPath = /bin/sh;
+                     shellScript = "make -C /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0 -f /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/CMakeScripts/ZERO_CHECK_cmakeRulesBuildPhase.make$CONFIGURATION all";
+                     showEnvVarsInLog = 0;
+              };
+              98BC7D7AE9294AE095EA7CBE /* CMake PostBuild Rules */ = {
+                     isa = PBXShellScriptBuildPhase;
+                     buildActionMask = 2147483647;
+                     files = (
+                     );
+                     name = "CMake PostBuild Rules";
+                     runOnlyForDeploymentPostprocessing = 0;
+                     shellPath = /bin/sh;
+                     shellScript = "make -C /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0 -f /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/CMakeScripts/gtest_postBuildPhase.make$CONFIGURATION all";
+                     showEnvVarsInLog = 0;
+              };
+              C199A5025E7B437F92C3FB55 /* CMake PostBuild Rules */ = {
+                     isa = PBXShellScriptBuildPhase;
+                     buildActionMask = 2147483647;
+                     files = (
+                     );
+                     name = "CMake PostBuild Rules";
+                     runOnlyForDeploymentPostprocessing = 0;
+                     shellPath = /bin/sh;
+                     shellScript = "make -C /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0 -f /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/CMakeScripts/gtest_main_postBuildPhase.make$CONFIGURATION all";
+                     showEnvVarsInLog = 0;
+              };
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+              6228B031AB2849B6BAD2B7F3 /* Sources */ = {
+                     isa = PBXSourcesBuildPhase;
+                     buildActionMask = 2147483647;
+                     files = (
+                            062CF73E27484FC490FA3805 /* /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/src/gtest-all.cc */,
+                     );
+                     runOnlyForDeploymentPostprocessing = 0;
+              };
+              9EB1D27D63444D40AF71085B /* Sources */ = {
+                     isa = PBXSourcesBuildPhase;
+                     buildActionMask = 2147483647;
+                     files = (
+                            477D70E279454E74875B2AA3 /* /Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/src/gtest_main.cc */,
+                     );
+                     runOnlyForDeploymentPostprocessing = 0;
+              };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+              49C7C7EB355A497BB61AB57B /* PBXTargetDependency */ = {
+                     isa = PBXTargetDependency;
+                     target = 2333A74BD98F42EA8C311A48 /* gtest_main */;
+                     targetProxy = DE39D459C87249DDAEF924C5 /* PBXContainerItemProxy */;
+              };
+              8F4F0C7B91754996B942BD90 /* PBXTargetDependency */ = {
+                     isa = PBXTargetDependency;
+                     target = F59AB92F5CF34D489AD37C75 /* gtest */;
+                     targetProxy = 9ABD7C8CD4C44AF9AD8770C0 /* PBXContainerItemProxy */;
+              };
+              0E179AFA7B214703A3C659B9 /* PBXTargetDependency */ = {
+                     isa = PBXTargetDependency;
+                     target = 6D831883C56447B5A10C63B7 /* ZERO_CHECK */;
+                     targetProxy = AA292881431B4F309B392BF1 /* PBXContainerItemProxy */;
+              };
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+              7039788B109F4CECBDD8CFD1 /* Debug */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+                            MACOSX_DEPLOYMENT_TARGET = "10.8";
+                            ONLY_ACTIVE_ARCH = YES;
+                            SDKROOT = "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/build";
+                     };
+                     name = Debug;
+              };
+              B8FD7A77AFEC4E46981B2F32 /* Release */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+                            MACOSX_DEPLOYMENT_TARGET = "10.8";
+                            ONLY_ACTIVE_ARCH = YES;
+                            SDKROOT = "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/build";
+                     };
+                     name = Release;
+              };
+              6A81A5BA830142B1BC4D9E0D /* MinSizeRel */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+                            MACOSX_DEPLOYMENT_TARGET = "10.8";
+                            ONLY_ACTIVE_ARCH = YES;
+                            SDKROOT = "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/build";
+                     };
+                     name = MinSizeRel;
+              };
+              266CBBB2740741F0B0990269 /* RelWithDebInfo */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+                            MACOSX_DEPLOYMENT_TARGET = "10.8";
+                            ONLY_ACTIVE_ARCH = YES;
+                            SDKROOT = "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/build";
+                     };
+                     name = RelWithDebInfo;
+              };
+              284D0309891A479ABA2AD18E /* Debug */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+                            GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+                            GCC_OPTIMIZATION_LEVEL = 0;
+                            GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'", );
+                            GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+                            HEADER_SEARCH_PATHS = (/Users/gnzlbg/src/libcxx/libcxx/include, /usr/local/include/eigen3, "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/include", "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0", );
+                            INSTALL_PATH = "";
+                            OTHER_CFLAGS = "  ";
+                            OTHER_LDFLAGS = "";
+                            OTHER_REZFLAGS = "";
+                            PRODUCT_NAME = ALL_BUILD;
+                            SECTORDER_FLAGS = "";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0";
+                            USE_HEADERMAP = NO;
+                            WARNING_CFLAGS = ("-Wmost", "-Wno-four-char-constants", "-Wno-unknown-pragmas", );
+                     };
+                     name = Debug;
+              };
+              06339F23EDDA4708A961B911 /* Release */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+                            GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+                            GCC_OPTIMIZATION_LEVEL = 0;
+                            GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'", );
+                            GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+                            HEADER_SEARCH_PATHS = (/Users/gnzlbg/src/libcxx/libcxx/include, /usr/local/include/eigen3, "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/include", "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0", );
+                            INSTALL_PATH = "";
+                            OTHER_CFLAGS = "  ";
+                            OTHER_LDFLAGS = "";
+                            OTHER_REZFLAGS = "";
+                            PRODUCT_NAME = ALL_BUILD;
+                            SECTORDER_FLAGS = "";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0";
+                            USE_HEADERMAP = NO;
+                            WARNING_CFLAGS = ("-Wmost", "-Wno-four-char-constants", "-Wno-unknown-pragmas", );
+                     };
+                     name = Release;
+              };
+              AFA2F8AADAEC4ABF9735EA30 /* MinSizeRel */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+                            GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+                            GCC_OPTIMIZATION_LEVEL = 0;
+                            GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'", );
+                            GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+                            HEADER_SEARCH_PATHS = (/Users/gnzlbg/src/libcxx/libcxx/include, /usr/local/include/eigen3, "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/include", "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0", );
+                            INSTALL_PATH = "";
+                            OTHER_CFLAGS = "  ";
+                            OTHER_LDFLAGS = "";
+                            OTHER_REZFLAGS = "";
+                            PRODUCT_NAME = ALL_BUILD;
+                            SECTORDER_FLAGS = "";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0";
+                            USE_HEADERMAP = NO;
+                            WARNING_CFLAGS = ("-Wmost", "-Wno-four-char-constants", "-Wno-unknown-pragmas", );
+                     };
+                     name = MinSizeRel;
+              };
+              ABF7ADDF19D04ECD80AEDB51 /* RelWithDebInfo */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+                            GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+                            GCC_OPTIMIZATION_LEVEL = 0;
+                            GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'", );
+                            GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+                            HEADER_SEARCH_PATHS = (/Users/gnzlbg/src/libcxx/libcxx/include, /usr/local/include/eigen3, "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/include", "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0", );
+                            INSTALL_PATH = "";
+                            OTHER_CFLAGS = "  ";
+                            OTHER_LDFLAGS = "";
+                            OTHER_REZFLAGS = "";
+                            PRODUCT_NAME = ALL_BUILD;
+                            SECTORDER_FLAGS = "";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0";
+                            USE_HEADERMAP = NO;
+                            WARNING_CFLAGS = ("-Wmost", "-Wno-four-char-constants", "-Wno-unknown-pragmas", );
+                     };
+                     name = RelWithDebInfo;
+              };
+              37C4A92B01CF438E932EF58B /* Debug */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+                            GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+                            GCC_OPTIMIZATION_LEVEL = 0;
+                            GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'", );
+                            GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+                            HEADER_SEARCH_PATHS = (/Users/gnzlbg/src/libcxx/libcxx/include, /usr/local/include/eigen3, "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/include", "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0", );
+                            INSTALL_PATH = "";
+                            OTHER_CFLAGS = "  ";
+                            OTHER_LDFLAGS = "";
+                            OTHER_REZFLAGS = "";
+                            PRODUCT_NAME = RUN_TESTS;
+                            SECTORDER_FLAGS = "";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0";
+                            USE_HEADERMAP = NO;
+                            WARNING_CFLAGS = ("-Wmost", "-Wno-four-char-constants", "-Wno-unknown-pragmas", );
+                     };
+                     name = Debug;
+              };
+              DAE12CCBCD084BCABDEA3B79 /* Release */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+                            GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+                            GCC_OPTIMIZATION_LEVEL = 0;
+                            GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'", );
+                            GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+                            HEADER_SEARCH_PATHS = (/Users/gnzlbg/src/libcxx/libcxx/include, /usr/local/include/eigen3, "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/include", "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0", );
+                            INSTALL_PATH = "";
+                            OTHER_CFLAGS = "  ";
+                            OTHER_LDFLAGS = "";
+                            OTHER_REZFLAGS = "";
+                            PRODUCT_NAME = RUN_TESTS;
+                            SECTORDER_FLAGS = "";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0";
+                            USE_HEADERMAP = NO;
+                            WARNING_CFLAGS = ("-Wmost", "-Wno-four-char-constants", "-Wno-unknown-pragmas", );
+                     };
+                     name = Release;
+              };
+              C1CED800CC014A17A72B2544 /* MinSizeRel */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+                            GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+                            GCC_OPTIMIZATION_LEVEL = 0;
+                            GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'", );
+                            GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+                            HEADER_SEARCH_PATHS = (/Users/gnzlbg/src/libcxx/libcxx/include, /usr/local/include/eigen3, "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/include", "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0", );
+                            INSTALL_PATH = "";
+                            OTHER_CFLAGS = "  ";
+                            OTHER_LDFLAGS = "";
+                            OTHER_REZFLAGS = "";
+                            PRODUCT_NAME = RUN_TESTS;
+                            SECTORDER_FLAGS = "";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0";
+                            USE_HEADERMAP = NO;
+                            WARNING_CFLAGS = ("-Wmost", "-Wno-four-char-constants", "-Wno-unknown-pragmas", );
+                     };
+                     name = MinSizeRel;
+              };
+              4FA0C9C74726490C852D2D37 /* RelWithDebInfo */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+                            GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+                            GCC_OPTIMIZATION_LEVEL = 0;
+                            GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'", );
+                            GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+                            HEADER_SEARCH_PATHS = (/Users/gnzlbg/src/libcxx/libcxx/include, /usr/local/include/eigen3, "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/include", "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0", );
+                            INSTALL_PATH = "";
+                            OTHER_CFLAGS = "  ";
+                            OTHER_LDFLAGS = "";
+                            OTHER_REZFLAGS = "";
+                            PRODUCT_NAME = RUN_TESTS;
+                            SECTORDER_FLAGS = "";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0";
+                            USE_HEADERMAP = NO;
+                            WARNING_CFLAGS = ("-Wmost", "-Wno-four-char-constants", "-Wno-unknown-pragmas", );
+                     };
+                     name = RelWithDebInfo;
+              };
+              8EA810B50AA34868BC3430FD /* Debug */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+                            GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+                            GCC_OPTIMIZATION_LEVEL = 0;
+                            GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'", );
+                            GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+                            HEADER_SEARCH_PATHS = (/Users/gnzlbg/src/libcxx/libcxx/include, /usr/local/include/eigen3, "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/include", "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0", );
+                            INSTALL_PATH = "";
+                            OTHER_CFLAGS = "  ";
+                            OTHER_LDFLAGS = "";
+                            OTHER_REZFLAGS = "";
+                            PRODUCT_NAME = ZERO_CHECK;
+                            SECTORDER_FLAGS = "";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0";
+                            USE_HEADERMAP = NO;
+                            WARNING_CFLAGS = ("-Wmost", "-Wno-four-char-constants", "-Wno-unknown-pragmas", );
+                     };
+                     name = Debug;
+              };
+              50902AC26B0A41308CB69524 /* Release */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+                            GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+                            GCC_OPTIMIZATION_LEVEL = 0;
+                            GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'", );
+                            GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+                            HEADER_SEARCH_PATHS = (/Users/gnzlbg/src/libcxx/libcxx/include, /usr/local/include/eigen3, "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/include", "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0", );
+                            INSTALL_PATH = "";
+                            OTHER_CFLAGS = "  ";
+                            OTHER_LDFLAGS = "";
+                            OTHER_REZFLAGS = "";
+                            PRODUCT_NAME = ZERO_CHECK;
+                            SECTORDER_FLAGS = "";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0";
+                            USE_HEADERMAP = NO;
+                            WARNING_CFLAGS = ("-Wmost", "-Wno-four-char-constants", "-Wno-unknown-pragmas", );
+                     };
+                     name = Release;
+              };
+              5E00142062FD495BB4BFE164 /* MinSizeRel */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+                            GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+                            GCC_OPTIMIZATION_LEVEL = 0;
+                            GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'", );
+                            GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+                            HEADER_SEARCH_PATHS = (/Users/gnzlbg/src/libcxx/libcxx/include, /usr/local/include/eigen3, "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/include", "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0", );
+                            INSTALL_PATH = "";
+                            OTHER_CFLAGS = "  ";
+                            OTHER_LDFLAGS = "";
+                            OTHER_REZFLAGS = "";
+                            PRODUCT_NAME = ZERO_CHECK;
+                            SECTORDER_FLAGS = "";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0";
+                            USE_HEADERMAP = NO;
+                            WARNING_CFLAGS = ("-Wmost", "-Wno-four-char-constants", "-Wno-unknown-pragmas", );
+                     };
+                     name = MinSizeRel;
+              };
+              FCB45CCBD435403D91DB8F23 /* RelWithDebInfo */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+                            GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+                            GCC_OPTIMIZATION_LEVEL = 0;
+                            GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'", );
+                            GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+                            HEADER_SEARCH_PATHS = (/Users/gnzlbg/src/libcxx/libcxx/include, /usr/local/include/eigen3, "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/include", "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0", );
+                            INSTALL_PATH = "";
+                            OTHER_CFLAGS = "  ";
+                            OTHER_LDFLAGS = "";
+                            OTHER_REZFLAGS = "";
+                            PRODUCT_NAME = ZERO_CHECK;
+                            SECTORDER_FLAGS = "";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0";
+                            USE_HEADERMAP = NO;
+                            WARNING_CFLAGS = ("-Wmost", "-Wno-four-char-constants", "-Wno-unknown-pragmas", );
+                     };
+                     name = RelWithDebInfo;
+              };
+              636B464E03C1417792C2E68F /* Debug */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            EXECUTABLE_PREFIX = lib;
+                            EXECUTABLE_SUFFIX = ".a";
+                            GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+                            GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+                            GCC_OPTIMIZATION_LEVEL = 0;
+                            GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'", );
+                            GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+                            HEADER_SEARCH_PATHS = (/Users/gnzlbg/src/libcxx/libcxx/include, /usr/local/include/eigen3, "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/include", "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0", );
+                            INSTALL_PATH = "";
+                            LIBRARY_STYLE = STATIC;
+                            OTHER_CFLAGS = "   -g  ";
+                            OTHER_CPLUSPLUSFLAGS = "-arch x86_64 -Wall -Wextra -std=c++11 -stdlib=libc++ -I/Users/gnzlbg/src/libcxx/libcxx/include -pedantic -Wshadow -Woverloaded-virtual -pedantic-errors -Wcast-align -Wcomment -Wcast-qual  -Wchar-subscripts  -Wdisabled-optimization -Wfloat-equal -Wformat -Wformat=2 -Winvalid-pch -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wimport  -Winit-self  -Winline -Wreturn-type  -Wmissing-braces -Wmissing-field-initializers -Wmissing-include-dirs  -Wredundant-decls -Wpacked -Wparentheses  -Wpointer-arith -Wsequence-point  -Wsign-compare  -Wstack-protector -Wstrict-aliasing -Wstrict-aliasing=2 -Wswitch -Wswitch-default  -Wtrigraphs -Wuninitialized -Wunknown-pragmas  -Wunreachable-code -Wunused -Wunused-function -Wunused-label  -Wunused-parameter -Wunused-value  -Wunused-variable -Wvariadic-macros -Wvolatile-register-var  -Wwrite-strings -Woverloaded-virtual -Wsign-promo -Wstrict-overflow=5 -Wswitch-default -DGTEST_USE_OWN_TR1_TUPLE=1 -fdiagnostics-show-template-tree -ftemplate-backtrace-limit=0 -Wno-attributes         -fno-inline -fstack-protector-all -D_FORTIFY_SOURCE=2 -D_GLIBCXX_DEBUG -g3  ";
+                            OTHER_LDFLAGS = "";
+                            OTHER_REZFLAGS = "";
+                            PRODUCT_NAME = gtest;
+                            SECTORDER_FLAGS = "";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0";
+                            USE_HEADERMAP = NO;
+                            WARNING_CFLAGS = ("-Wmost", "-Wno-four-char-constants", "-Wno-unknown-pragmas", );
+                     };
+                     name = Debug;
+              };
+              19D972374850443A99519D7B /* Release */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            EXECUTABLE_PREFIX = lib;
+                            EXECUTABLE_SUFFIX = ".a";
+                            GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+                            GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+                            GCC_OPTIMIZATION_LEVEL = 3;
+                            GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'", );
+                            GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+                            HEADER_SEARCH_PATHS = (/Users/gnzlbg/src/libcxx/libcxx/include, /usr/local/include/eigen3, "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/include", "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0", );
+                            INSTALL_PATH = "";
+                            LIBRARY_STYLE = STATIC;
+                            OTHER_CFLAGS = "    -DNDEBUG  ";
+                            OTHER_CPLUSPLUSFLAGS = "-arch x86_64 -Wall -Wextra -std=c++11 -stdlib=libc++ -I/Users/gnzlbg/src/libcxx/libcxx/include -pedantic -Wshadow -Woverloaded-virtual -pedantic-errors -Wcast-align -Wcomment -Wcast-qual  -Wchar-subscripts  -Wdisabled-optimization -Wfloat-equal -Wformat -Wformat=2 -Winvalid-pch -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wimport  -Winit-self  -Winline -Wreturn-type  -Wmissing-braces -Wmissing-field-initializers -Wmissing-include-dirs  -Wredundant-decls -Wpacked -Wparentheses  -Wpointer-arith -Wsequence-point  -Wsign-compare  -Wstack-protector -Wstrict-aliasing -Wstrict-aliasing=2 -Wswitch -Wswitch-default  -Wtrigraphs -Wuninitialized -Wunknown-pragmas  -Wunreachable-code -Wunused -Wunused-function -Wunused-label  -Wunused-parameter -Wunused-value  -Wunused-variable -Wvariadic-macros -Wvolatile-register-var  -Wwrite-strings -Woverloaded-virtual -Wsign-promo -Wstrict-overflow=5 -Wswitch-default -DGTEST_USE_OWN_TR1_TUPLE=1 -fdiagnostics-show-template-tree -ftemplate-backtrace-limit=0 -Wno-attributes     -DNDEBUG -march=native -mtune=native -fstrict-aliasing -fomit-frame-pointer -pipe -fdata-sections -ffunction-sections -ffast-math -fvectorize -fslp-vectorize-aggressive -DEIGEN_FAST_MATH -DEIGEN_NO_DEBUG  ";
+                            OTHER_LDFLAGS = "";
+                            OTHER_REZFLAGS = "";
+                            PRODUCT_NAME = gtest;
+                            SECTORDER_FLAGS = "";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0";
+                            USE_HEADERMAP = NO;
+                            WARNING_CFLAGS = ("-Wmost", "-Wno-four-char-constants", "-Wno-unknown-pragmas", );
+                     };
+                     name = Release;
+              };
+              678B900AD0CD4A458CFD295F /* MinSizeRel */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            EXECUTABLE_PREFIX = lib;
+                            EXECUTABLE_SUFFIX = ".a";
+                            GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+                            GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+                            GCC_OPTIMIZATION_LEVEL = s;
+                            GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'", );
+                            GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+                            HEADER_SEARCH_PATHS = (/Users/gnzlbg/src/libcxx/libcxx/include, /usr/local/include/eigen3, "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/include", "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0", );
+                            INSTALL_PATH = "";
+                            LIBRARY_STYLE = STATIC;
+                            OTHER_CFLAGS = "    -DNDEBUG  ";
+                            OTHER_CPLUSPLUSFLAGS = "-arch x86_64 -Wall -Wextra -std=c++11 -stdlib=libc++ -I/Users/gnzlbg/src/libcxx/libcxx/include -pedantic -Wshadow -Woverloaded-virtual -pedantic-errors -Wcast-align -Wcomment -Wcast-qual  -Wchar-subscripts  -Wdisabled-optimization -Wfloat-equal -Wformat -Wformat=2 -Winvalid-pch -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wimport  -Winit-self  -Winline -Wreturn-type  -Wmissing-braces -Wmissing-field-initializers -Wmissing-include-dirs  -Wredundant-decls -Wpacked -Wparentheses  -Wpointer-arith -Wsequence-point  -Wsign-compare  -Wstack-protector -Wstrict-aliasing -Wstrict-aliasing=2 -Wswitch -Wswitch-default  -Wtrigraphs -Wuninitialized -Wunknown-pragmas  -Wunreachable-code -Wunused -Wunused-function -Wunused-label  -Wunused-parameter -Wunused-value  -Wunused-variable -Wvariadic-macros -Wvolatile-register-var  -Wwrite-strings -Woverloaded-virtual -Wsign-promo -Wstrict-overflow=5 -Wswitch-default -DGTEST_USE_OWN_TR1_TUPLE=1 -fdiagnostics-show-template-tree -ftemplate-backtrace-limit=0 -Wno-attributes     -DNDEBUG  ";
+                            OTHER_LDFLAGS = "";
+                            OTHER_REZFLAGS = "";
+                            PRODUCT_NAME = gtest;
+                            SECTORDER_FLAGS = "";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0";
+                            USE_HEADERMAP = NO;
+                            WARNING_CFLAGS = ("-Wmost", "-Wno-four-char-constants", "-Wno-unknown-pragmas", );
+                     };
+                     name = MinSizeRel;
+              };
+              BC16DD9A145A4FF6976495D7 /* RelWithDebInfo */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            EXECUTABLE_PREFIX = lib;
+                            EXECUTABLE_SUFFIX = ".a";
+                            GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+                            GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+                            GCC_OPTIMIZATION_LEVEL = 2;
+                            GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'", );
+                            GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+                            HEADER_SEARCH_PATHS = (/Users/gnzlbg/src/libcxx/libcxx/include, /usr/local/include/eigen3, "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/include", "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0", );
+                            INSTALL_PATH = "";
+                            LIBRARY_STYLE = STATIC;
+                            OTHER_CFLAGS = "       -DNDEBUG  ";
+                            OTHER_CPLUSPLUSFLAGS = "-arch x86_64 -Wall -Wextra -std=c++11 -stdlib=libc++ -I/Users/gnzlbg/src/libcxx/libcxx/include -pedantic -Wshadow -Woverloaded-virtual -pedantic-errors -Wcast-align -Wcomment -Wcast-qual  -Wchar-subscripts  -Wdisabled-optimization -Wfloat-equal -Wformat -Wformat=2 -Winvalid-pch -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wimport  -Winit-self  -Winline -Wreturn-type  -Wmissing-braces -Wmissing-field-initializers -Wmissing-include-dirs  -Wredundant-decls -Wpacked -Wparentheses  -Wpointer-arith -Wsequence-point  -Wsign-compare  -Wstack-protector -Wstrict-aliasing -Wstrict-aliasing=2 -Wswitch -Wswitch-default  -Wtrigraphs -Wuninitialized -Wunknown-pragmas  -Wunreachable-code -Wunused -Wunused-function -Wunused-label  -Wunused-parameter -Wunused-value  -Wunused-variable -Wvariadic-macros -Wvolatile-register-var  -Wwrite-strings -Woverloaded-virtual -Wsign-promo -Wstrict-overflow=5 -Wswitch-default -DGTEST_USE_OWN_TR1_TUPLE=1 -fdiagnostics-show-template-tree -ftemplate-backtrace-limit=0 -Wno-attributes        -DNDEBUG  ";
+                            OTHER_LDFLAGS = "";
+                            OTHER_REZFLAGS = "";
+                            PRODUCT_NAME = gtest;
+                            SECTORDER_FLAGS = "";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0";
+                            USE_HEADERMAP = NO;
+                            WARNING_CFLAGS = ("-Wmost", "-Wno-four-char-constants", "-Wno-unknown-pragmas", );
+                     };
+                     name = RelWithDebInfo;
+              };
+              CF613EBCF21F485A85E26EC5 /* Debug */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            EXECUTABLE_PREFIX = lib;
+                            EXECUTABLE_SUFFIX = ".a";
+                            GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+                            GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+                            GCC_OPTIMIZATION_LEVEL = 0;
+                            GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'", );
+                            GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+                            HEADER_SEARCH_PATHS = (/Users/gnzlbg/src/libcxx/libcxx/include, /usr/local/include/eigen3, "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/include", "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0", );
+                            INSTALL_PATH = "";
+                            LIBRARY_STYLE = STATIC;
+                            OTHER_CFLAGS = "   -g  ";
+                            OTHER_CPLUSPLUSFLAGS = "-arch x86_64 -Wall -Wextra -std=c++11 -stdlib=libc++ -I/Users/gnzlbg/src/libcxx/libcxx/include -pedantic -Wshadow -Woverloaded-virtual -pedantic-errors -Wcast-align -Wcomment -Wcast-qual  -Wchar-subscripts  -Wdisabled-optimization -Wfloat-equal -Wformat -Wformat=2 -Winvalid-pch -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wimport  -Winit-self  -Winline -Wreturn-type  -Wmissing-braces -Wmissing-field-initializers -Wmissing-include-dirs  -Wredundant-decls -Wpacked -Wparentheses  -Wpointer-arith -Wsequence-point  -Wsign-compare  -Wstack-protector -Wstrict-aliasing -Wstrict-aliasing=2 -Wswitch -Wswitch-default  -Wtrigraphs -Wuninitialized -Wunknown-pragmas  -Wunreachable-code -Wunused -Wunused-function -Wunused-label  -Wunused-parameter -Wunused-value  -Wunused-variable -Wvariadic-macros -Wvolatile-register-var  -Wwrite-strings -Woverloaded-virtual -Wsign-promo -Wstrict-overflow=5 -Wswitch-default -DGTEST_USE_OWN_TR1_TUPLE=1 -fdiagnostics-show-template-tree -ftemplate-backtrace-limit=0 -Wno-attributes         -fno-inline -fstack-protector-all -D_FORTIFY_SOURCE=2 -D_GLIBCXX_DEBUG -g3  ";
+                            OTHER_LDFLAGS = "";
+                            OTHER_REZFLAGS = "";
+                            PRODUCT_NAME = gtest_main;
+                            SECTORDER_FLAGS = "";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0";
+                            USE_HEADERMAP = NO;
+                            WARNING_CFLAGS = ("-Wmost", "-Wno-four-char-constants", "-Wno-unknown-pragmas", );
+                     };
+                     name = Debug;
+              };
+              E86FA869E3694CE7BEEBB592 /* Release */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            EXECUTABLE_PREFIX = lib;
+                            EXECUTABLE_SUFFIX = ".a";
+                            GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+                            GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+                            GCC_OPTIMIZATION_LEVEL = 3;
+                            GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'", );
+                            GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+                            HEADER_SEARCH_PATHS = (/Users/gnzlbg/src/libcxx/libcxx/include, /usr/local/include/eigen3, "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/include", "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0", );
+                            INSTALL_PATH = "";
+                            LIBRARY_STYLE = STATIC;
+                            OTHER_CFLAGS = "    -DNDEBUG  ";
+                            OTHER_CPLUSPLUSFLAGS = "-arch x86_64 -Wall -Wextra -std=c++11 -stdlib=libc++ -I/Users/gnzlbg/src/libcxx/libcxx/include -pedantic -Wshadow -Woverloaded-virtual -pedantic-errors -Wcast-align -Wcomment -Wcast-qual  -Wchar-subscripts  -Wdisabled-optimization -Wfloat-equal -Wformat -Wformat=2 -Winvalid-pch -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wimport  -Winit-self  -Winline -Wreturn-type  -Wmissing-braces -Wmissing-field-initializers -Wmissing-include-dirs  -Wredundant-decls -Wpacked -Wparentheses  -Wpointer-arith -Wsequence-point  -Wsign-compare  -Wstack-protector -Wstrict-aliasing -Wstrict-aliasing=2 -Wswitch -Wswitch-default  -Wtrigraphs -Wuninitialized -Wunknown-pragmas  -Wunreachable-code -Wunused -Wunused-function -Wunused-label  -Wunused-parameter -Wunused-value  -Wunused-variable -Wvariadic-macros -Wvolatile-register-var  -Wwrite-strings -Woverloaded-virtual -Wsign-promo -Wstrict-overflow=5 -Wswitch-default -DGTEST_USE_OWN_TR1_TUPLE=1 -fdiagnostics-show-template-tree -ftemplate-backtrace-limit=0 -Wno-attributes     -DNDEBUG -march=native -mtune=native -fstrict-aliasing -fomit-frame-pointer -pipe -fdata-sections -ffunction-sections -ffast-math -fvectorize -fslp-vectorize-aggressive -DEIGEN_FAST_MATH -DEIGEN_NO_DEBUG  ";
+                            OTHER_LDFLAGS = "";
+                            OTHER_REZFLAGS = "";
+                            PRODUCT_NAME = gtest_main;
+                            SECTORDER_FLAGS = "";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0";
+                            USE_HEADERMAP = NO;
+                            WARNING_CFLAGS = ("-Wmost", "-Wno-four-char-constants", "-Wno-unknown-pragmas", );
+                     };
+                     name = Release;
+              };
+              926DB336821C47D398FF639D /* MinSizeRel */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            EXECUTABLE_PREFIX = lib;
+                            EXECUTABLE_SUFFIX = ".a";
+                            GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+                            GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+                            GCC_OPTIMIZATION_LEVEL = s;
+                            GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'", );
+                            GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+                            HEADER_SEARCH_PATHS = (/Users/gnzlbg/src/libcxx/libcxx/include, /usr/local/include/eigen3, "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/include", "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0", );
+                            INSTALL_PATH = "";
+                            LIBRARY_STYLE = STATIC;
+                            OTHER_CFLAGS = "    -DNDEBUG  ";
+                            OTHER_CPLUSPLUSFLAGS = "-arch x86_64 -Wall -Wextra -std=c++11 -stdlib=libc++ -I/Users/gnzlbg/src/libcxx/libcxx/include -pedantic -Wshadow -Woverloaded-virtual -pedantic-errors -Wcast-align -Wcomment -Wcast-qual  -Wchar-subscripts  -Wdisabled-optimization -Wfloat-equal -Wformat -Wformat=2 -Winvalid-pch -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wimport  -Winit-self  -Winline -Wreturn-type  -Wmissing-braces -Wmissing-field-initializers -Wmissing-include-dirs  -Wredundant-decls -Wpacked -Wparentheses  -Wpointer-arith -Wsequence-point  -Wsign-compare  -Wstack-protector -Wstrict-aliasing -Wstrict-aliasing=2 -Wswitch -Wswitch-default  -Wtrigraphs -Wuninitialized -Wunknown-pragmas  -Wunreachable-code -Wunused -Wunused-function -Wunused-label  -Wunused-parameter -Wunused-value  -Wunused-variable -Wvariadic-macros -Wvolatile-register-var  -Wwrite-strings -Woverloaded-virtual -Wsign-promo -Wstrict-overflow=5 -Wswitch-default -DGTEST_USE_OWN_TR1_TUPLE=1 -fdiagnostics-show-template-tree -ftemplate-backtrace-limit=0 -Wno-attributes     -DNDEBUG  ";
+                            OTHER_LDFLAGS = "";
+                            OTHER_REZFLAGS = "";
+                            PRODUCT_NAME = gtest_main;
+                            SECTORDER_FLAGS = "";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0";
+                            USE_HEADERMAP = NO;
+                            WARNING_CFLAGS = ("-Wmost", "-Wno-four-char-constants", "-Wno-unknown-pragmas", );
+                     };
+                     name = MinSizeRel;
+              };
+              1D3D4D6C1E7A4B03A1729CE9 /* RelWithDebInfo */ = {
+                     isa = XCBuildConfiguration;
+                     buildSettings = {
+                            EXECUTABLE_PREFIX = lib;
+                            EXECUTABLE_SUFFIX = ".a";
+                            GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+                            GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+                            GCC_OPTIMIZATION_LEVEL = 2;
+                            GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'", );
+                            GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+                            HEADER_SEARCH_PATHS = (/Users/gnzlbg/src/libcxx/libcxx/include, /usr/local/include/eigen3, "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0/include", "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0", );
+                            INSTALL_PATH = "";
+                            LIBRARY_STYLE = STATIC;
+                            OTHER_CFLAGS = "       -DNDEBUG  ";
+                            OTHER_CPLUSPLUSFLAGS = "-arch x86_64 -Wall -Wextra -std=c++11 -stdlib=libc++ -I/Users/gnzlbg/src/libcxx/libcxx/include -pedantic -Wshadow -Woverloaded-virtual -pedantic-errors -Wcast-align -Wcomment -Wcast-qual  -Wchar-subscripts  -Wdisabled-optimization -Wfloat-equal -Wformat -Wformat=2 -Winvalid-pch -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wimport  -Winit-self  -Winline -Wreturn-type  -Wmissing-braces -Wmissing-field-initializers -Wmissing-include-dirs  -Wredundant-decls -Wpacked -Wparentheses  -Wpointer-arith -Wsequence-point  -Wsign-compare  -Wstack-protector -Wstrict-aliasing -Wstrict-aliasing=2 -Wswitch -Wswitch-default  -Wtrigraphs -Wuninitialized -Wunknown-pragmas  -Wunreachable-code -Wunused -Wunused-function -Wunused-label  -Wunused-parameter -Wunused-value  -Wunused-variable -Wvariadic-macros -Wvolatile-register-var  -Wwrite-strings -Woverloaded-virtual -Wsign-promo -Wstrict-overflow=5 -Wswitch-default -DGTEST_USE_OWN_TR1_TUPLE=1 -fdiagnostics-show-template-tree -ftemplate-backtrace-limit=0 -Wno-attributes        -DNDEBUG  ";
+                            OTHER_LDFLAGS = "";
+                            OTHER_REZFLAGS = "";
+                            PRODUCT_NAME = gtest_main;
+                            SECTORDER_FLAGS = "";
+                            SYMROOT = "/Users/gnzlbg/projects/sideprojects/HOM3/home/gtest-1.6.0";
+                            USE_HEADERMAP = NO;
+                            WARNING_CFLAGS = ("-Wmost", "-Wno-four-char-constants", "-Wno-unknown-pragmas", );
+                     };
+                     name = RelWithDebInfo;
+              };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+              3CC9156270B9441C8BBDA72C /* Build configuration list for PBXProject  "gtest" */ = {
+                     isa = XCConfigurationList;
+                     buildConfigurations = (
+                            7039788B109F4CECBDD8CFD1 /* Debug */,
+                            B8FD7A77AFEC4E46981B2F32 /* Release */,
+                            6A81A5BA830142B1BC4D9E0D /* MinSizeRel */,
+                            266CBBB2740741F0B0990269 /* RelWithDebInfo */,
+                     );
+                     defaultConfigurationIsVisible = 0;
+                     defaultConfigurationName = Debug;
+              };
+              EF2AD29A73464A769946F0E9 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */ = {
+                     isa = XCConfigurationList;
+                     buildConfigurations = (
+                            284D0309891A479ABA2AD18E /* Debug */,
+                            06339F23EDDA4708A961B911 /* Release */,
+                            AFA2F8AADAEC4ABF9735EA30 /* MinSizeRel */,
+                            ABF7ADDF19D04ECD80AEDB51 /* RelWithDebInfo */,
+                     );
+                     defaultConfigurationIsVisible = 0;
+                     defaultConfigurationName = Debug;
+              };
+              D376ACEB04CA404EBB5C348D /* Build configuration list for PBXAggregateTarget "RUN_TESTS" */ = {
+                     isa = XCConfigurationList;
+                     buildConfigurations = (
+                            37C4A92B01CF438E932EF58B /* Debug */,
+                            DAE12CCBCD084BCABDEA3B79 /* Release */,
+                            C1CED800CC014A17A72B2544 /* MinSizeRel */,
+                            4FA0C9C74726490C852D2D37 /* RelWithDebInfo */,
+                     );
+                     defaultConfigurationIsVisible = 0;
+                     defaultConfigurationName = Debug;
+              };
+              1C0A58E55E4A4AEE9CF877F1 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */ = {
+                     isa = XCConfigurationList;
+                     buildConfigurations = (
+                            8EA810B50AA34868BC3430FD /* Debug */,
+                            50902AC26B0A41308CB69524 /* Release */,
+                            5E00142062FD495BB4BFE164 /* MinSizeRel */,
+                            FCB45CCBD435403D91DB8F23 /* RelWithDebInfo */,
+                     );
+                     defaultConfigurationIsVisible = 0;
+                     defaultConfigurationName = Debug;
+              };
+              06843DF3B5BC468EBDAF856A /* Build configuration list for PBXNativeTarget "gtest" */ = {
+                     isa = XCConfigurationList;
+                     buildConfigurations = (
+                            636B464E03C1417792C2E68F /* Debug */,
+                            19D972374850443A99519D7B /* Release */,
+                            678B900AD0CD4A458CFD295F /* MinSizeRel */,
+                            BC16DD9A145A4FF6976495D7 /* RelWithDebInfo */,
+                     );
+                     defaultConfigurationIsVisible = 0;
+                     defaultConfigurationName = Debug;
+              };
+              4AD5686FBE7348BE8A66DA42 /* Build configuration list for PBXNativeTarget "gtest_main" */ = {
+                     isa = XCConfigurationList;
+                     buildConfigurations = (
+                            CF613EBCF21F485A85E26EC5 /* Debug */,
+                            E86FA869E3694CE7BEEBB592 /* Release */,
+                            926DB336821C47D398FF639D /* MinSizeRel */,
+                            1D3D4D6C1E7A4B03A1729CE9 /* RelWithDebInfo */,
+                     );
+                     defaultConfigurationIsVisible = 0;
+                     defaultConfigurationName = Debug;
+              };
+/* End XCConfigurationList section */
+       };
+       rootObject = 4E268170BDBA4E0E93820EC0;
+}
