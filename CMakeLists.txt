@@ -78,8 +78,8 @@ find_package(Boost 1.53 COMPONENTS mpi serialization filesystem system REQUIRED)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
 # pnetcdf
-find_package(PNETCDF REQUIRED)
-include_directories(SYSTEM ${PNETCDF_INCLUDE_DIR})
+#find_package(PNETCDF REQUIRED)
+#include_directories(SYSTEM ${PNETCDF_INCLUDE_DIR})
 
 
 
