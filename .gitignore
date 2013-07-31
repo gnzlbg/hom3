@@ -12,5 +12,22 @@
 *.la
 *.a
 
+# CMake files
+CMakeCache.txt
+CMakeFiles
+Makefile
+cmake_install.cmake
+install_manifest.txt
+
+# CTest files
+CTestTestfile.cmake
+Testing
+
+# VTK files
+*.vtk
+
+# Doxygen
+Doxyfile
+
 # Backup files (e.g. from emacs)
 *~

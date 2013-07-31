@@ -42,8 +42,10 @@ template<SInd nd> struct Container : container::Sequential<Container<nd>> {
   M<NumM,nd> myNumArr;
 
   /// Construction:
-  Container(const Ind n) : container::Sequential< Container<nd> >(n),
-        myInt(this), myNum(this), myIntArr(this), myNumArr(this) {}
+  Container(const Ind n)
+      : container::Sequential< Container<nd> >(n,"fixed_container"),
+      myInt(this,"myInt"), myNum(this,"myNum"), myIntArr(this,"myIntArr"),
+      myNumArr(this,"myNumArr") {}
 
  private:
 

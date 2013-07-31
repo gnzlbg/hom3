@@ -10,6 +10,10 @@
 #include "../../misc/dbg.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
+#define assert_variable_node_container()                                \
+  static_assert(std::is_same<container_type,tag::variable_nodes>::value, \
+                "Function defined only for variable_node_size containers!")
+
 namespace container { namespace sequential {
 
 /// \brief Sequential container (base implementation)
@@ -32,17 +36,18 @@ template<class Cells> struct Implementation {
 
   /// \name Constructors
   ///@{
-  Implementation(const Ind n, const std::string name) : Implementation(n,n,name) {}
+  Implementation(const Ind n, const std::string name) : Implementation(n,0,name) {}
   Implementation(const Ind ne, const Ind nn, const std::string name)
       : maxCellSize_(ne), maxNodeSize_(nn), cellSize_(0),
-        nodeSize_(0), nodes_(c()), name_(name) {
+        nodeSize_(0), nodes_(c(),"nodes"), name_(name) {
     TRACE_IN((ne)(nn));
 
     if (capacity() == 0) {
       TERMINATE("Empty container!");
     }
 
-    if (node_capacity() < capacity()) {
+    if (std::is_same<container_type,tag::variable_nodes>::value
+        && node_capacity() < capacity()) {
       TERMINATE("Less nodes than cells!");
     }
 
@@ -95,11 +100,11 @@ template<class Cells> struct Implementation {
   /// \brief Returns the current #of cells stored in the container
   inline Ind  size()          const { return cellSize_;      }
   /// \brief Returns the current #of nodes stored in the container
-  inline Ind  node_size()     const { return nodeSize_;      }
+  inline Ind  node_size()     const
+  { assert_variable_node_container(); return nodeSize_;      }
   /// \brief Returns the current #of nodes of the element \p cellId
   inline Int node_size(const Ind cellId) { ///< Returns #nodes of "cellId"
-    static_assert(std::is_same<container_type,tag::variable_nodes>::value,
-                  "Function defined only for variable_node_size containers!");
+    assert_variable_node_container();
     ASSERT(first_node(cellId) <= last_node(cellId),"Invalid cell node range!");
     return last_node(cellId) - first_node(cellId);
   }
@@ -269,18 +274,8 @@ template<class Cells> struct Implementation {
   Ind cellSize_; ///< #of cells + 1
   Ind nodeSize_; ///< #of nodes + 1
 
-  /// \brief Container of node indicies
-  ///
-  /// Hint: If container_type == variable_nodes
-  /// then:
-  ///         NodalVariables<Cells,IndM,2> nodes;
-  /// else:
-  ///         void* nodes; // we don't want to store them!
-  ///
-  typename std::conditional<
-    std::is_same<container_type, tag::variable_nodes>::value,
-    NodeIndices<Cells>, void* >::type
-  nodes_;
+  /// Container of node indicies
+  NodeIndices<Cells> nodes_;
 
   const std::string name_;
 

@@ -82,7 +82,6 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 #include_directories(SYSTEM ${PNETCDF_INCLUDE_DIR})
 
 
-
 SET(HOM3_BASE_LIBS ${Boost_LIBRARIES} ${MPI_LIBRARIES} ${PNETCDF_LIBRARY})
 
 # Doxygen (optional) - Enables "make docs"

@@ -10,13 +10,14 @@
 template<SInd nd> io::Properties small_grid(const SInd minRefLevel) {
   using Boundaries = typename Grid<nd>::Boundaries;
   Boundaries boundaries;
-  auto properties = grid::helpers::unit_cube::small_grid<nd>(minRefLevel);
+  auto properties
+      = grid::helpers::cube::properties<nd>
+      ({NumA<nd>::Constant(0),NumA<nd>::Constant(1)}, minRefLevel);
   io::insert_property<decltype(boundaries)>(properties,"boundaries",boundaries);
   return properties;
 }
 
-template<SInd nd>
-struct nghbrIds {
+template<SInd nd> struct nghbrIds {
   Ind nId;
   std::array<Ind,2*nd> nghbrs;
 };
@@ -38,7 +39,7 @@ void consistency_nghbr_check(const Grid<nd>& grid) {
 
 /// \test tests Grid constructor
 TEST(hierarchical_container_test, constructor) {
-  Grid<3> grid(grid::helpers::unit_cube::small_grid<3>(2));
+  Grid<3> grid(small_grid<3>(2));
   grid.read_mesh_generator();
   grid.generate_mesh();
 
@@ -48,7 +49,7 @@ TEST(hierarchical_container_test, constructor) {
 Grid<3> small3DGrid(small_grid<3>(2),grid::initialize);
 
 TEST(hierarchical_container_test, test_write_grid_domain_3d) {
-  grid::helpers::write_domain("grid_3D",&small3DGrid);
+  write_domain("grid_3D",&small3DGrid);
 }
 
 /// \test tests childs ranges
@@ -191,7 +192,7 @@ TEST(hierarchical_container_test, test_nghbrs_ranges) {
 Grid<2> small2DGrid(small_grid<2>(3),grid::initialize);
 
 TEST(hierarchical_container_test, test_write_grid_domain_2d) {
-  grid::helpers::write_domain("grid_2D",&small2DGrid);
+  write_domain("grid_2D",&small2DGrid);
 }
 
 /// \test test computation of samelvl nghbrs

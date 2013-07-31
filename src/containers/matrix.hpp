@@ -86,7 +86,7 @@ template<class C, class T, template <SInd> class V, SInd nd_ = 1> struct Matrix 
  private:
   const C* c_;
   data_container data_;
-  const std::string name_;
+  std::string name_;
 
   inline std::string path() const { return name() + " in container " + c_->name(); }
 

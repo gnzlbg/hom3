@@ -121,13 +121,13 @@ TEST(fixed_container_test, iterators_DeathTest) {
       }
     });
 
-  /// Access out of bounds elements:
-  EXPECT_DEATH(cells[-1].myNum() = -2.0, "[\\S\\s]+"); ///< implicit conversion to unsigned!
-  EXPECT_DEATH(cells[cells.size()].myNum() = -2.0;, "[\\S\\s]+");
-  EXPECT_DEATH(cells[cells.size()+1].myNum() = -2.0;, "[\\S\\s]+");
-  EXPECT_DEATH(cells.myNum(-1) = -2.0, "[\\S\\s]+");
-  EXPECT_DEATH(cells.myNum(cells.size()) = -2.0;, "[\\S\\s]+");
-  EXPECT_DEATH(cells.myNum(cells.size()+1) = -2.0;, "[\\S\\s]+");
+  /// Access out of bounds elements: die in debug mode only
+  EXPECT_DEBUG_DEATH(cells[-1].myNum() = -2.0, "[\\S\\s]+"); ///< implicit conversion to unsigned!
+  EXPECT_DEBUG_DEATH(cells[cells.size()].myNum() = -2.0;, "[\\S\\s]+");
+  EXPECT_DEBUG_DEATH(cells[cells.size()+1].myNum() = -2.0;, "[\\S\\s]+");
+  EXPECT_DEBUG_DEATH(cells.myNum(-1) = -2.0, "[\\S\\s]+");
+  EXPECT_DEBUG_DEATH(cells.myNum(cells.size()) = -2.0;, "[\\S\\s]+");
+  EXPECT_DEBUG_DEATH(cells.myNum(cells.size()+1) = -2.0;, "[\\S\\s]+");
 }
 
 TEST(fixed_container_test, copy_cells) {

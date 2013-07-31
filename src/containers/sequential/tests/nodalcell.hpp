@@ -53,14 +53,10 @@ template<SInd nd> struct Container : container::Sequential<Container<nd>> {
 
   /// Construction:
   Container(const Ind ne, const Ind nn)
-      : container::Sequential<Container<nd>>(ne,nn) {
-    TRACE_IN_();
-
-    this->initialize(myInt,myNum,myIntArr,myNumArr,myNodalInt,myNodalNum);
-
-    TRACE_OUT();
-  }
-
+      : container::Sequential<Container<nd>>(ne,nn,"nodal_container"),
+      myInt(this,"myInt"), myNum(this,"myNum"), myIntArr(this,"myIntArr"),
+      myNumArr(this,"myNumArr"), myNodalInt(this,"myNodalInt"),
+      myNodalNum(this,"myNodalNum") {}
 
   /// \name Extra functionality, not required as long as you don't use it!
   ///@{
