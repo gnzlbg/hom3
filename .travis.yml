@@ -3,5 +3,6 @@ compiler:
   - clang
 install:
   - sudo apt-get install -qq libeigen3-dev
+  - sudo apt-get install -qq libmpich2-dev
 # Change this to your needs
 script: ./configure.sh -r && make && ctest
