@@ -1,5 +1,7 @@
 language: cpp
 compiler:
   - clang
+install:
+  - sudo apt-get install -qq libeigen3-dev
 # Change this to your needs
 script: ./configure.sh -r && make && ctest
