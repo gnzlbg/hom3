@@ -20,7 +20,6 @@ template<SInd nd,SInd nvars> struct Value;
 namespace container { namespace sequential {
 template<SInd nd,SInd nvars> struct traits<solver::fv::Container<nd,nvars>> {
   using container_type    = tag::fixed_nodes;
-  using connectivity_node = Ind;
   using value_type        = typename solver::fv::Value<nd,nvars>;
   using reference         = typename solver::fv::Reference<nd,nvars>;
 };

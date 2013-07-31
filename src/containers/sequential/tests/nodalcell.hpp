@@ -20,7 +20,6 @@ namespace container { namespace sequential {
 /// \brief Specialize trait for nodal test container
 template<SInd nd> struct traits<test::nodal::Container<nd>> {
   using container_type    = tag::variable_nodes;
-  using connectivity_node = Ind;
   using value_type        = typename test::nodal::Value<nd>;
   using reference         = typename test::nodal::Reference<nd>;
 };

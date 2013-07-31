@@ -19,7 +19,6 @@ namespace container { namespace sequential {
 /// Fixed Test Container trait:
 template<SInd nd> struct traits<test::fixed::Container<nd>> {
   using container_type    = tag::fixed_nodes;
-  using connectivity_node = Ind;
   using value_type = typename test::fixed::Value<nd>;
   using reference = typename test::fixed::Reference<nd>;
 };
