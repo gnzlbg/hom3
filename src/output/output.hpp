@@ -10,7 +10,7 @@
 #include "../misc/helpers.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
-template<SInd nd> struct Grid;
+template<SInd nd> struct CartesianHSP;
 
 namespace io {
 ////////////////////////////////////////////////////////////////////////////////
@@ -58,21 +58,24 @@ struct StreamableVariable {
       : value_type_(o.value_type_), as_int(o.as_int), as_num(o.as_num),
         name_(o.name_), noDims_(o.noDims_) {}
   /// \brief Constructor for Ind variables
-  template<class T> StreamableVariable(const T& t, Ind, std::function<std::string(const SInd)> n, SInd nd)
+  template<class T> StreamableVariable
+  (const T& t, Ind, std::function<std::string(const SInd)> n, SInd nd)
       : value_type_(StreamableVariable::value_types::Ind),
         as_int([=](const Ind i, const SInd d){ return t(i,d); }),
-        as_num([](const Ind, const SInd) { return invalid_value<Num>(); }),
+        as_num([](const Ind, const SInd) { return invalid<Num>(); }),
         name_(n), noDims_(nd) {}
   /// \brief Constructor for SInd variables
-  template<class T> StreamableVariable(const T& t, SInd, std::function<std::string(const SInd)> n, SInd nd)
+  template<class T> StreamableVariable
+  (const T& t, SInd, std::function<std::string(const SInd)> n, SInd nd)
       : value_type_(StreamableVariable::value_types::Ind),
         as_int([=](const Ind i, const SInd d){ return t(i,d); }),
-        as_num([](const Ind, const SInd) { return invalid_value<Num>(); }),
+        as_num([](const Ind, const SInd) { return invalid<Num>(); }),
         name_(n), noDims_(nd) {}
   /// \brief Constructor for Num variables
-  template<class T> StreamableVariable(const T& t, Num, std::function<std::string(const SInd)> n, SInd nd)
+  template<class T> StreamableVariable
+  (const T& t, Num, std::function<std::string(const SInd)> n, SInd nd)
       : value_type_(StreamableVariable::value_types::Num),
-        as_int([](const Ind, const SInd){ return invalid_value<Ind>(); }),
+        as_int([](const Ind, const SInd){ return invalid<Ind>(); }),
         as_num([=](const Ind i, const SInd d){ return t(i,d); }),
         name_(n), noDims_(nd) {}
   /// \brief Constructor for types that satisfy the Streamable concept
@@ -81,7 +84,8 @@ struct StreamableVariable {
   /// \brief Constructor from function object
   template<class F> StreamableVariable(std::string n, SInd nd, F&& f)
       : StreamableVariable(f, decltype(f(0,0))(), make_name(n,nd), nd) {}
-  template<class F> StreamableVariable(std::function<std::string(const SInd)> n, SInd nd, F&& f)
+  template<class F> StreamableVariable
+  (std::function<std::string(const SInd)> n, SInd nd, F&& f)
       : StreamableVariable(f, decltype(f(0,0))(), n, nd) {}
 
   std::string name(SInd d = 0) const { return name_(d); }
@@ -107,11 +111,16 @@ struct StreamableVariable {
 };
 
 /// "make_stream" helper function:
-template<class Variable> StreamableVariable stream(const Variable& v) { return StreamableVariable(v); }
-template<class Functor> StreamableVariable stream(std::string name, SInd nd, Functor&& f) {
+template<class Variable> StreamableVariable stream
+(const Variable& v) { return StreamableVariable(v); }
+
+template<class Functor> StreamableVariable stream
+(std::string name, SInd nd, Functor&& f) {
   return StreamableVariable(name, nd, f);
 }
-template<class Functor> StreamableVariable stream(std::function<std::string(const SInd)> name, SInd nd, Functor&& f) {
+
+template<class Functor> StreamableVariable stream
+(std::function<std::string(const SInd)> name, SInd nd, Functor&& f) {
   return StreamableVariable(name, nd, f);
 }
 
@@ -123,9 +132,15 @@ template<SInd nd> struct StreamableDomain {
 
   /// \todo this function should be removed eventually, output should be
   /// exclusively range-based
-  StreamableDomain(const Grid<nd>* g)
-      : cells([=](){ return g->nodes().leaf_nodes(); }),
-        cell_vertices([=](const Ind cId){ return g->compute_cell_vertices(cId); })
+  StreamableDomain(const CartesianHSP<nd>* g)
+      : cells([=](){ return g->nodes().leaf_nodes()
+              | boost::adaptors::transformed(
+                  [&](const NodeIdx i){
+                  return i();
+                })
+              ; }),
+        cell_vertices([=](const Ind nIdx){
+            return g->compute_cell_vertices(NodeIdx{nIdx}); })
   {}
 
   template<class CellRange, class CellVerticesRange>
@@ -134,21 +149,20 @@ template<SInd nd> struct StreamableDomain {
         cell_vertices(std::forward<CellVerticesRange>(cell_vertices_)) {}
 
   const std::function<AnyRange<Ind>(void)> cells;
-  const std::function<grid::CellVertices<nd>(Ind)> cell_vertices;
-  inline auto dimensions() const -> decltype(Range<SInd>(SInd(0),nd)) { return Range<SInd>(SInd(0),nd); }
+  const std::function<typename CartesianHSP<nd>::CellVertices(Ind)> cell_vertices;
+
+  inline auto dimensions() const -> decltype(Range<SInd>(SInd{0},nd)) {
+    return Range<SInd>(SInd{0},nd);
+  }
   static constexpr SInd no_dimensions() { return nd; }
 };
 ////////////////////////////////////////////////////////////////////////////////
 
-template<template <SInd> class Grid, SInd nd> StreamableDomain<nd> stream_grid(const Grid<nd>& g) {
+template<template <SInd> class Grid, SInd nd>
+StreamableDomain<nd> stream_grid(const Grid<nd>& g) {
   return StreamableDomain<nd>(g);
 }
 
-template <typename Container> struct container_hash {
-  std::size_t operator()(const Container& c) const {
-    return boost::hash_range(std::begin(c), std::end(c));
-  }
-};
 
 ////////////////////////////////////////////////////////////////////////////////
 /// VTK Output class:
@@ -157,7 +171,8 @@ template<SInd nd, class Format = io::format::ascii> struct Vtk {
   /// The constructor configures the output and prepares the header information
   template<class Precision = io::precision::standard>
   Vtk(StreamableDomain<nd> d, const std::string fN, const Precision p = Precision())
-      :  streams_(), fileName(fN + ".vtk"), domain(d), isFileOpen(false), isHeaderWritten(false) {
+      :  streams_(), fileName(fN + ".vtk"), domain(d), isFileOpen(false),
+         isHeaderWritten(false) {
     set_precision(p);
 
     /// VTK Header Information:
@@ -341,7 +356,7 @@ template<SInd nd, class Format = io::format::ascii> struct Vtk {
     if(os.is_open()) { os.close(); }
     os.open(fileName, std::ios_base::app); // reopen in ascii mode
     os << i;
-    os.close(); 
+    os.close();
     os.open(fileName, std::ios_base::app|std::ios_base::binary);
   }
   void write_header(const std::string& i, io::format::ascii) { os << i; }
@@ -377,7 +392,7 @@ template<SInd nd, class Format = io::format::ascii> struct Vtk {
   inline void write_new_line(io::format::ascii)  { os << "\n"; }
   inline void write_new_line(io::format::binary) { os << std::endl; }
 
- using Vertex = typename grid::CellVertices<nd>::Vertex;
+  using Vertex = typename CartesianHSP<nd>::CellVertices::Vertex;
   std::vector<StreamableVariable> streams_;
   const std::string fileName;
   std::stringstream header_;

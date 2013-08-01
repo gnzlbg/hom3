@@ -8,7 +8,6 @@
 /// Includes:
 #include "../containers/hierarchical.hpp"
 #include "generation.hpp"
-#include "helpers.hpp"
 #include "cellvertex.hpp"
 #include "../geometry/boundary.hpp"
 /// Options:
@@ -28,20 +27,8 @@ struct initialize_t {};
 static constexpr initialize_t initialize{};
 ///@}
 
-/// \name Overloading based on #of space dimensions
-///@{
-struct two_dim {}; struct three_dim {};
-
-// SFINAE and enable_if are _really_ messy in the long term,
-// let's try to get _as far as possible_ with tag-dispatching only
-namespace detail_ {
-template<SInd nd> struct dim_t {};
-template<> struct dim_t<SInd(2)> { using type = two_dim; };
-template<> struct dim_t<SInd(3)> { using type = three_dim; };
-}
-
-template<SInd nd> using dim = typename detail_::dim_t<nd>::type;
-///@}
+/// \brief #of space dimensions tag
+template<SInd nd> struct dim {};
 
 ///@}
 
@@ -112,6 +99,36 @@ static constexpr std::array<SInt,8*3> vertex_pos_3d_arr {{
     }};
 ///@}
 
+template<int nd> struct RootCell {
+  RootCell(const RootCell<nd>&) = default;
+  RootCell(const NumA<nd>& min, const NumA<nd>& max) : length(math::eps) {
+    for(Ind d = 0; d != nd; ++d) {
+      const Num lengthD = max(d) - min(d);
+      ASSERT(lengthD > math::eps, "Negative length not allowed!");
+      length = std::max(length, lengthD);
+      coordinates(d) = min(d) + 0.5 * lengthD;
+    }
+  }
+
+  static const int nDim = nd;
+  Num length;
+  NumA<nd> coordinates;
+  NumA<nd> x_min() const {
+    NumA<nd> m;
+    for(SInd d = 0; d < nd; ++d) {
+      m(d) = coordinates(d) - 0.5 * length;
+    }
+    return m;
+  }
+  NumA<nd> x_max() const {
+    NumA<nd> m;
+    for(SInd d = 0; d < nd; ++d) {
+      m(d) = coordinates(d) + 0.5 * length;
+    }
+    return m;
+  }
+};
+
 } // grid namespace
 
 /// \brief Hierarchical Cartesian Grid data-structure
@@ -119,28 +136,30 @@ static constexpr std::array<SInt,8*3> vertex_pos_3d_arr {{
 /// graph (e.g. neighbor/parent-child relationships)
 /// - manages the boundaries/geometry of each sub domain
 ///
-template <SInd nd> struct Grid {
+/// \todo rename to CartesianHSP
+template <SInd nd> struct CartesianHSP {
 
-  using This = Grid<nd>;
+  using This = CartesianHSP<nd>;
   using Boundary = boundary::Interface<nd>;
   using Boundaries = std::vector<Boundary>;
   using dim = grid::dim<nd>;
-  using D2 = grid::two_dim;
-  using D3 = grid::three_dim;
-
+  using D2 = grid::dim<2>;
+  using D3 = grid::dim<3>;
+  using Connectivity = typename container::Hierarchical<nd>;
   /// \name Construction
   ///@{
 
   /// \brief Construct a grid from a set of input properties
-  Grid(io::Properties input) : properties_(input),
-                               nodes_(io::read<Ind>(properties_,"maxNoGridNodes"),
-                                      io::read<SInd>(properties_,"maxNoContainers")),
-                               rootCell_(io::read<grid::RootCell<nd>>(properties_,"rootCell")),
-                               ready_(false)
-  { TRACE_IN_(); TRACE_OUT();  }
+  CartesianHSP(io::Properties input)
+      : properties_(input),
+        nodes_(io::read<Ind>(properties_,"maxNoGridNodes"),
+               io::read<SInd>(properties_,"maxNoContainers")),
+        rootCell_(io::read<grid::RootCell<nd>>(properties_,"rootCell")),
+        ready_(false)
+  { TRACE_IN_(); TRACE_OUT(); }
 
   /// \brief Constructs and initializes a grid from a set of input properties
-  Grid(io::Properties input, grid::initialize_t) : Grid(input) {
+  CartesianHSP(io::Properties input, grid::initialize_t) : CartesianHSP(input) {
     TRACE_IN_();
     initialize();
     TRACE_OUT();
@@ -163,7 +182,7 @@ template <SInd nd> struct Grid {
   /// \brief Reads boundaries from input set
   ///
   /// \warning Overwrites previously-set boundaries!
-  void read_boundaries() { read_boundaries(properties_);  }
+  void read_boundaries() { read_boundaries(properties_); }
   void read_boundaries(const io::Properties& boundaryProperties) {
     io::read(boundaryProperties,"boundaries",boundaries_);
   }
@@ -189,7 +208,7 @@ template <SInd nd> struct Grid {
   /// \warning Doesn't check if a grid has been generated already!
   void generate_mesh() {
     TRACE_IN_();
-       meshGeneration_(this);
+       meshGeneration_(*this);
     TRACE_OUT();
   };
 
@@ -202,10 +221,8 @@ template <SInd nd> struct Grid {
   inline auto dims() const -> Range<SInd> { return {SInd(0),nd}; }
 
   /// \brief Mesh topology
-  ///
-  /// \warning Read-only !
-  /// \todo Rename to something more meaningful like connectivity/topology ?
-  const container::Hierarchical<nd>& nodes() const { return nodes_; }
+  inline const Connectivity& nodes() const { return nodes_; }
+  inline       Connectivity& nodes()       { return nodes_; }
 
   ///@}
 
@@ -214,7 +231,8 @@ template <SInd nd> struct Grid {
 
   /// \brief #of spatial dimensions
   static constexpr SInd no_dimensions() {
-    static_assert(nd == 2 || nd == 3, "Error: unsupported #of spatial dimensions!");
+    static_assert(nd == 2 || nd == 3,
+                  "Error: unsupported #of spatial dimensions!");
     return nd;
   }
   /// \brief #of verticles per cell
@@ -315,8 +333,8 @@ template <SInd nd> struct Grid {
   ///  - the positions correspond to the vertices.
   ///  - the stencil is the same one as that for the relative child position,
   ///    just sorted in a different order.
-  static constexpr SInt vertex_pos(const SInt childId, const SInt d) {
-    return vertex_pos_(childId,d,dim());
+  static constexpr SInt vertex_pos(const NodeIdx childIdx, const SInt d) {
+    return vertex_pos_(childIdx,d,dim());
   }
 
   /// \brief Length of cells at \p level
@@ -324,25 +342,25 @@ template <SInd nd> struct Grid {
     return rootCell_.length / std::pow(2,level);
   }
 
-  /// \brief Length of cell \p cId
-  Num cell_length(const Ind cId) const {
-    return cell_length_at_level(nodes().level(cId));
+  /// \brief Length of cell at node \p nIdx
+  Num cell_length(const NodeIdx nIdx) const {
+    return cell_length_at_level(nodes().level(nIdx));
   }
 
-  /// \brief Centroid coordinates of cell \p cId
+  /// \brief Centroid coordinates of cell at node \p nIdx
   ///
   /// Note: the coordinates are computed from the root cell's coordinates.
   /// \complexity O(L) - linear in the number of levels.
   /// \complexity O(logN) - logarithmic in the number of cells.
-  NumA<nd> cell_coordinates(const Ind cId) const {
-    TRACE_IN((cId));
-    const Ind level = nodes().level(cId);
+  NumA<nd> cell_coordinates(const NodeIdx nIdx) const {
+    TRACE_IN((nIdx));
+    const Ind level = nodes().level(nIdx);
     if( level != 0 ) {
-      const Ind pId          = nodes().parent(cId);
-      const Ind posInParent  = nodes().position_in_parent(cId);
-      const Num relLength = 0.25 * cell_length(pId);
+      const auto pIdx      = nodes().parent(nIdx);
+      const auto posInParent  = nodes().position_in_parent(nIdx);
+      const auto relLength = 0.25 * cell_length(pIdx);
       const NumA<nd> relativePosition
-          = cell_coordinates(pId)
+          = cell_coordinates(pIdx)
           + child_rel_pos(posInParent).template cast<Num>() * relLength;
       TRACE_OUT();
       return relativePosition;
@@ -352,21 +370,41 @@ template <SInd nd> struct Grid {
     }
   }
 
-  /// \brief Cell vertices of \p cId sorted in counter clockwise direction
-  /// \todo template output routines with #of spatial dimensions and use eigen types
-  auto cell_vertices_coords(const Num cellLength, const NumA<nd> x_cell) const
-      -> typename grid::CellVertices<nd>::Vertices
-  {
+  /// \todo rename cell_id to node_id
+  struct CellVertices {
+    static constexpr SInd no_vertices() {  /// \todo refactor! (see grid)
+      return math::ct::ipow(2u,nd);
+    }
 
+    using Vertex = NumA<nd>;
+    using Vertices = std::array<Vertex,no_vertices()>;
+
+    Ind cell_id() const { return cellId_; }
+    Vertices operator()() const { return vertices_; }
+
+    Ind cellId_;
+    Vertices vertices_;
+  };
+
+  using CellVerticesRange
+  = boost::transformed_range<std::function<CellVertices (NodeIdx)>, const  AnyRange<NodeIdx>>;
+
+  /// \brief Vertices of cell at \p x_cell with cell length \p cellLength sorted
+  /// in counter clockwise direction
+  auto cell_vertices_coords(const Num cellLength, const NumA<nd> x_cell) const
+  -> typename CellVertices::Vertices
+  {
     TRACE_IN((cellLength)(x_cell));
     enum class VTK { Pixel, Polyline };
     const VTK element_type = VTK::Pixel;
-    const Num cellHalfLength = 0.5 * cellLength;
-    typename grid::CellVertices<nd>::Vertices relativePosition;
+    const auto cellHalfLength = 0.5 * cellLength;
+    typename CellVertices::Vertices relativePosition;
     for(auto v : boost::counting_range(0U,no_edge_vertices())) {
       if(element_type == VTK::Pixel) {
         relativePosition[v] = x_cell + cellHalfLength * child_rel_pos(v).template cast<Num>();
       } else if(element_type == VTK::Polyline) {
+        TERMINATE("polyline support deprecated? (TODO: decide!)");
+        // old implementation, needs update:
         // relativePosition[v][d] = vertex_pos(v,d) * relLength + cellCoordinates[d];
       }
     }
@@ -374,23 +412,28 @@ template <SInd nd> struct Grid {
     return relativePosition;
   }
 
-  /// \brief Cell vertices of \p cId sorted in counter clockwise direction
-  /// \todo template output routines with #of spatial dimensions and use eigen types
-  grid::CellVertices<nd> compute_cell_vertices(const Ind cId) const {
-    TRACE_IN((cId));
+  /// \brief Vertices of cell at node \p nIdx sorted in counter clockwise
+  /// direction
+  CellVertices compute_cell_vertices(const NodeIdx nIdx) const {
+    TRACE_IN((nIdx));
 
-    const NumA<nd> x_cell = cell_coordinates(cId);
-    const Num l_cell = cell_length(cId);
+    const NumA<nd> x_cell = cell_coordinates(nIdx);
+    const Num l_cell = cell_length(nIdx);
 
-    return { cId, cell_vertices_coords(l_cell,x_cell) };
+    return { nIdx(), cell_vertices_coords(l_cell,x_cell) };
   }
 
+  /// \brief Total #of _leaf_ cell vertices
+  /// \warning Returns the #of vertices for the leaf nodes
+  /// \todo Should return the #of vertices for a grid!
   Ind no_cell_vertices() const { return nodes().no_leaf_nodes() * no_edge_vertices(); };
 
-  /// \brief Lazy range of all cell vertices
-  auto cell_vertices() const -> grid::CellVerticesRange<nd> const {
-    std::function<grid::CellVertices<nd>(const Ind)> f = [&](const Ind cId){
-      return compute_cell_vertices(cId);
+  /// \brief Lazy range of all _leaf_ cell vertices
+  /// \warning Returns the range for the leaf nodes
+  /// \todo Should return the range for a grid!
+  auto cell_vertices() const -> CellVerticesRange const {
+    std::function<CellVertices(const NodeIdx)> f = [&](const NodeIdx nIdx){
+      return compute_cell_vertices(nIdx);
     };
     return AnyRange<Ind>(nodes().leaf_nodes()) | boost::adaptors::transformed(f);
   }
@@ -400,22 +443,14 @@ template <SInd nd> struct Grid {
   /// \name Operations on mesh topology (i.e. grid connectivity)
   ///@{
 
-  /// \brief Refines cell \p cId isotropically.
+  /// \brief Refines node \p nIdx isotropically.
   ///
   /// \complexity O(1) - constant time ?!? (I guess average constant time due to
   /// compression but should really check this out)
-  void refine_cell(const Ind cId) {
-    TRACE_IN((cId));
-    nodes_.refine_node(cId);
+  void refine_node(const NodeIdx nIdx) {
+    TRACE_IN((nIdx));
+    nodes_.refine_node(nIdx);
     TRACE_OUT();
-  }
-
-  inline Ind& local_id(const Ind globalId, const SInd container) {
-    return nodes_.local_id(globalId, container);
-  }
-
-  inline Ind local_id(const Ind globalId, const SInd container) const {
-    return nodes_.local_id(globalId, container);
   }
 
   ///@}
@@ -427,34 +462,34 @@ template <SInd nd> struct Grid {
   /// \brief Range of boundaries
   inline const std::vector<Boundary>& boundaries() const { return boundaries_; }
 
-  inline auto boundaries(const SInd solverId) const
+  /// \biref Range of boundaries belonging to the solver \p solverIdx
+  inline auto boundaries(const SolverIdx solverIdx) const
   -> decltype(boundaries() | boost::adaptors::filtered(std::function<bool(Boundary)>())) {
-    std::function<bool(Boundary)> valid = [=](Boundary b){
-      return b.is_valid(solverId);
-    };
+    std::function<bool(Boundary)> valid
+        = [=](const Boundary& b){ return b.is_valid(solverIdx); };
     return boundaries() | boost::adaptors::filtered(valid);
   }
 
   /// \brief Appends boundary \p b to the grid boundaries
-  void push_back(Boundary&& b) { boundaries_.push_back(b); }
+  void append_boundary(Boundary&& b) { boundaries_.push_back(b); }
 
   /// \brief Boundary cell information
   ///
   /// For each boundary in a boundary cell, the bcId as well as the solverIds
   /// that share that boundary are provided.
   struct BoundaryCell {
-    BoundaryCell(Ind globalId, std::vector<SInd> boundaries)
-        : globalId_(globalId), boundaries_(boundaries) {}
-    Ind global_id() { return globalId_; }
-    Ind size() { return boundaries_.size(); }
+    BoundaryCell(const NodeIdx nodeIdx, const std::vector<SInd> boundaries)
+        : nodeIdx_(nodeIdx), boundaries_(boundaries) {}
+    NodeIdx node_idx() const { return nodeIdx_; }
+    Ind size() const { return boundaries_.size(); }
     const std::vector<SInd>& boundaries() const { return boundaries_; }
    private:
-    Ind globalId_;
-    std::vector<SInd> boundaries_;
+    const NodeIdx nodeIdx_;
+    const std::vector<SInd> boundaries_;
   };
   using BoundaryCells = std::vector<BoundaryCell>;
 
-  static constexpr SInd invalid_solver(){ return iSInd(); }
+  static constexpr SInd invalid_solver(){ return invalid<SInd>(); }
 
   /// \brief Finds all boundary cells of \p solver
   ///
@@ -471,23 +506,21 @@ template <SInd nd> struct Grid {
   /// \warning EXPERIMENTAL!
   /// \warning Doesn't work across refinement levels yet
   ///
-  BoundaryCells boundary_cells(solver::Interface solver) {
-    const auto solverId = solver.solver_id();
+  BoundaryCells boundary_cells(const SolverIdx solverIdx) {
     BoundaryCells boundaryCells;
 
-
-    for(auto cId : solver.global_ids()) {
-      auto allCellBoundaryIds = is_cut_by_boundaries(cId);
+    for(auto nIdx : nodes().nodes(solverIdx)) {
+      auto allCellBoundaryIds = is_cut_by_boundaries(nIdx);
       if( allCellBoundaryIds.empty() ) { continue; } // not a boundary cell
       // is a boundary cell, but maybe not from solver
-      std::vector<SInd> gridBoundaryIds; // cell might be cut by n-boundaries!
+      std::vector<SInd> boundaryIds; // cell might be cut by n-boundaries!
       for(auto bndryId : allCellBoundaryIds) {
-        if(boundaries()[bndryId].is_valid(solverId)) {
-          gridBoundaryIds.push_back(bndryId);
+        if(boundaries()[bndryId].is_valid(solverIdx)) {
+          boundaryIds.push_back(bndryId);
         }
       }
-      if(!gridBoundaryIds.empty()) { // boundary cell from solver
-        boundaryCells.push_back({cId,std::move(gridBoundaryIds)});
+      if(!boundaryIds.empty()) { // boundary cell from solver
+        boundaryCells.push_back({nIdx,std::move(boundaryIds)});
       }
       // cell is not a boundary cell from solver
       // but it is a boundary cell from another solver
@@ -495,112 +528,10 @@ template <SInd nd> struct Grid {
     }
     return boundaryCells;
   }
-  //  std::vector<BoundaryCell> boundary_cells(solver::Interface solver) {
-  //   const auto solverId = solver.solver_id();
-  //   std::vector<BoundaryCell> boundaryCells;
-  //   using Boundaries = typename BoundaryCell::Boundaries;
-  //   using Boundary = typename BoundaryCell::Boundary;
-  //   // note: checks only those solver ids with a global id (i.e. a subset of all
-  //   // possible cells). This might or might not be more efficient than looping
-  //   // over all global ids and check which of them have the local id.
-  //   //
-  //   // opt: we are going to jump in memory anyways, but if we loop over all
-  //   // globals and compare the local ids we jump always forward in
-  //   // memory. Howver, if we loop over all solver global ids... well they can be
-  //   // arbitraryly sorted..
-  //   for(auto nId : solver.global_ids()) {
-  //     auto nghbrs = nodes().all_samelvl_nghbrs(nId);
-  //     Boundaries boundaries;
-  //     for(auto nghbrPos : nodes().nghbr_pos()) {
-  //       auto nghbrId = nghbrs(nghbrPos);
-
-  //       // If there is no nghbr, add boundary without solver:
-  //       if(!is_valid(nghbrId)) {
-  //         boundaries.push_back(Boundary{nghbrPos,{invalid_solver()}});
-  //         continue;
-  //       }
-  //       // If there is a neighbor but not from this solver,
-  //       // add boundary with all solver presents at that nghbr
-  //       if(!nodes().has_container(nghbrId,solverId)) { // solver/solver boundary
-  //         std::vector<SInd> solvers;
-  //         boost::push_back(solvers,nodes().containers(nghbrId));
-  //         boundaries.push_back(Boundary{nghbrPos,solvers});
-  //         continue;
-  //       }
-  //     }
-
-  //     if(!boundaries.empty()) {
-  //       boundaryCells.emplace_back(nId,boundaries);
-  //     }
-  //   }
-  //   return boundaryCells;
-  // }
-
-  //   struct BoundaryCell {
-  //   struct Boundary {
-  //     using Solvers = std::vector<SInd>;
-  //     const SInd& direction() const { return direction_; }
-  //     const Solvers& solvers() const { return solvers_; }
-  //     std::function<void(solver::Interface,AnyRange<Ind>)>
-  //     SInd direction_;
-  //     Solvers solvers_;
-  //   };
-  //   using Boundaries = std::vector<Boundary>;
-
-  //   BoundaryCell(Ind globalId, Boundaries boundaries)
-  //       : globalId_(globalId), boundaries_(boundaries) {}
-  //   Ind global_id() { return globalId_; }
-  //   Ind size() { return boundaries_.size(); }
-  //   const Boundaries& boundaries() const { return boundaries_; }
-  //  private:
-  //   Ind globalId_;
-  //   Boundaries boundaries_;
-  // };
-  /// Old one, replaced by level-set only version
-  // std::vector<BoundaryCell> boundary_cells(solver::Interface solver) {
-  //   const auto solverId = solver.solver_id();
-  //   std::vector<BoundaryCell> boundaryCells;
-  //   using Boundaries = typename BoundaryCell::Boundaries;
-  //   using Boundary = typename BoundaryCell::Boundary;
-  //   // note: checks only those solver ids with a global id (i.e. a subset of all
-  //   // possible cells). This might or might not be more efficient than looping
-  //   // over all global ids and check which of them have the local id.
-  //   //
-  //   // opt: we are going to jump in memory anyways, but if we loop over all
-  //   // globals and compare the local ids we jump always forward in
-  //   // memory. Howver, if we loop over all solver global ids... well they can be
-  //   // arbitraryly sorted..
-  //   for(auto nId : solver.global_ids()) {
-  //     auto nghbrs = nodes().all_samelvl_nghbrs(nId);
-  //     Boundaries boundaries;
-  //     for(auto nghbrPos : nodes().nghbr_pos()) {
-  //       auto nghbrId = nghbrs(nghbrPos);
-
-  //       // If there is no nghbr, add boundary without solver:
-  //       if(!is_valid(nghbrId)) {
-  //         boundaries.push_back(Boundary{nghbrPos,{invalid_solver()}});
-  //         continue;
-  //       }
-  //       // If there is a neighbor but not from this solver,
-  //       // add boundary with all solver presents at that nghbr
-  //       if(!nodes().has_container(nghbrId,solverId)) { // solver/solver boundary
-  //         std::vector<SInd> solvers;
-  //         boost::push_back(solvers,nodes().containers(nghbrId));
-  //         boundaries.push_back(Boundary{nghbrPos,solvers});
-  //         continue;
-  //       }
-  //     }
-
-  //     if(!boundaries.empty()) {
-  //       boundaryCells.emplace_back(nId,boundaries);
-  //     }
-  //   }
-  //   return boundaryCells;
-  // }
 
   struct VolumeCoupledCell {
-    Ind globalId;
-    std::vector<SInd> solverIds;
+    Ind nodeIdx;
+    std::vector<SolverIdx> solverIds;
   };
 
   /// \brief Finds all volume coupled cellsof \p solver
@@ -613,29 +544,30 @@ template <SInd nd> struct Grid {
   ///
   /// \warning EXPERIMENTAL
   /// \warning Doesn't work across refinement levels yet!
-  std::vector<VolumeCoupledCell> volume_coupled_cells(solver::Interface solver) {
-    const auto solverId = solver.solver_id();
+  template<class Solver>
+  std::vector<VolumeCoupledCell> volume_coupled_cells(Solver& solver) {
+    const auto solverIdx = solver.solver_idx();
     std::vector<VolumeCoupledCell> volumeCoupledCells;
-    for(auto nId : solver.global_ids()) {
+    for(auto nIdx : solver.node_ids()) {
       std::vector<SInd> solverIds;
-      for(auto otherSolver : nodes().containers(nId)) {
-        if(otherSolver == solverId) { continue; }
+      for(auto otherSolver : nodes().grid_ids(nIdx)) {
+        if(otherSolver == solverIdx) { continue; }
         solverIds.push_back(otherSolver);
       }
       if(!solverIds.empty()) {
-        volumeCoupledCells.push_back(VolumeCoupledCell{solverId,solverIds});
+        volumeCoupledCells.push_back(VolumeCoupledCell{solverIdx,solverIds});
       }
     }
     return volumeCoupledCells;
   }
 
   /// \brief EXPERIMENTAL
-  Num level_set(const Ind cId) const {
-    const NumA<nd> x = cell_coordinates(cId);
+  Num level_set(const NodeIdx nIdx) const {
+    const NumA<nd> x = cell_coordinates(nIdx);
     return level_set(x);
   }
 
-   /// \brief EXPERIMENTAL
+  /// \brief EXPERIMENTAL
   Num level_set(const NumA<nd> x) const {
     Num tmp = std::numeric_limits<Num>::max();
     for(const auto& ls : boundaries_) {
@@ -644,14 +576,15 @@ template <SInd nd> struct Grid {
     return tmp;
   }
 
-   /// \brief EXPERIMENTAL
+  /// \brief EXPERIMENTAL
   template<class SignedDistance>
-  bool is_cut_by(const Ind cId, SignedDistance&& signed_distance) const {
-    return is_cut_by(compute_cell_vertices(cId), std::forward<SignedDistance>(signed_distance));
+  bool is_cut_by(const NodeIdx nIdx, SignedDistance&& signed_distance) const {
+    return is_cut_by(compute_cell_vertices(nIdx), std::forward<SignedDistance>(signed_distance));
   }
 
+  /// \brief EXPERIMENTAL
   template<class SignedDistance>
-  bool is_cut_by(const grid::CellVertices<nd> cellVertices,
+  bool is_cut_by(const CellVertices cellVertices,
                  SignedDistance&& signed_distance) const {
     // compute level set values at vertices
     NumA<no_edge_vertices()> lsvEdges;
@@ -672,24 +605,24 @@ template <SInd nd> struct Grid {
     }
   }
 
-  bool is_cut_by(const grid::CellVertices<nd> cellVertices,
-                 const SInd gridBoundaryId) const {
+  bool is_cut_by(const CellVertices cellVertices,
+                 const SInd boundaryIdx) const { // todo BoundaryIdx
     return is_cut_by(cellVertices,[&](const NumA<nd> x){
-        return boundaries()[gridBoundaryId].signed_distance(x);
+        return boundaries()[boundaryIdx].signed_distance(x);
     });
   }
 
   /// \brief EXPERIMENTAL
-  bool is_cut_by_levelset(const Ind cId) {
-    return is_cut_by(cId,[&](const NumA<nd> x){ return level_set(x); });
+  bool is_cut_by_levelset(const NodeIdx nIdx) {
+    return is_cut_by(nIdx,[&](const NumA<nd> x){ return level_set(x); });
   }
 
   /// \brief EXPERIMENTAL
-  std::vector<SInd> is_cut_by_boundaries(const Ind cId) {
+  std::vector<SInd> is_cut_by_boundaries(const NodeIdx nIdx) {
     std::vector<SInd> result;
     SInd i = 0;
     for(auto b : boundaries()) {
-      if(is_cut_by(cId,[&](const NumA<nd> x){ return b.signed_distance(x); })) {
+      if(is_cut_by(nIdx,[&](const NumA<nd> x){ return b.signed_distance(x); })) {
         result.push_back(i);
       }
       ++i;
@@ -699,37 +632,41 @@ template <SInd nd> struct Grid {
 
   ///@}
 
+  /// \brief
+  /// \todo unused / deprecate?
   inline bool is_ready() const { return ready_; }
 
   /// \todo take grid by const reference instead of pointer (requires changes to io::Vtk!)
-  friend void write_domain(const std::string fName, const Grid<nd>* const grid) {
+  friend void write_domain(const std::string fName, const This* const grid) {
 
-  io::Vtk<nd,io::format::binary> out(grid, fName, io::precision::standard());
+    io::Vtk<nd,io::format::binary> out(grid, fName, io::precision::standard());
 
-  out << io::stream("cellIds",1,[](const Ind cId, const SInd){ return cId; });
+    out << io::stream("nodeIds",1,[](const Ind nIdx, const SInd){ return nIdx; });
 
-  out << io::stream("global_nghbrs",grid->nodes().no_samelvl_nghbr_pos(),
-                    [&](const Ind cId, const SInd pos){
-                      return grid->nodes().find_samelvl_nghbr(cId,pos);
-                    });
-  out << io::stream("solver",grid->nodes().container_capacity(),
-                    [&](const Ind cId, const SInd pos){
-                      return grid->nodes().has_container(cId,pos) ? pos : iSInd();
-                    });
-  for(const auto& i : grid->boundaries()) {
-    out << io::stream(i.name(),1,[&](const Ind cId, const SInd) {
-        return i.signed_distance(grid->cell_coordinates(cId));
-      });
+    out << io::stream("nghbrIds",grid->nodes().no_samelvl_nghbr_pos(),
+                      [&](const Ind nIdx, const SInd pos){
+                        return grid->nodes().find_samelvl_nghbr(NodeIdx{nIdx},pos)();
+                      });
+    out << io::stream("solver",grid->nodes().solver_capacity(),
+                      [&](const Ind nIdx, const SInd pos){
+                        return grid->nodes().has_solver(NodeIdx{nIdx},SolverIdx{pos}) ? pos : invalid<SInd>();
+                      });
+    for(const auto& i : grid->boundaries()) {
+      out << io::stream(i.name(),1,[&](const Ind nIdx, const SInd) {
+          return i.signed_distance(grid->cell_coordinates(NodeIdx{nIdx}));
+        });
+    }
   }
-}
 
+  //////////////////////////////////////////////////////////////////////////////
  private:
+  //////////////////////////////////////////////////////////////////////////////
 
   /// Contains the grid properties
   io::Properties properties_;
 
   /// Grid node connectivity graph
-  container::Hierarchical<nd> nodes_;
+  Connectivity nodes_;
 
   /// Grid root cell information
   const grid::RootCell<nd> rootCell_;
@@ -738,7 +675,7 @@ template <SInd nd> struct Grid {
   std::vector<Boundary> boundaries_;
 
   /// Grid generator
-  std::function<void(This*)> meshGeneration_;
+  std::function<void(This&)> meshGeneration_;
 
   /// Is the grid ready to use ?
   bool ready_;
@@ -805,7 +742,8 @@ template <SInd nd> struct Grid {
   ///@}
 };
 
-
+/// \brief Backwards compatibility
+template<SInd nd> using Grid = CartesianHSP<nd>;
 
 ////////////////////////////////////////////////////////////////////////////////
 #undef ENABLE_DBG_

@@ -6,6 +6,8 @@
 /// Includes:
 #include "misc/types.hpp"
 #include "misc/constants.hpp"
+#include "misc/integer.hpp"
+#include "misc/indices.hpp"
 #include "misc/error.hpp"
 #include "misc/debug.hpp"
 #include "misc/assert.hpp"

@@ -16,7 +16,7 @@ using Solver = solver::fv::Solver<nd,Physics, physics::flux::three_point>;
 static const SInd nvars = Solver::nvars;
 using InitialCondition = Solver::InitialCondition;
 using V = typename Solver::V;
-static const SInd fvSolverId = 0;
+static const fvSolverId = SolverIdx{0};
 const grid::RootCell<nd> rootCell(NumA<nd>::Constant(0),NumA<nd>::Constant(1));
 
 const SInd minRefLevel = 6;

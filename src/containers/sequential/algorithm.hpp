@@ -34,7 +34,7 @@ using namespace boost::algorithm;
 /// \algorithm non-modifying
 /// \complexity O(n)
 ///@{
-template <class Predicate> Ind find_if(Ind first, const Ind last, Predicate&& p) {
+template <class T, class Predicate> T find_if(T first, const T last, Predicate&& p) {
   while(first != last && !p(first)) {
     ++first;
   }
@@ -43,8 +43,8 @@ template <class Predicate> Ind find_if(Ind first, const Ind last, Predicate&& p)
 
 /// \brief Finds the first element in range \p c, that satisfies the predicate \p p
 template<class Container, class Predicate>
-Ind find_if(Container&& c, Predicate&& p) {
-  return find_if(c.front(),c.size(),std::forward<Predicate>(p));
+auto find_if(Container&& c, Predicate&& p) {
+  return find_if(c.first(),c.last(),std::forward<Predicate>(p));
 }
 ///@}
 

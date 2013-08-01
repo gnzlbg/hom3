@@ -2,6 +2,7 @@
 #include "heat.hpp"
 #include "euler.hpp"
 #include "coupling.hpp"
+#include "../../grid/helpers.hpp"
 #include "../../geometry/geometry.hpp"
 /// External Includes:
 #include "gtest/gtest.h"
@@ -11,8 +12,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 static const SInd nd = 3;
-static const SInd eulerSolverId = 0;
-static const SInd heatSolverId = 1;
+static const auto eulerSolverId = SolverIdx{0};
+static const auto heatSolverId = SolverIdx{1};
 static const Num timeEnd = 0.25;
 static const Num cfl = 0.2;
 
@@ -66,8 +67,7 @@ io::Properties euler_properties(Grid<nd>* grid) {
 Grid<nd>::Boundaries euler_bcs(EulerSolver& solver) {
   using namespace grid::helpers; using namespace cube; using namespace edge;
   auto bc
-  = boundary::make_condition<euler_physics::bc::Neumann<EulerSolver>>
-      (solver,[](Ind,SInd){return 0.0;});
+  = boundary::make_condition<euler_physics::bc::Neumann<EulerSolver>>(solver);
   auto bcs = make_conditions<nd>()(bc);
   auto boundaries =  make_boundaries<nd>()(eulerSolverId, rootCell, bcs);
   return boundaries;
@@ -142,18 +142,22 @@ int main() {
   write_domain(&eulerSolver);
   write_domain(&heatSolver);
 
-  Num eulerE0 = 0;
-  for(auto cId : eulerSolver.internal_cells()) {
-    eulerE0 += eulerSolver.cells().vars(cId,EulerSolver::V::E());
-  }
-  Num heatE0 = 0;
-  for(auto cId : heatSolver.internal_cells()) {
-      heatE0 += heatSolver.cells().vars(cId,HeatSolver::V::T());
-  }
-  std::cerr << "E_euler = " << eulerE0
-            << " | E_heat = " << heatE0
-            << " | E_total = " << eulerE0 + heatE0
-            << std::endl;
+  auto print_total_energy = [&](){
+    Num eulerE0 = 0;
+    for(auto&& cId : eulerSolver.internal_cells()) {
+      eulerE0 += eulerSolver.cells().lhs(cId,EulerSolver::V::E());
+    }
+    Num heatE0 = 0;
+    for(auto&& cId : heatSolver.internal_cells()) {
+      heatE0 += heatSolver.cells().lhs(cId,HeatSolver::V::T());
+    }
+    std::cerr << "E_euler = " << eulerE0
+    << " | E_heat = " << heatE0
+    << " | E_total = " << eulerE0 + heatE0
+    << std::endl;
+  };
+
+  print_total_energy();
   
   while(
         eulerSolver.time() < eulerSolver.final_time()
@@ -175,18 +179,7 @@ int main() {
     eulerSolver.solve();
     heatSolver.solve();
 
-    Num eulerE = 0;
-    for(auto cId : eulerSolver.internal_cells()) {
-      eulerE += eulerSolver.cells().vars(cId,EulerSolver::V::E());
-    }
-    Num heatE = 0;
-    for(auto cId : heatSolver.internal_cells()) {
-      heatE += heatSolver.cells().vars(cId,HeatSolver::V::T());
-    }
-    std::cerr << " | E_euler = " << eulerE
-              << " | E_heat = " << heatE
-              << " | E_total = " << eulerE + heatE
-              << std::endl;
+    print_total_energy();
 
     if(//eulerSolver.step() % 1 == 0
            heatSolver.step() % 1 == 0

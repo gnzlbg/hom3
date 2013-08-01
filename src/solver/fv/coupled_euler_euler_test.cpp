@@ -2,6 +2,7 @@
 #include "heat.hpp"
 #include "euler.hpp"
 #include "coupling.hpp"
+#include "../../grid/helpers.hpp"
 #include "../../geometry/geometry.hpp"
 /// External Includes:
 #include "gtest/gtest.h"
@@ -11,8 +12,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 static const SInd nd = 3;
-static const SInd euler0SolverId = 0;
-static const SInd euler1SolverId = 1;
+static const auto euler0SolverId = SolverIdx{0};
+static const auto euler1SolverId = SolverIdx{1};
 static const Num timeEnd = 0.25;
 static const Num cfl = 0.2;
 
@@ -31,7 +32,7 @@ namespace physics = solver::fv::euler;
 template<SInd nd, class S> using EulerPhysics = physics::Physics<nd,S>;
 using EulerSolver = solver::fv::Solver<nd,EulerPhysics, physics::flux::ausm>;
 
-io::Properties euler_properties(Grid<nd>* grid, SInd solverId) {
+io::Properties euler_properties(Grid<nd>* grid, SolverIdx solverId) {
   using namespace grid::helpers::cube;
   const Ind maxNoCells = no_solver_cells_with_gc<nd>(minRefLevel)*2;
   static const SInd nvars = EulerSolver::nvars;
@@ -39,7 +40,7 @@ io::Properties euler_properties(Grid<nd>* grid, SInd solverId) {
 
   EulerSolver::InitialDomain initialDomain;
 
-  if(solverId == 0) {
+  if(solverId() == 0) {
     initialDomain = [=](const NumA<nd> x){
       return (*cubeH)(x) > 0 ? true : false;
     };
@@ -94,8 +95,7 @@ io::Properties euler_properties(Grid<nd>* grid, SInd solverId) {
 Grid<nd>::Boundaries euler0_bcs(EulerSolver& solver) {
   using namespace grid::helpers; using namespace cube; using namespace edge;
   auto bc
-  = boundary::make_condition<physics::bc::Neumann<EulerSolver>>
-      (solver,[](Ind,SInd){return 0.0;});
+  = boundary::make_condition<physics::bc::Neumann<EulerSolver>>(solver);
   auto bcs = make_conditions<nd>()(bc);
   auto boundaries =  make_boundaries<nd>()(euler0SolverId, rootCell, bcs);
   return boundaries;

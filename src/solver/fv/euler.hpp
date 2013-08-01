@@ -80,41 +80,41 @@ template<SInd nd, class Solver> struct Physics {
   static constexpr SInd nvars = V::nvars;
 
   /// \brief Density of cell \p lId
-  template<class T> inline Num& rho(const Ind lId)       {
+  template<class T> inline Num& rho(const CellIdx lId)       {
     return Q_<T>(lId,V::rho());
   }
-  template<class T> inline Num  rho(const Ind lId) const {
+  template<class T> inline Num  rho(const CellIdx lId) const {
     return Q_<T>(lId,V::rho());
   }
 
   /// \brief \p d-th momentum component of cell \p lId
-  template<class T> inline Num& rho_u(const Ind lId, const SInd d)       {
+  template<class T> inline Num& rho_u(const CellIdx lId, const SInd d)       {
     return Q_<T>(lId,V::rho_u(d));
   }
-  template<class T> inline Num  rho_u(const Ind lId, const SInd d) const {
+  template<class T> inline Num  rho_u(const CellIdx lId, const SInd d) const {
     return Q_<T>(lId,V::rho_u(d));
   }
 
   /// \brief Energy of cell \p lId
-  template<class T> inline Num& E(const Ind lId)       {
+  template<class T> inline Num& E(const CellIdx lId)       {
     return Q_<T>(lId,V::E());
   }
-  template<class T> inline Num  E(const Ind lId) const {
+  template<class T> inline Num  E(const CellIdx lId) const {
     return Q_<T>(lId,V::E());
   }
 
   /// \brief \p d-th velocity component of cell \p lId
-  template<class T> inline Num u(const Ind lId, const SInd d) const {
+  template<class T> inline Num u(const CellIdx lId, const SInd d) const {
     return rho_u<T>(lId,d) / rho<T>(lId);
   }
 
   /// \brief Pressure of cell \p lId p = (\gamma - 1) * (E - \frac{\rho ||u||^2}{2})
-  template<class T> inline Num p(const Ind lId) const {
+  template<class T> inline Num p(const CellIdx lId) const {
     return gammaM1_ * (E<T>(lId) - 0.5 * rho<T>(lId) * u_mag2<T>(lId));
   }
 
   /// \brief \p d-th component of the Euler flux of cell \p lId
-  template<class T> inline NumA<nvars> flux(const Ind lId, const SInd d) const {
+  template<class T> inline NumA<nvars> flux(const CellIdx lId, const SInd d) const {
     NumA<nvars> f = NumA<nvars>::Zero();
 
     f(V::rho()) = rho_u<T>(lId, d); // f(rho)= rho u_d
@@ -131,7 +131,7 @@ template<SInd nd, class Solver> struct Physics {
   }
 
   /// \brief Velocity magnitude squared: u^2 + v^2 + w^2 (in 3D)
-  template<class T> inline Num u_mag2(const Ind cId) const {
+  template<class T> inline Num u_mag2(const CellIdx cId) const {
     Num uMag2 = 0;
     for(SInd d = 0; d < nd; ++d) {
       uMag2 += u<T>(cId,d) * u<T>(cId,d);
@@ -140,17 +140,17 @@ template<SInd nd, class Solver> struct Physics {
   }
 
   /// \brief Velocity magnitude: ||u|| = \sqrt{u^2 + v^2 + w^2} (in 3D)
-  template<class T> inline Num u_mag(const Ind cId) const {
+  template<class T> inline Num u_mag(const CellIdx cId) const {
     return std::sqrt(u_mag2<T>(cId));
   }
 
   /// \brief Speed of sound a = \sqrt{\gamma p / \rho}
-  template<class T> inline Num a(const Ind cId) const {
+  template<class T> inline Num a(const CellIdx cId) const {
     return std::sqrt(gamma() * p<T>(cId) / rho<T>(cId));
   }
 
   /// \brief Mach number at cell \p cId (always positive!)
-  template<class T> inline Num M(const Ind cId) const {
+  template<class T> inline Num M(const CellIdx cId) const {
     return u_mag<T>(cId) / a<T>(cId);
   }
 
@@ -164,15 +164,15 @@ template<SInd nd, class Solver> struct Physics {
   /// \brief Computes the numerical flux at the interface between \p leftId and
   /// \p rightId
   template<class T, class Flux>
-  inline NumA<nvars> compute_num_flux(const Ind leftId, const Ind rightId,
+  inline NumA<nvars> compute_num_flux(const CellIdx leftId, const CellIdx rightId,
                                       const SInd d, const Num dx, const Num dt) const {
     return compute_num_flux_<T>(leftId,rightId,d,dx,dt,Flux());
   }
 
   /// \brief computes dt at cell \p lId
   /// \min_{u_i \in \mathbf{u}} ( \frac{C * h_{cell}}{u_i + a} )
-  template<class T> inline Num compute_dt(const Ind lId) const {
-    const Num h = b_()->cell_length(lId);
+  template<class T> inline Num compute_dt(const CellIdx lId) const {
+    const Num h = b_()->cells().length(lId);
     const Num a_ = a<T>(lId);
 
     /// \warning assumming dx is constant...
@@ -190,14 +190,14 @@ template<SInd nd, class Solver> struct Physics {
   ///@}
 
   template<class Output> void physics_output(Output&& out) const{
-    out << io::stream("a",1,[&](const Ind cId, const SInd){ return a<lhs_tag>(cId); });
-    out << io::stream("p",1,[&](const Ind cId, const SInd){ return p<lhs_tag>(cId); });
-    out << io::stream("u",nd,[&](const Ind cId, const SInd d){ return u<lhs_tag>(cId,d); });
-    out << io::stream("M",1,[&](const Ind cId, const SInd){ return M<lhs_tag>(cId); });
+    out << io::stream("a",1,[&](const Ind cId, const SInd){ return a<lhs_tag>(CellIdx{cId}); });
+    out << io::stream("p",1,[&](const Ind cId, const SInd){ return p<lhs_tag>(CellIdx{cId}); });
+    out << io::stream("u",nd,[&](const Ind cId, const SInd d){ return u<lhs_tag>(CellIdx{cId},d); });
+    out << io::stream("M",1,[&](const Ind cId, const SInd){ return M<lhs_tag>(CellIdx{cId}); });
   }
 
   /// \brief checks that variables have only valid values (for debugging pourposes)
-  template<class T> inline void check_variables(const Ind lId) const {
+  template<class T> inline void check_variables(const CellIdx lId) const {
     if(b_()->is_ghost_cell(lId)){ return; }
     ASSERT(rho<T>(lId) > 0, "negative density (=" << rho<T>(lId) << ") in cell: "  << lId << "!\n");
     ASSERT(E<T>(lId) > 0,   "negative energy (=" << E<T>(lId) << ") in cell: "   << lId << "!\n");
@@ -212,16 +212,16 @@ template<SInd nd, class Solver> struct Physics {
 
   /// Remove template ugliness
   // Quiz fact: template keyword is required because C++ is unparseable -.-
-  template<class T> inline Num& Q_(const Ind lId, const SInd varId)       {
+  template<class T> inline Num& Q_(const CellIdx lId, const SInd varId)       {
     return b_()->template Q<T>(lId,varId);
   }
-  template<class T> inline Num  Q_(const Ind lId, const SInd varId) const {
+  template<class T> inline Num  Q_(const CellIdx lId, const SInd varId) const {
     return b_()->template Q<T>(lId,varId);
   }
-  template<class T> inline Eigen::Block<NumM<nvars>,1,nvars> Q_(const Ind lId) {
+  template<class T> inline Eigen::Block<NumM<nvars>,1,nvars> Q_(const CellIdx lId) {
     return b_()->template Q<T>(lId);
   }
-  template<class T> inline NumA<nvars> Q_(const Ind lId) const {
+  template<class T> inline NumA<nvars> Q_(const CellIdx lId) const {
     return b_()->template Q<T>(lId);
   }
 
@@ -240,7 +240,7 @@ template<SInd nd, class Solver> struct Physics {
   /// the surface between the cells \p lId and \p rId. The distance between the
   /// cell centers is \p dx and the time-step is \p dt
   template<class T> inline NumA<nvars> compute_num_flux_
-  (const Ind lId, const Ind rId, const SInd d, const Num dx,
+  (const CellIdx lId, const CellIdx rId, const SInd d, const Num dx,
    const Num dt, flux::lax_friedrichs) const {
     return 0.5*(flux<T>(lId,d) + flux<T>(rId,d) + dx / dt * (Q_<T>(lId) - Q_<T>(rId)));
   }
@@ -253,7 +253,7 @@ template<SInd nd, class Solver> struct Physics {
   ///\brief Computes the \p -dth component of the AUSM flux at the surface
   /// between the cells \p lId and \p rId.
   template<class T> inline NumA<nvars> compute_num_flux_
-  (const Ind lId, const Ind rId, const SInd d, const Num, const Num, flux::ausm) const {
+  (const CellIdx lId, const CellIdx rId, const SInd d, const Num, const Num, flux::ausm) const {
     const Num ML = u<T>(lId,d) / a<T>(lId);
     const Num MR = u<T>(rId,d) / a<T>(rId);
 
@@ -288,7 +288,7 @@ template<SInd nd, class Solver> struct Physics {
 
   /// \brief Computes the d-th flux vector component divided by the d-th
   /// velocity (it is multiplied by the interface speed-of-sound in ausm)
-  template<class T> inline NumA<nvars> theta_(const Ind cId) const {
+  template<class T> inline NumA<nvars> theta_(const CellIdx cId) const {
     NumA<nvars> f = NumA<nvars>::Zero();
     f(V::rho()) = rho<T>(cId);
     for(SInd i = 0; i < nd; ++i) {
@@ -363,35 +363,37 @@ NumA<nd + 2> isentropic_vortex(const NumA<nd>, const Num) {
 namespace bc {
 
 template<class Solver> struct Neumann : boundary::Condition {
-  template<class F> Neumann(Solver& s_, F&& val) : value(val), s(s_) {}
-  void apply(AnyRange<Ind> ghost_cells) const override {
+  using F = std::function<Num(CellIdx,SInd)>;
+  Neumann(Solver& s_, F&& val = [](CellIdx,SInd){return 0.0; }) : value(val), s(s_) {}
+  void apply(AnyRange<CellIdx> ghost_cells) const override {
     for(auto ghostCellId : ghost_cells) {
-      Ind bndryCellId;
+      CellIdx bndryCellId;
       std::tie(bndryCellId,std::ignore) = s.boundary_cell_id(ghostCellId);
       for(SInd v = 0; v < Solver::nvars; ++v) {
-        s.cells().vars(ghostCellId,v) = s.cells().vars(bndryCellId,v) /* + ...*/;
+        s.cells().lhs(ghostCellId,v) = s.cells().lhs(bndryCellId,v) /* + ...*/;
         s.cells().rhs(ghostCellId,v) = s.cells().rhs(bndryCellId,v) /* + ...*/;
       }
     }
   }
 
-  std::function<Num(Ind,SInd)> value;
+  F value;
   Solver& s;
 };
 
 template<class Solver> struct Test : boundary::Condition {
   using V = Indices<Solver::nd>;
-  template<class F> Test(Solver& s_, F&& val) : value(val), s(s_) {}
+  using F = std::function<Num(CellIdx,SInd)>;
+  Test(Solver& s_, F&& val) : value(val), s(s_) {}
 
-  void apply(AnyRange<Ind> ghost_cells) const override {
+  void apply(AnyRange<CellIdx> ghost_cells) const override {
     for(auto ghostCellId : ghost_cells) {
        for(SInd v = 0; v < Solver::nvars; ++v) {
-         s.cells().vars(ghostCellId,v) = value(0,v);
+         s.cells().lhs(ghostCellId,v) = value(0,v);
        }
     }
   }
 
-  std::function<Num(Ind,SInd)> value;
+  F value;
   Solver& s;
 };
 
@@ -399,19 +401,20 @@ template<class Solver> struct IsentropicVortex : boundary::Condition {
   using V = Indices<Solver::nd>;
   IsentropicVortex(Solver& s_) : s(s_) {}
 
-  void apply(AnyRange<Ind> ghost_cells) const override {
+  void apply(AnyRange<CellIdx> ghost_cells) const override {
     for(auto ghostCellId : ghost_cells) {
-      Ind bndryCellId;
+      CellIdx bndryCellId;
       std::tie(bndryCellId,std::ignore) = s.boundary_cell_id(ghostCellId);
 
-      NumA<V::nd>    x_bc = s.cells().xc().row(bndryCellId);
-      NumA<V::nd>    x_gc = s.cells().xc().row(ghostCellId);
+      NumA<V::nd>    x_bc = s.x_cell(bndryCellId);
+      NumA<V::nd>    x_gc = s.x_cell(ghostCellId);
       NumA<V::nvars> gcVars = isentropic_vortex<V::nd>(x_gc,s.time());
       NumA<V::nvars> bcVars = isentropic_vortex<V::nd>(x_bc,s.time());
+      /// \todo vars = vars
       for(SInd v = 0; v < V::nvars; ++v) {
-        s.cells().vars(ghostCellId,v) = gcVars(v);
+        s.cells().lhs(ghostCellId,v) = gcVars(v);
         s.cells().rhs(ghostCellId,v) = gcVars(v);
-        s.cells().vars(bndryCellId,v) = bcVars(v);
+        s.cells().lhs(bndryCellId,v) = bcVars(v);
         s.cells().rhs(bndryCellId,v) = bcVars(v);
       }
     }

@@ -28,25 +28,31 @@
 /// constants and operations on them, and because they were previously constants
 /// and were already here.
 
+template<class T, class B> struct Integer;
+
+namespace detail {
+
 /// \brief \returns invalid value for identifier of type T
-template<class T> static constexpr T invalid_value() {
+template<class T> constexpr T invalid_value_(T) {
   return std::numeric_limits<T>::max();
 }
 
-/// \brief \returns [bool] Has the identifier "o" a valid value?
-template<class T> static constexpr bool is_valid(const T& o) {
-  return o != invalid_value<T>();
+constexpr Num invalid_value_(Num) {
+  static_assert(std::numeric_limits<Num>::has_quiet_NaN, "no NaN support!");
+  return std::numeric_limits<Num>::quiet_NaN();
 }
 
-constexpr SInd iSInd() { return invalid_value<SInd>(); }
-constexpr Ind   iInd() { return invalid_value< Ind>(); }
-constexpr Num   iNum() {
-  // #ifndef NDEBUG
-    static_assert(std::numeric_limits<Num>::has_quiet_NaN, "no NaN support!");
-    return std::numeric_limits<Num>::quiet_NaN();
-  // #else // Compiler optimizations might assume the absense of NaNs
-  //   return std::numeric_limits<Num>::max();
-  // #endif
+template<class T,class B> constexpr Integer<T,B> invalid_value_(Integer<T,B>) {
+  return Integer<T,B>{invalid_value_(T())};
+}
+
+}
+
+template<class T> constexpr T invalid() { return detail::invalid_value_(T()); }
+
+/// \brief \returns [bool] Has the identifier "o" a valid value?
+template<class T> static constexpr bool is_valid(const T& o) {
+  return o != invalid<T>();
 }
 
 namespace math {

@@ -12,13 +12,12 @@ namespace quadrature {
 template<SInd nd> struct GaussPoints {
   static const SInd size = Grid<nd>::no_edge_vertices();
   using type = std::array<NumA<nd>,size>;
-  using dim = typename Grid<nd>::dim;
 
   type operator()() {
-    return gauss_points_(dim());
+    return gauss_points_(grid::dim<nd>());
   }
 
-  type gauss_points_(grid::two_dim) {
+  type gauss_points_(grid::dim<2>) {
     const NumA<nd> gp1 = { -1/std::sqrt(3), -1/std::sqrt(3) };
     const NumA<nd> gp2 = {  1/std::sqrt(3), -1/std::sqrt(3) };
     const NumA<nd> gp3 = { -1/std::sqrt(3),  1/std::sqrt(3) };
@@ -26,7 +25,7 @@ template<SInd nd> struct GaussPoints {
     return {{gp1,gp2,gp3,gp4}};
   }
 
-  type gauss_points_(grid::three_dim) {
+  type gauss_points_(grid::dim<3>) {
     const NumA<nd> gp1 = { -1/std::sqrt(3), -1/std::sqrt(3), -1/std::sqrt(3) };
     const NumA<nd> gp2 = {  1/std::sqrt(3), -1/std::sqrt(3), -1/std::sqrt(3) };
     const NumA<nd> gp3 = { -1/std::sqrt(3),  1/std::sqrt(3), -1/std::sqrt(3) };
@@ -51,7 +50,8 @@ auto gauss_points_x(Vector&& x, const Num dx)
 };
 
 
-template<SInd nd, class Vector, class Functor> auto integrate(Functor&& f, Vector&& xc, const Num dx)
+template<SInd nd, class Vector, class Functor>
+auto integrate(Functor&& f, Vector&& xc, const Num dx)
     -> decltype(f(xc)) {
   auto x_gps = gauss_points_x<nd>(std::forward<Vector>(xc),dx);
   /// \todo stop hating c++ and use something better

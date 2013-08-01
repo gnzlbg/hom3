@@ -17,9 +17,9 @@ namespace boundary {
 /// Solver/Solver BC: apply bc to active_solver's cells using information from
 /// passive_solver
 struct Condition {
-  void operator()(AnyRange<Ind> cells) const { apply(cells); }
+  void operator()(AnyRange<CellIdx> cells) const { apply(cells); }
  private:
-  virtual void apply(AnyRange<Ind> /*cells*/) const {
+  virtual void apply(AnyRange<CellIdx> /*cells*/) const {
     ASSERT(false, "calling an empty bc!");
   };
 };
@@ -54,15 +54,16 @@ ConditionHandler make_condition(Args&&... args) {
 /// \todo change shared_ptr to unique_ptr for the geometry
 /// object geometry when C++14 (requires lambda capture-by-move)
 template<SInd nd> struct Interface {
+  using Conditions = std::vector<ConditionHandler>;
   /// \brief Constructs a boundary with a custom boundary condition
   template<class Geometry>
-  Interface(std::string bcName, std::shared_ptr<Geometry> geometry,
-            std::vector<SInd> solverIds,
-            std::vector<ConditionHandler> bc)
+  Interface(const std::string bcName, std::shared_ptr<Geometry> geometry,
+            const SolverIdx solverIdx,
+            const std::vector<ConditionHandler> bc)
       : name_(bcName),
         signed_distance([=](const NumA<nd> x){ return geometry->operator()(x); }),
         conditions_(bc),
-        solverIds_(solverIds)
+        solverIdx_(solverIdx)
   {}
 
   Interface() = default;
@@ -74,22 +75,14 @@ template<SInd nd> struct Interface {
   std::function<Num(const NumA<nd>&)> signed_distance;
   /// \brief Applies boundary condition on boundary cell \p localBCellId of
   /// solver \p s
-  std::string name() const { return name_; }
-  std::vector<SInd>& solver_ids() { return solverIds_; } // for this solver ids the bc is valid
-  const std::vector<SInd>& solver_ids() const { return solverIds_; }
-  bool is_valid(const SInd solverId) const {
-    return boost::find(solverIds_,solverId) == std::end(solverIds_) ? false : true;
-  }
-  const Condition& condition(const SInd solverId) const {
-    ASSERT(is_valid(solverId), "Invalid BC for solver with it: " << solverId
-           << "! Use the is_valid(solverId) function to avoid calling invalid BCs!");
-    auto pos = boost::find(solverIds_,solverId) - std::begin(solverIds_);
-    return (*conditions_[pos]);
-  }
+  inline std::string name() const { return name_; }
+  inline SolverIdx solver_idx() const { return solverIdx_; }
+  inline bool is_valid(const SolverIdx solverIdx) const {return solverIdx == solver_idx();}
+  inline const Condition& condition(const SInd condition) const {return (*conditions_[condition]);}
+  inline const Conditions& conditions() const { return conditions_; }
  private:
-  std::vector<ConditionHandler> conditions_;
-  std::vector<SInd> solverIds_;
-
+  Conditions conditions_;
+  const SolverIdx solverIdx_;
 };
 
 } // boundary namespace

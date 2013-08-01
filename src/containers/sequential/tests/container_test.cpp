@@ -350,7 +350,7 @@ template<class C> Ind erase_even_cells_and_verify(C& cells, C& cells_copy) {
   // cells.pop_cell(std::end(cells) - next);
   //auto next = cells.erase_remove_if(pred);
   /// Check:
-  for(TestNodalContainer2D::size_type j = 0, ej = oldSize, i = 0; j < ej; ++j) {
+  for(TestNodalContainer2D::cell_size_type j = 0, ej = oldSize, i = 0; j < ej; ++j) {
     if(j % 2 == 0) continue;
     /// cell values:
     EXPECT_EQ(cells.myInt(i),cells_copy.myInt(j));
@@ -478,27 +478,28 @@ TEST(variable_container_test, single_index_storage) {
   Ind maxNoCells = 5, maxNoNodes = 20;
 
   TestNodalContainer2D cells(maxNoCells,maxNoNodes);
+  using nst = TestNodalContainer2D::node_size_type;
   cells.push_cell(1,1);  cells.push_cell(1,2);  cells.push_cell(1,3);
 
   //plotCellNodes2D(cells);
   DBG("");
-  EXPECT_EQ(cells.node_size(0), 1);
-  EXPECT_EQ(cells.node_size(1), 2);
-  EXPECT_EQ(cells.node_size(2), 3);
+  EXPECT_EQ(cells.node_size(0), nst{1});
+  EXPECT_EQ(cells.node_size(1), nst{2});
+  EXPECT_EQ(cells.node_size(2), nst{3});
 
   DBG("cells.erase_remove_if([&cells](Ind i)->bool{ return i == 2; });");
   cells.erase_remove_if([&cells](Ind i)->bool{ return i == 2; });
   //plotCellNodes2D(cells);
-  EXPECT_EQ(cells.node_size(0), 1);
-  EXPECT_EQ(cells.node_size(1), 2);
+  EXPECT_EQ(cells.node_size(0), nst{1});
+  EXPECT_EQ(cells.node_size(1), nst{2});
   DBG("");
 
   DBG("cells.push_back(1,5);");
   cells.push_cell(1,5);
   //plotCellNodes2D(cells);
-  EXPECT_EQ(cells.node_size(0), 1);
-  EXPECT_EQ(cells.node_size(1), 2);
-  EXPECT_EQ(cells.node_size(2), 5);
+  EXPECT_EQ(cells.node_size(0), nst{1});
+  EXPECT_EQ(cells.node_size(1), nst{2});
+  EXPECT_EQ(cells.node_size(2), nst{5});
   DBG("");
 
   DBG("cells.erase_remove_if([&cells](Ind i)->bool{ return i == 0; });");

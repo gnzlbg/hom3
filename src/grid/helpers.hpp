@@ -3,46 +3,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 /// Includes:
 #include "../globals.hpp"
+#include "grid.hpp"
 #include "../geometry/geometry.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 namespace grid {
 ////////////////////////////////////////////////////////////////////////////////
 
-template<int nd> struct RootCell {
-  RootCell(const RootCell<nd>&) = default;
-  RootCell(const NumA<nd>& min, const NumA<nd>& max) : length(math::eps) {
-    for(Ind d = 0; d != nd; ++d) {
-      const Num lengthD = max(d) - min(d);
-      ASSERT(lengthD > math::eps, "Negative length not allowed!");
-      length = std::max(length, lengthD);
-      coordinates(d) = min(d) + 0.5 * lengthD;
-    }
-  }
-
-  static const int nDim = nd;
-  Num length;
-  NumA<nd> coordinates;
-  NumA<nd> x_min() const {
-    NumA<nd> m;
-    for(SInd d = 0; d < nd; ++d) {
-      m(d) = coordinates(d) - 0.5 * length;
-    }
-    return m;
-  }
-  NumA<nd> x_max() const {
-    NumA<nd> m;
-    for(SInd d = 0; d < nd; ++d) {
-      m(d) = coordinates(d) + 0.5 * length;
-    }
-    return m;
-  }
-};
-
 namespace helpers {
 
 /// \brief Easily builds a nd-hypercube grid
 namespace cube {
-
 
 /// \brief #of leaf nodes at \p level
 template<SInd nd> static constexpr Ind no_leaf_nodes(const SInd level) {
@@ -125,9 +95,9 @@ using edge::make_edge;
 
 template<SInd nd,class position>
 boundary::Interface<nd> make_boundary
-(position, Num d, Num off, std::string name, std::vector<SInd> solverId,
+(position, Num d, Num off, std::string name, SolverIdx solverIdx,
  std::vector<boundary::ConditionHandler> bcs) {
-  return {name,make_edge<nd>(position(),d,off),solverId,std::move(bcs)};
+  return {name,make_edge<nd>(position(),d,off),solverIdx,std::move(bcs)};
 }
 
 template<SInd nd> struct make_conditions {
@@ -158,7 +128,7 @@ template<SInd nd> struct make_boundaries {
   }
 
   template<class T>
-  Boundaries two_dim(SInd solverId, RootCell<nd> rootCell, T&& bcs) {
+  Boundaries two_dim(SolverIdx solverId, RootCell<nd> rootCell, T&& bcs) {
     auto p = boundary_position(rootCell);
 
     Boundaries boundaries;
@@ -170,12 +140,12 @@ template<SInd nd> struct make_boundaries {
   }
 
   template<class T, traits::EnableIf<traits::equal<SInd,nd,2,T>> = traits::dummy>
-  Boundaries operator()(SInd solverId, RootCell<nd> rootCell, T&& bcs) {
+  Boundaries operator()(SolverIdx solverId, RootCell<nd> rootCell, T&& bcs) {
     return two_dim(solverId,rootCell,std::forward<T>(bcs));
   }
 
   template<class T, traits::EnableIf<traits::equal<SInd,nd,3,T>> = traits::dummy>
-  Boundaries operator()(SInd solverId, RootCell<nd> rootCell, T&& bcs) {
+  Boundaries operator()(SolverIdx solverId, RootCell<nd> rootCell, T&& bcs) {
     auto p = boundary_position(rootCell);
     auto boundaries = two_dim(solverId, rootCell, std::forward<T>(bcs));
     boundaries.push_back(make_boundary<nd>(edge::xneg<2>(),p.x_min,p.off,"front" ,{solverId},{std::get<4>(bcs)}));
@@ -198,7 +168,7 @@ io::Properties properties
   io::Properties properties;
   io::insert_property<grid::RootCell<nd>>(properties,"rootCell",rootCell);
   io::insert_property<Ind>(properties,"maxNoGridNodes",maxNoGridNodes);
-  io::insert_property<std::function<void(Grid<nd>*)>>(properties,"meshGeneration", mesh_gen);
+  io::insert_property<std::function<void(Grid<nd>&)>>(properties,"meshGeneration", mesh_gen);
   io::insert_property<SInd>(properties,"maxNoContainers",maxNoContainers);
   return properties;
 }

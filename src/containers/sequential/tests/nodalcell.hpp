@@ -22,6 +22,8 @@ template<SInd nd> struct traits<test::nodal::Container<nd>> {
   using container_type    = tag::variable_nodes;
   using value_type        = typename test::nodal::Value<nd>;
   using reference         = typename test::nodal::Reference<nd>;
+  using cell_index_type   = Ind;
+  using node_index_type   = Ind;
 };
 }} // container::sequential namespace
 

@@ -97,7 +97,7 @@ TEST(euler_fv_solver, constant_ic) {
   };
 
   Solver fvSolver(fvSolverId,fv_properties<nd>(&test_grid,constant_ic,0.25));
-  auto bc = boundary::make_condition<physics::bc::Neumann<Solver>>(fvSolver,[](Ind,SInd){return 0.0;});
+  auto bc = boundary::make_condition<physics::bc::Neumann<Solver>>(fvSolver);
   run_sim(test_grid,fvSolver,bc);
 }
 
@@ -133,7 +133,7 @@ TEST(euler_fv_solver, sod_shock_tube_ic) {
   };
 
   Solver fvSolver(fvSolverId,fv_properties<nd>(&test_grid,sod_shock_tube_ic,0.25));
-  auto bc = boundary::make_condition<physics::bc::Neumann<Solver>>(fvSolver,[](Ind,SInd){return 0.0;});
+  auto bc = boundary::make_condition<physics::bc::Neumann<Solver>>(fvSolver);
   run_sim(test_grid,fvSolver,bc);
 }
 
@@ -163,7 +163,7 @@ TEST(euler_fv_solver, explosion_ic) {
   };
 
   Solver fvSolver(fvSolverId,fv_properties<nd>(&test_grid,explosion_ic,0.25));
-  auto bc = boundary::make_condition<physics::bc::Neumann<Solver>>(fvSolver,[](Ind,SInd){return 0.0;});
+  auto bc = boundary::make_condition<physics::bc::Neumann<Solver>>(fvSolver);
   run_sim(test_grid,fvSolver,bc);
 }
 

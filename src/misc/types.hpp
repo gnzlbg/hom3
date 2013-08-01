@@ -145,14 +145,25 @@ template<typename _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int
 struct range_const_iterator< Eigen::Matrix<_Scalar,_Rows,_Cols,_Options,_MaxRows,_MaxCols> >
 { typedef const _Scalar* type; };
 
+template<typename _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols, int BlockRows, int BlockCols, bool InnerPanel>
+struct range_const_iterator< Eigen::Block< Eigen::Matrix<_Scalar,_Rows,_Cols,_Options,_MaxRows,_MaxCols>,
+                                           BlockRows, BlockCols, InnerPanel
+                                           >
+                             >
+{ typedef const _Scalar* type; };
+
+template<typename _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols, int BlockRows, int BlockCols, bool InnerPanel>
+struct range_const_iterator< Eigen::Block< const Eigen::Matrix<_Scalar,_Rows,_Cols,_Options,_MaxRows,_MaxCols>,
+                                           BlockRows, BlockCols, InnerPanel
+                                           >
+                             >
+{ typedef const _Scalar* type; };
+
 template<typename _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols>
 struct range_iterator< Eigen::Matrix<_Scalar,_Rows,_Cols,_Options,_MaxRows,_MaxCols> >
 { typedef _Scalar* type; };
 
 }
-// ///@}
-
-// }
 
 //////////////////////////////////////////////////////////////////////
 #endif

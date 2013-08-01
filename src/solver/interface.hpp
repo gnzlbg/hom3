@@ -19,13 +19,13 @@ struct Interface {
   template<class S> Interface(const S& s)
       : boundary_condition([&](SInd bcId, Ind localId){ s.boundary_condition(bcId,localId); }),
         solver_id([&](){ return s.solver_id(); }),
-        global_ids([&]() { return s.global_ids(); }),
+        node_ids([&]() { return s.node_ids(); }),
         type_id([&](){ return s.type_id(); })
   {}
 
   std::function<void(SInd,Ind)> boundary_condition;
   std::function<SInd(void)> solver_id;
-  std::function<AnyRange<Ind>()> global_ids;
+  std::function<AnyRange<Ind>()> node_ids;
   std::function<type()> type_id;
 };
 

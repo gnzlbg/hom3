@@ -10,7 +10,7 @@ template<class C, class T = detail::enabler>
 using EnableIf = typename std::enable_if<C::value, T>::type;
 
 template<class C, class T = detail::enabler>
-using DisableIf = typename std::enable_if<!C::value, T>::type;
+using DisableIf = typename std::enable_if<!(C::value), T>::type;
 
 template<class T, T a, T b, class C = T> struct equal : std::integral_constant<bool, a == b> {};
 

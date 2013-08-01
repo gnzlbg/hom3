@@ -10,6 +10,15 @@
 namespace container { namespace sequential {
 ////////////////////////////////////////////////////////////////////////////////
 
+#define assert_in_cell_range(cIdx)                                      \
+  ASSERT(cIdx() <= c()->last(),                                         \
+         "Iterator's cell index " << cIdx()                             \
+         << " is out of bounds [" << c()->first() << ","                \
+         << c()->size() <<  "].")
+
+#define assert_same_containers(lhs,rhs)                         \
+  ASSERT(same_container(lhs,rhs), "Different containers")
+
 /// \brief Boilerplate for implementing a value proxy type
 ///
 /// Value proxy types provide a value-like interface for the container
@@ -25,7 +34,6 @@ template<class Container> struct ValueFacade {
   /// \brief Returns the underlying value type
   value_type* r(){return static_cast<value_type*>(this);}
   const value_type* r() const {return static_cast<const value_type*>(this);}
-  
 
   /// \brief Implicit conversion to its reference type
   operator reference() const {
@@ -54,6 +62,7 @@ template<class Container> struct ReferenceFacade {
   ///@{
   using value_type = typename traits<Container>::value_type;
   using reference  = typename traits<Container>::reference;
+  using CIdx       = typename traits<Container>::cell_index_type;
   ///@}
 
   friend inline void swap(reference   lhs, reference   rhs) { value_type::swap_values(lhs,rhs); }
@@ -94,15 +103,15 @@ template<class Container> struct ReferenceFacade {
 
   /// \brief Returns the index of the element within a container, if the reference
   /// referes to an element within a container
-  inline Ind  index() const { ASSERT( is_valid(index_), "ERROR!"); return index_; }
-  inline Ind& index()       { ASSERT( is_valid(index_), "ERROR!"); return index_; }
+  inline CIdx  index() const { ASSERT( is_valid(index_), "ERROR!"); return index_; }
+  inline CIdx& index()       { ASSERT( is_valid(index_), "ERROR!"); return index_; }
 
 
-  ReferenceFacade() : c_(nullptr), index_(iInd())  {}
-  ReferenceFacade(Container* c, Ind i) : c_(c), index_(i) {}
+  ReferenceFacade() : c_(nullptr), index_(invalid<CIdx>())  {}
+  ReferenceFacade(Container* c, CIdx i) : c_(c), index_(i) {}
  private:
   Container* c_; ///< Pointer to the underlying container
-  Ind    index_; ///< Index of the of the element
+  CIdx   index_; ///< Index of the of the element
 };
 
 /// \brief Random Access iterator implementation
@@ -123,10 +132,11 @@ template<class Container> struct Iterator {
   using reference         = typename traits<Container>::reference;
   using pointer           = typename traits<Container>::reference;
   using iterator_category = std::random_access_iterator_tag;
+  using CIdx              = typename traits<Container>::cell_index_type;
   ///@}
 
   Iterator() : c_(), index_()  {}
-  Iterator(Container* c, Ind index) : c_(c), index_(index) {}
+  Iterator(Container* c, CIdx index) : c_(c), index_(index) {}
 
   /// \brief Returns a pointer to the iterators container
   inline Container* c()             { return c_;     }
@@ -134,8 +144,8 @@ template<class Container> struct Iterator {
 
   /// \brief Returns the index of the element being pointer
   /// by the iterator within the container
-  inline Ind index()            { return index_; }
-  inline Ind index()      const { return index_; }
+  inline CIdx index()            { return index_; }
+  inline CIdx index()      const { return index_; }
 
   /// \name Comparison operators (==, !=, <, >, <=, >=)
   ///@{
@@ -143,15 +153,15 @@ template<class Container> struct Iterator {
     return lhs.c() == rhs.c();
   }
   friend inline bool operator==(const Iterator& lhs, const Iterator& rhs) {
-    ASSERT(same_container(lhs,rhs), "Different containers");
+    assert_same_containers(lhs,rhs);
     return lhs.index() == rhs.index();
   }
   friend inline bool operator<=(const Iterator& lhs, const Iterator& rhs) {
-    ASSERT(same_container(lhs,rhs), "Different containers");
+    assert_same_containers(lhs,rhs);
     return lhs.index() <= rhs.index();
   }
   friend inline bool operator>=(const Iterator& lhs, const Iterator& rhs) {
-    ASSERT(same_container(lhs,rhs), "Different containers");
+    assert_same_containers(lhs,rhs);
     return lhs.index() >= rhs.index();
   }
   friend inline bool operator!=(const Iterator& lhs, const Iterator& rhs) {
@@ -169,37 +179,39 @@ template<class Container> struct Iterator {
   ///@{
   inline Iterator& operator++() {
     ++index_;
-    ASSERT(index() <= c()->size(),"Index is out of bounds.");
+    assert_in_cell_range(index);
     return *this;
   }
   inline Iterator operator++(int) { return Iterator(c_, index_++); }
   inline Iterator& operator+=(const difference_type o) {
-    index_ += o;
-    ASSERT(index() <= c()->size(),"Index is out of bounds.");
+    primitive_cast(index_) += o;
+    assert_in_cell_range(index);
     return *this;
   }
   friend inline Iterator operator+(Iterator it, difference_type o) {
     return it += o;
   }
   friend difference_type operator+(const Iterator& lhs, const Iterator& rhs) {
-    ASSERT(same_container(lhs,rhs), "Different containers");
+    assert_same_containers(lhs,rhs);
     return lhs.index_ + rhs.index_;
   }
   inline Iterator& operator--() {
     --index_;
-    ASSERT(index() <= c()->size(),"Index is out of bounds.");
+    assert_in_cell_range(index);
     return *this;
   }
   inline Iterator operator--(int) { return Iterator(c_, index_--); }
   inline Iterator& operator-=(difference_type o) {
-    index_ -= o;
-    ASSERT(index() <= c()->size(),"Index is out of bounds.");
+    primitive_cast(index_) -= o;
+    assert_in_cell_range(index);
     return *this;
   }
   friend inline Iterator operator-(Iterator it, difference_type o) { return it -= o; }
   friend inline difference_type operator-(const Iterator& lhs, const Iterator& rhs) {
-    ASSERT(same_container(lhs,rhs), "Different containers");
-    return lhs.index_ - rhs.index_;
+    assert_same_containers(lhs,rhs);
+    return static_cast<difference_type>(primitive_cast(lhs.index_))
+        -
+        static_cast<difference_type>(primitive_cast(rhs.index_));
   }
   ///@}
 
@@ -211,16 +223,21 @@ template<class Container> struct Iterator {
   ///@}
 
   friend inline void swap(Iterator& lhs, Iterator& rhs) {
-    std::swap(lhs.c_, rhs.c_);
-    std::swap(lhs.index_, rhs.index_);
+    using std::swap;
+    swap(lhs.c_, rhs.c_);
+    swap(lhs.index_, rhs.index_);
   }
 
  private:
   Container* c_; ///< Pointer to the container
-  Ind index_;    ///< Index of the element
+  CIdx index_;    ///< Index of the element
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 }} // container::sequential namespace
+
+////////////////////////////////////////////////////////////////////////////////
+#undef assert_in_cell_range
+#undef assert_same_containers
 ////////////////////////////////////////////////////////////////////////////////
 #endif

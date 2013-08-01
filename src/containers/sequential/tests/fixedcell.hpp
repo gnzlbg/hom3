@@ -21,6 +21,7 @@ template<SInd nd> struct traits<test::fixed::Container<nd>> {
   using container_type    = tag::fixed_nodes;
   using value_type = typename test::fixed::Value<nd>;
   using reference = typename test::fixed::Reference<nd>;
+  using cell_index_type = Ind;
 };
 }} // container::sequential
 

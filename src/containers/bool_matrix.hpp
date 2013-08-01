@@ -33,6 +33,9 @@ template <SInd nd> struct BoolMatrix {
     return data_[d][i];
   }
 
+  inline void row(const Ind) const { TERMINATE("unimplemented"); }
+  inline void col(const Ind) const { TERMINATE("unimplemented"); }
+
   inline bool check_size() const {
     ASSERT(data_.size() > 0, "Can't check size on empty data_");
     const auto size_ = data_[0].size();
@@ -54,6 +57,7 @@ template <SInd nd> struct BoolMatrix {
     for(auto&& v : data_) {
       v.resize(n);
     }
+
   }
 
  private:
