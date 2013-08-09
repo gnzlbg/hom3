@@ -38,11 +38,11 @@ template<SInd nd> struct Container : container::Sequential<Container<nd>> {
 
   /// Cell Matrix
   template<template <SInd> class V_, SInd nd_ = 1>
-  using CM = container::Matrix<Container,container::matrix::tag::Cell,V_,nd_>;
+      using CM = container::Matrix<Container,container::matrix::tag::Cell,V_,Ind,SInd,nd_>;
 
   /// Nodal Matrix
   template<template <SInd> class V_, SInd nd_ = 1>
-  using NM = container::Matrix<Container,container::matrix::tag::Node,V_,nd_>;
+      using NM = container::Matrix<Container,container::matrix::tag::Node,V_,Ind,SInd,nd_>;
 
   /// Data:
   CM<IntM>    myInt;

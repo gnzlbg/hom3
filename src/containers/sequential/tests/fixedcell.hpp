@@ -33,7 +33,7 @@ template<SInd nd> struct Container : container::Sequential<Container<nd>> {
   /// Aliases:
   friend container::Sequential<Container<nd>>;
   template<template <SInd> class V_, SInd nd_ = 1>
-  using M = container::Matrix<Container,container::matrix::tag::Cell,V_,nd_>;
+  using M = container::Matrix<Container,container::matrix::tag::Cell,V_,Ind,SInd,nd_>;
 
   /// Data:
   M<IntM>    myInt;

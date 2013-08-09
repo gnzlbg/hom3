@@ -206,7 +206,7 @@ constexpr inline auto primitive_cast(const T& t) {
 template<class T, traits::DisableIf<is_integer<T>> = traits::dummy>
 constexpr inline auto& primitive_cast(T& t) {
   static_assert(!is_integer<T>::value, "T can't be an integer!");
-  return std::forward<T>(t);
+  return t;
 }
 
 
