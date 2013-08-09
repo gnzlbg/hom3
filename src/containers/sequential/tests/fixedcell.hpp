@@ -81,11 +81,12 @@ template<SInd nd> struct Value : container::sequential::ValueFacade<Container<nd
 
   template<class Value1, class Value2>
   static inline void swap_values(Value1& lhs, Value2& rhs) {
-    std::swap(lhs.myInt(),rhs.myInt());
-    std::swap(lhs.myNum(),rhs.myNum());
+    using std::swap;
+    swap(lhs.myInt(),rhs.myInt());
+    swap(lhs.myNum(),rhs.myNum());
     for(SInd d = 0; d < nd; ++d) {
-      std::swap(lhs.myIntArr(d),rhs.myIntArr(d));
-      std::swap(lhs.myNumArr(d),rhs.myNumArr(d));
+      swap(lhs.myIntArr(d),rhs.myIntArr(d));
+      swap(lhs.myNumArr(d),rhs.myNumArr(d));
     }
   }
 

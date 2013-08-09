@@ -124,11 +124,12 @@ template<SInd nd> struct Container : container::Sequential<Container<nd>> {
 
   inline void swap_cell_variables(const Ind fromCellId, const Ind toCellId) {
     TRACE_IN((fromCellId)(toCellId));
-    std::swap(myInt(toCellId),myInt(fromCellId));
-    std::swap(myNum(toCellId),myNum(fromCellId));
+    using std::swap;
+    swap(myInt(toCellId),myInt(fromCellId));
+    swap(myNum(toCellId),myNum(fromCellId));
     for(SInd d = 0; d < nd; ++d) {
-      std::swap(myIntArr(toCellId,d),myIntArr(fromCellId,d));
-      std::swap(myNumArr(toCellId,d),myNumArr(fromCellId,d));
+      swap(myIntArr(toCellId,d),myIntArr(fromCellId,d));
+      swap(myNumArr(toCellId,d),myNumArr(fromCellId,d));
     }
     TRACE_OUT();
   }
@@ -139,8 +140,9 @@ template<SInd nd> struct Container : container::Sequential<Container<nd>> {
   }
 
   inline void swap_node_variables(const Ind fromNodeId, const Ind toNodeId) {
-    std::swap(myNodalInt(toNodeId),myNodalInt(fromNodeId));
-    std::swap(myNodalNum(toNodeId),myNodalNum(fromNodeId));
+    using std::swap;
+    swap(myNodalInt(toNodeId),myNodalInt(fromNodeId));
+    swap(myNodalNum(toNodeId),myNodalNum(fromNodeId));
   }
 
 
@@ -150,12 +152,13 @@ template<SInd nd> struct Container : container::Sequential<Container<nd>> {
   /// Required for Copy/Assing/Move containers only:
   friend void swap_containers (Container<nd>& first, Container<nd>& second) {
     TRACE_IN_();
-    std::swap(first.myInt      , second.myInt      );
-    std::swap(first.myNum      , second.myNum      );
-    std::swap(first.myIntArr   , second.myIntArr   );
-    std::swap(first.myNumArr   , second.myNumArr   );
-    std::swap(first.myNodalInt , second.myNodalInt );
-    std::swap(first.myNodalNum , second.myNodalNum );
+    using std::swap;
+    swap(first.myInt      , second.myInt      );
+    swap(first.myNum      , second.myNum      );
+    swap(first.myIntArr   , second.myIntArr   );
+    swap(first.myNumArr   , second.myNumArr   );
+    swap(first.myNodalInt , second.myNodalInt );
+    swap(first.myNodalNum , second.myNodalNum );
     TRACE_OUT();
   };
   ///@}

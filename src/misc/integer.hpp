@@ -133,7 +133,8 @@ template<class T, class B = void> struct Integer {
 
   /// \brief swap
   constexpr friend inline void swap(Integer&& a, Integer&& b) noexcept {
-    std::swap(a.value,b.value);
+    using std::swap;
+    swap(a.value,b.value);
   }
 
   /// \brief to_string
