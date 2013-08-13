@@ -3,6 +3,8 @@ project(HOM3)
 
 # Module path
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+set(COMMON_INCLUDES ${PROJECT_SOURCE_DIR}/src)
+set(EXT_PROJECTS_DIR ${PROJECT_SOURCE_DIR}/ext)
 
 # Environment
 set(CMAKE_OSX_SYSROOT $ENV{SDKROOT})
@@ -86,7 +88,9 @@ set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
 include_directories(SYSTEM ${EIGEN3_INCLUDE_DIR})
 
 # gTest (and enables unit testing)
-add_subdirectory(gtest-1.6.0)
+#add_subdirectory(gtest-1.6.0)
+add_subdirectory(${EXT_PROJECTS_DIR}/gtest)
+include_directories(${GTEST_INCLUDE_DIRS} ${COMMON_INCLUDES})
 enable_testing(true)
 
 # MPI
@@ -102,7 +106,15 @@ set(Boost_USE_STATIC_RUNTIME ON)
 find_package(Boost 1.53 COMPONENTS mpi serialization filesystem system REQUIRED)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
-SET(HOM3_BASE_LIBS ${Boost_LIBRARIES} ${MPI_LIBRARIES} ${PNETCDF_LIBRARY})
+set(HOM3_BASE_LIBS ${Boost_LIBRARIES} ${MPI_LIBRARIES} ${PNETCDF_LIBRARY})
+set(HOM3_TESTING_LIBS ${GTEST_LIBS_DIR}/libgtest.a ${GTEST_LIBS_DIR}/libgtest_main.a)
+set(HOM3_TESTING_INCLUDES ${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+function(add_hom3_test name)
+  include_directories(${HOM3_TESTING_INCLUDES})
+  add_executable(${name} ${name}_test.cpp)
+  target_link_libraries(${name} ${HOM3_TESTING_LIBS})
+  add_test(${name} ${name})
+endfunction(add_hom3_test)
 
 # Doxygen (optional) - Enables "make docs"
 option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML documentation" ON)
