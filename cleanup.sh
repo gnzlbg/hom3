@@ -8,3 +8,9 @@ do
     echo "removing ${FILE} ..."
     find . -name $FILE -print0 | xargs -0 rm -rf
 done
+
+# Clean GoogleTest stuff
+echo "removing ext/gtest/src..."
+rm -rf ext/gtest/src
+echo "removing ext/gtest/tmp..."
+rm -rf ext/gtest/tmp
