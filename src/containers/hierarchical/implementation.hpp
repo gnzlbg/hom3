@@ -20,6 +20,9 @@
 /// \brief Asserts that a child position must be in range [0,no_childs())
 #define assert_child_position(pos) \
   ASSERT((pos) < no_child_pos(), "Child position " << (pos) << " does not exist!")
+/// \brief Asserts that node is a leaf node
+#define assert_leaf(nId) \
+  ASSERT(is_leaf((nId)),"Node " << (nId) << " is not a leaf")
 ///@}
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -29,7 +32,7 @@ namespace hom3 { namespace container {
 namespace hierarchical {
 
 /// Stencil of relative sibling positions
-static constexpr std::array<std::array<SInd,6>,8>  rel_sibling_position_arr {{
+static constexpr auto rel_sibling_position_arr = std::array<std::array<SInd,6>,8>{{
   //        0       1       2        3         4        5   | nghbrPos
   {{ invalid<SInd>(),               1, invalid<SInd>(),               2, invalid<SInd>(),               4 }}, // child 0
   {{               0, invalid<SInd>(), invalid<SInd>(),               3, invalid<SInd>(),               5 }}, // child 1
@@ -42,7 +45,7 @@ static constexpr std::array<std::array<SInd,6>,8>  rel_sibling_position_arr {{
 }};
 
 /// Stencil of opposite neighbor positions
-static constexpr std::array<SInd,6> opposite_nghbr_position_arr{{ 1, 0, 3, 2, 5, 4 }};
+static constexpr auto opposite_nghbr_position_arr = std::array<SInd,6>{{ 1, 0, 3, 2, 5, 4 }};
 
 
 /// \brief Hierarchical Node Container: stores a hierarchical "nd"-space
@@ -146,7 +149,8 @@ template<SInd nd> struct Implementation {
   inline SInd nDim()     const { return nd;                  }
   /// \brief Is the container ready for usage? (no modifications are currently
   /// taking place, all invariants hold).
-  inline SInd is_ready() const { return isReady_;            }
+  /// \warning deprecated
+  inline bool is_ready() const { return isReady_;            }
 
   ///@}
   //////////////////////////////////////////////////////////////////////////////
@@ -156,7 +160,7 @@ template<SInd nd> struct Implementation {
   ///@{
 
   /// \brief Cell id of node \p nodeIdx within \p solverIdx grid
-  inline const CellIdx& cell_id(const NodeIdx nodeIdx, const SolverIdx solverIdx) const {
+  inline CellIdx cell_id(const NodeIdx nodeIdx, const SolverIdx solverIdx) const {
     assert_valid(nodeIdx); assert_active(nodeIdx);
     return node2cells_(nodeIdx(),solverIdx());
   }
@@ -211,14 +215,17 @@ template<SInd nd> struct Implementation {
   }
 
   /// \brief Parent of node \p nIdx
-  inline const NodeIdx& parent(const NodeIdx nIdx) const { assert_valid(nIdx); return parentIds_(nIdx()); }
+  inline const NodeIdx parent(const NodeIdx nIdx) const {
+    assert_valid(nIdx);
+    return parentIds_(nIdx());
+  }
 
   /// \brief Child of \p nIdx at position \p pos
-  inline const NodeIdx& child(const NodeIdx nIdx, const SInd pos) const {
+  inline const NodeIdx child(const NodeIdx nIdx, const SInd pos) const {
     TRACE_IN((nIdx)(pos));
     assert_valid(nIdx); assert_child_position(pos);
     TRACE_OUT();
-    return childrenIds_(nIdx(),pos);
+    return childrenIds_(nIdx()) + NodeIdx{pos};
   }
   /// \brief \f$\#\f$ of children of \p nIdx
   inline SInd no_childs(const NodeIdx nIdx) const {
@@ -289,67 +296,96 @@ template<SInd nd> struct Implementation {
   //////////////////////////////////////////////////////////////////////////////
   /// \name Modifying algorithms
   ///@{
-
+ private:
   /// \brief Inserts a node into parent \p pIdx at position \p pos.
   ///
   /// \complexity O(1) if the tree is_compact()
   /// \complexity average O(1) if the tree is not Compact
-  NodeIdx insert_node(const NodeIdx pIdx, const SInd pos) {
-    TRACE_IN((pIdx)(pos));
-    assert_active(pIdx);
-    assert_valid(!child(pIdx,pos)); // position must be free!
-    ASSERT(level(pIdx) + 1 < max_no_levels(), "can't refine > max_no_levels()!");
-    const auto nIdx = is_compact() ? node_end() : free_spot_();
-    ++no_nodes_();
-    ++lowerFreeNodeBound_;
-    if(nIdx == node_end()) {
-      ++size_();
-    }
-    reset_node_(nIdx);
-    child_(pIdx,pos) = nIdx;
-    parent_(nIdx) = pIdx;
-    isFree_(nIdx()) = false;
-    TRACE_OUT();
-    return nIdx;
-  }
+  // NodeIdx insert_node(const NodeIdx pIdx, const SInd pos) {
+  //   TERMINATE("unimplemented");
+  //   // TRACE_IN((pIdx)(pos));
+  //   // assert_active(pIdx);
+  //   // ASSERT(!is_valid(child(pIdx)), "position must be free!");
+  //   // ASSERT(level(pIdx) + 1 < max_no_levels(), "can't refine > max_no_levels()!");
+  //   // const auto nIdx = is_compact() ? node_end() : free_spot_();
+  //   // ++no_nodes_();
+  //   // ++lowerFreeNodeBound_;
+  //   // if(nIdx == node_end()) {
+  //   //   ++size_();
+  //   // }
+  //   // reset_node_(nIdx);
+  //   // child_(pIdx,pos) = nIdx;
+  //   // parent_(nIdx) = pIdx;
+  //   // isFree_(nIdx()) = false;
+  //   // TRACE_OUT();
+  //   // return nIdx;
+  // }
 
   /// \brief Removes node \p nIdx from its parent.
   ///
   /// \complexity: O(1)
-  NodeIdx remove_node(const NodeIdx nIdx) {
-    TRACE_IN((nIdx));
-    assert_active(nIdx);
-    const auto pIdx = parent(nIdx);
-    ASSERT(is_valid(pIdx), "Node has no parent!");
-    const auto pos = position_in_parent(nIdx);
-    ASSERT(is_valid(pos), "Node is not child of parent!");
-    child_(pIdx,pos) = invalid<Ind>();
-    reset_node_(nIdx);
-    --no_nodes_();
-    if(nIdx == size()) {
-      --size();
-    }
-    isReady_ = false;
-    lowerFreeNodeBound_ = std::min(lowerFreeNodeBound_,nIdx);
-    TRACE_OUT();
-    return pIdx;
-  }
+  // NodeIdx remove_node(const NodeIdx /*nIdx*/) {
+  //   TERMINATE("unimplemented");
+  //   // TRACE_IN((nIdx));
+  //   // assert_active(nIdx);
+  //   // const auto pIdx = parent(nIdx);
+  //   // ASSERT(is_valid(pIdx), "Node has no parent!");
+  //   // const auto pos = position_in_parent(nIdx);
+  //   // ASSERT(is_valid(pos), "Node is not child of parent!");
+  //   // child_(pIdx,pos) = invalid<Ind>();
+  //   // reset_node_(nIdx);
+  //   // --no_nodes_();
+  //   // if(nIdx == size()) {
+  //   //   --size();
+  //   // }
+  //   // isReady_ = false;
+  //   // lowerFreeNodeBound_ = std::min(lowerFreeNodeBound_,nIdx);
+  //   // TRACE_OUT();
+  //   // return pIdx;
+  // }
+ public:
 
   /// \brief Refines a node isotropically, i.e. into 4 (in 2D) or 8 (in 3D)
-  /// children. It optionally takes a predicate \p predicate (const SInd
-  /// posInParent) that is executed after each child is inserted.
+  /// children.
   ///@{
-  template<class P> NodeIdx refine_node(const NodeIdx nIdx, P&& predicate) {
+  NodeIdx refine_node(const NodeIdx nIdx) {
     TRACE_IN((nIdx));
-    for(auto pos : child_pos()) {
-      insert_node(nIdx,pos); // note insert_node returns nIdx of child
-      predicate(pos);        // but computing it from the nIdx is easy with pos.
+    assert_active(nIdx);
+    assert_leaf(nIdx); // only leaf nodes can be issotropically refined
+    ASSERT(level(nIdx) + 1 < max_no_levels(), "can't refine > max_no_levels()!");
+
+    const auto firstChildIdx = is_compact() ? node_end() : free_spot_();
+    const auto lastChildIdx = firstChildIdx + NodeIdx{no_child_pos()};
+
+    no_nodes_() += no_child_pos();
+    lowerFreeNodeBound_ += NodeIdx{no_child_pos()};
+    if(lastChildIdx >= node_end()) {
+      auto diff = math::absdiff(lastChildIdx, node_end());
+      while(diff != NodeIdx{0}) {
+        ++size_();
+        --diff;
+      }
+    }
+
+    ASSERT([&](){
+      return algorithm::all_of(Range<NodeIdx>(firstChildIdx, lastChildIdx),
+                               [&](const NodeIdx cIdx){return !is_free(cIdx);});}(),
+      "All future childrens must be free!");
+
+    ASSERT([&](){
+        return algorithm::all_of(Range<NodeIdx>(firstChildIdx, lastChildIdx),
+                                 [&](const NodeIdx cIdx){return !is_reseted(cIdx);});}(),
+      "All future childrens must be reseted!");
+
+    child_(nIdx) = firstChildIdx;
+    for(auto childIdx : childs(nIdx)) {
+      parent_(childIdx) = nIdx;
+      isFree_(childIdx()) = false;
     }
     isReady_ = false;
     TRACE_OUT();
-    return child(nIdx,0);
+    return firstChildIdx;
   }
-  NodeIdx refine_node(const NodeIdx nIdx) { return refine_node(nIdx,[](const SInd){}); }
   ///@}
 
   ///@}
@@ -516,7 +552,17 @@ template<SInd nd> struct Implementation {
   inline auto atLevel(const SInd l) const -> RangeFilter<NodeIdx> {
     return {[&,l](const NodeIdx nIdx){ return level(nIdx) == l; }};
   }
-
+  /// \brief Maps child positions to child indices
+  inline auto pos_to_child(const NodeIdx nIdx) const -> RangeTransformer<SInd,NodeIdx> {
+    return {[&,nIdx](const SInd pos){
+        const auto firstChildIdx = child_(nIdx);
+        // if cell is leaf, child_(nIdx) is invalid === numeric_limits<Ind>::max
+        // -> adding stuff to it makes it wrap around
+        return is_valid(firstChildIdx) ? firstChildIdx + NodeIdx{pos} : invalid<NodeIdx>();
+      }
+    };
+  }
+  /// \brief Maps neighbor positions to neighbor indices
   inline auto pos_to_nghbr(const NodeIdx nIdx) const -> RangeTransformer<SInd,NodeIdx> {
     return {[&,nIdx](const SInd pos){ return find_samelvl_nghbr(nIdx,pos); }};
   }
@@ -547,27 +593,29 @@ template<SInd nd> struct Implementation {
     TRACE_OUT();
     return nodes() | leafs();
   }
-  /// \brief Returns [IndRange] of _all_ child Idxs of node \p nIdx.
-  /// That is, including inactive childs.
-  inline auto all_childs(const NodeIdx nIdx) const -> Range<NodeIdx*> {
-    TRACE_IN((nIdx));
-    assert_valid(nIdx);
-    TRACE_OUT();
-    return boost::make_iterator_range
-        (&childrenIds_(nIdx(), 0), &childrenIds_(nIdx(), 0) + no_child_pos());
-  }
-  /// \brief Returns [FilteredRange] of existing child Idxs of node \p nIdx.
-  inline auto childs(const NodeIdx nIdx) const -> FRange<NodeIdx*>{
-    TRACE_IN((nIdx));
-    assert_valid(nIdx); assert_active(nIdx);
-    TRACE_OUT();
-    return all_childs(nIdx) | valid();
-  }
   /// \brief Returns [IndRange] of all child positions.
   inline auto child_pos() const -> Range<SInd> {
     TRACE_IN_();
     TRACE_OUT();
-    return {SInd(0),no_child_pos()}; }
+    return {SInd(0),no_child_pos()};
+  }
+  /// \brief Returns [IndRange] of _all_ child Idxs of node \p nIdx.
+  /// That is, including inactive childs.
+  inline auto all_childs(const NodeIdx nIdx) const
+  -> decltype(child_pos() | pos_to_child(nIdx)) {
+    TRACE_IN((nIdx));
+    assert_valid(nIdx);
+    TRACE_OUT();
+    return child_pos() | pos_to_child(nIdx);
+  }
+  /// \brief Returns [FilteredRange] of existing child Idxs of node \p nIdx.
+  inline auto childs(const NodeIdx nIdx) const
+  -> decltype(all_childs(nIdx) | valid() | active()) {
+    TRACE_IN((nIdx));
+    assert_valid(nIdx); assert_active(nIdx);
+    TRACE_OUT();
+    return all_childs(nIdx) | valid() | active();
+  }
 
   /// \brief Returns [IndRange] of all nghbr positions.
   inline auto nghbr_pos() const -> Range<SInd> {
@@ -669,9 +717,17 @@ template<SInd nd> struct Implementation {
   /// \name Container Status Implementation details
   ///@{
 
+  ///     ________________________________________________
+  ///    |   |   |   |   |   |   |   |   |   |   |   |   | noActiveNodes = 6
+  ///    | 0 | 1 | x | 2 | x | 3 | 4 | 5 | x | x | x | x | noNodes = 8
+  ///    |___|___|___|___|___|___|___|___|___|___|___|___| maxNoNodes = 12
+  /// first^   empty^    lastNodeInUse^        capacity^
+
   Ind noActiveNodes_;      ///< \f$\#\f$ of active nodes
   Ind maxNoNodes_;         ///< max \f$\#\f$ of nodes
-  Ind noNodes_;            ///< \f$\#\f$ of nodes
+  Ind noNodes_;            ///< \f$\#\f$ of nodes (all node idx > noNodes_ are
+                           ///< not in use)
+
   NodeIdx lowerFreeNodeBound_; ///< Smallest free node id
 
   //////////////////////////////////////////////////////////////////////////////
@@ -683,13 +739,13 @@ template<SInd nd> struct Implementation {
   using M = container::Matrix<Implementation,container::matrix::tag::Cell,V_,Ind,SInd,nd_>;
 
   /// Parent node ids for each node
-  M<NodeIdxM>                    parentIds_;
+  M<NodeIdxM> parentIds_;
 
   /// Child node ids for each node
-  M<NodeIdxRM,no_child_pos()>    childrenIds_ ;
+  M<NodeIdxM> childrenIds_ ;
 
   /// Indicates if a node is free or in use
-  M<BoolMatrix>                  isFree_ ;
+  M<BoolMatrix> isFree_ ;
 
   ///@}
   //////////////////////////////////////////////////////////////////////////////
@@ -721,6 +777,14 @@ template<SInd nd> struct Implementation {
   /// \brief Writable reference no noNodes_
   inline Ind& no_nodes_() { return noNodes_; }
 
+  /// \brief Is a node position in memory free?
+  /// (is that position not holding a node?)
+  inline bool is_free(const NodeIdx nIdx) const {
+    assert_valid(nIdx);
+    return isFree_(nIdx());
+    //return !is_valid(parent(nIdx)) && !is_valid(child(nIdx)); // todo
+  }
+
   ///@}
   //////////////////////////////////////////////////////////////////////////////
 
@@ -731,11 +795,17 @@ template<SInd nd> struct Implementation {
   /// \brief Writable reference to parent id of node id \p nIdx
   inline NodeIdx& parent_(const NodeIdx nIdx) { assert_valid(nIdx); return parentIds_(nIdx()); }
   /// \brief Writable reference to child id of \p nIdx at position \p pos
-  inline NodeIdx& child_(const NodeIdx nIdx, const SInd pos) {
-    TRACE_IN((nIdx)(pos));
-    assert_valid(nIdx); assert_child_position(pos);
+  inline NodeIdx& child_(const NodeIdx nIdx) {
+    TRACE_IN((nIdx));
+    assert_valid(nIdx);
     TRACE_OUT();
-    return childrenIds_(nIdx(),pos);
+    return childrenIds_(nIdx());
+  }
+  inline NodeIdx child_(const NodeIdx nIdx) const {
+    TRACE_IN((nIdx));
+    assert_valid(nIdx);
+    TRACE_OUT();
+    return childrenIds_(nIdx());
   }
   ///@}
   //////////////////////////////////////////////////////////////////////////////
@@ -765,14 +835,35 @@ template<SInd nd> struct Implementation {
     TRACE_OUT();
   }
 
-  /// \brief Resets all the ids in \p nIdx to invalid<Ind>() and marks node as free.
+  /// \brief Resets all the ids in \p nIdx to invalid<Ind>() and marks node as
+  /// free.
+  ///
+  /// NOTE: need to keep in sync with is_reseted !
   void reset_node_(const NodeIdx nIdx) {
     TRACE_IN((nIdx));
     parent_(nIdx) = invalid<NodeIdx>();
-    for(const auto pos : child_pos())  { child_(nIdx,pos) = invalid<NodeIdx>(); }
+    child_(nIdx) = invalid<NodeIdx>();
     for(const auto pos : solver_ids()) { cell_id(nIdx,pos) = invalid<CellIdx>(); }
     isFree_(nIdx()) = true;
     TRACE_OUT();
+  }
+
+  ///@}
+  //////////////////////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////////////////////////////
+  /// \name Debugging pourposes
+  ///@{
+
+  /// \brief Is a node reseted?
+  bool is_reseted(const NodeIdx nIdx) {
+    TRACE_IN((nIdx));
+    TRACE_OUT();
+    return !is_valid(parent(nIdx))
+        && !is_valid(child_(nIdx))
+        && algorithm::all_of(all_cell_ids(nIdx),
+                             [&](const CellIdx cIdx){ return !is_valid(cIdx); })
+        && is_free(nIdx);
   }
 
   ///@}

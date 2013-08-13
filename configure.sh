@@ -1,6 +1,8 @@
-rm CMakeCache.txt
-rm -rf CMakeFiles
+echo "Configuring Hom3..."
 
+./cleanup.sh
+
+echo "Running cmake..."
 while getopts "drhx" option
 do
     case "${option}" in
@@ -11,15 +13,19 @@ do
             exit 1
             ;;
         d)
-            cmake -DCMAKE_CXX_COMPILER=/usr/local/bin/clang++ -DLIBCXX_INCLUDE_DIR=$LIBCXX/include -DLIBCXX_LIBRARY=$LIBCXX/lib -DCMAKE_BUILD_TYPE=Debug
+            cmake -DCMAKE_CXX_COMPILER=/usr/local/bin/clang++ \
+                -DLIBCXX_INCLUDE_DIR=$LIBCXX/include \
+                -DLIBCXX_LIBRARY=$LIBCXX/lib \
+                -DCMAKE_BUILD_TYPE=Debug
+            echo "... hom3-debug configuration finished!"
             exit 1
             ;;
         r)
-            cmake -DCMAKE_CXX_COMPILER=/usr/local/bin/clang++ -DLIBCXX_INCLUDE_DIR=$LIBCXX/include -DLIBCXX_LIBRARY=$LIBCXX/lib -DCMAKE_BUILD_TYPE=Release
-            exit 1
-            ;;
-        x)
-            cmake -G Xcode -DCMAKE_CXX_COMPILER=/usr/local/bin/clang++ -DLIBCXX_INCLUDE_DIR=$LIBCXX/include -DLIBCXX_LIBRARY=$LIBCXX/lib -DCMAKE_BUILD_TYPE=Release
+            cmake -DCMAKE_CXX_COMPILER=/usr/local/bin/clang++ \
+                -DLIBCXX_INCLUDE_DIR=$LIBCXX/include \
+                -DLIBCXX_LIBRARY=$LIBCXX/lib \
+                -DCMAKE_BUILD_TYPE=Release
+            echo "... hom3-release configuration finished!"
             exit 1
             ;;
     esac

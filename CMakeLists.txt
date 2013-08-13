@@ -47,8 +47,8 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     "-O3" "-DNDEBUG" "-march=native" "-mtune=native" "-fstrict-aliasing"
     "-fomit-frame-pointer" "-pipe" "-fdata-sections" "-ffunction-sections"
     "-fvectorize" "-fslp-vectorize-aggressive" "-DEIGEN_FAST_MATH"
-    "-DEIGEN_NO_DEBUG"
-    ) # -fno-rtti -fno-exceptions -ffast-math
+    "-DEIGEN_NO_DEBUG" "-ffast-math"
+    ) # -fno-rtti -fno-exceptions 
 
   # set flags:
   string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_LIST}")

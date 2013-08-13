@@ -3,14 +3,14 @@ HOM3
 
 A laboratory for High-Order Multiphysics Multiscale Methods
 
-## Right now:
+## Right now
 
 - Hierarchical Cartesian Grids
 - Low-order finite volume methods
 - Solver coupling
 - VTK output
 
-## Current solvers:
+## Current solvers
 
 - Low-order finite volume methods for:
   - the heat equation,
