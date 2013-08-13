@@ -7,7 +7,9 @@
 #include "../../misc/dbg.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace solver { namespace fv { namespace euler {
+namespace hom3 { namespace solver { namespace fv {
+
+namespace euler {
 
 /// \brief Indices to access conservative/primitive variables
 template<SInd nd_> struct Indices {
@@ -426,7 +428,7 @@ template<class Solver> struct IsentropicVortex : boundary::Condition {
 
 } // bc namespace
 
-}}} // solver::fv::euler namespace
+}}}} // hom3::solver::fv::euler namespace
 
 ////////////////////////////////////////////////////////////////////////////////
 #undef ENABLE_DBG_

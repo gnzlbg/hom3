@@ -4,7 +4,7 @@
 #include "../globals.hpp"
 //////////////////////////////////////////////////////////////////////////
 
-namespace geometry { namespace cell { namespace cartesian {
+namespace hom3 { namespace geometry { namespace cell { namespace cartesian {
 
 template<SInd nd> constexpr Num volume(const Num dx) {
   return dx * volume<nd-1>(dx);
@@ -12,7 +12,7 @@ template<SInd nd> constexpr Num volume(const Num dx) {
 template<> constexpr Num volume<1>(const Num dx) { return dx; }
 
 
-}}} // geometry::cell::cartesian namespace
+}}}} // hom3::geometry::cell::cartesian namespace
 
 ////////////////////////////////////////////////////////////////////////////////
 #endif

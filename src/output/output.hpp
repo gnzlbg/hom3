@@ -3,14 +3,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include<iostream>
 #include<fstream>
-#include"../globals.hpp"
-#include"../grid/cellvertex.hpp"
-#include <boost/functional/hash.hpp>
 #include <unordered_set>
+#include <boost/functional/hash.hpp>
+#include "../globals.hpp"
 #include "../misc/helpers.hpp"
 ////////////////////////////////////////////////////////////////////////////////
+namespace hom3 {
 
-template<SInd nd> struct CartesianHSP;
+namespace grid { template<SInd nd> struct CartesianHSP; } // grid namespace
 
 namespace io {
 ////////////////////////////////////////////////////////////////////////////////
@@ -132,7 +132,7 @@ template<SInd nd> struct StreamableDomain {
 
   /// \todo this function should be removed eventually, output should be
   /// exclusively range-based
-  StreamableDomain(const CartesianHSP<nd>* g)
+  StreamableDomain(const grid::CartesianHSP<nd>* g)
       : cells([=](){ return g->nodes().leaf_nodes()
               | boost::adaptors::transformed(
                   [&](const NodeIdx i){
@@ -149,7 +149,7 @@ template<SInd nd> struct StreamableDomain {
         cell_vertices(std::forward<CellVerticesRange>(cell_vertices_)) {}
 
   const std::function<AnyRange<Ind>(void)> cells;
-  const std::function<typename CartesianHSP<nd>::CellVertices(Ind)> cell_vertices;
+  const std::function<typename grid::CartesianHSP<nd>::CellVertices(Ind)> cell_vertices;
 
   inline auto dimensions() const -> decltype(Range<SInd>(SInd{0},nd)) {
     return Range<SInd>(SInd{0},nd);
@@ -392,7 +392,7 @@ template<SInd nd, class Format = io::format::ascii> struct Vtk {
   inline void write_new_line(io::format::ascii)  { os << "\n"; }
   inline void write_new_line(io::format::binary) { os << std::endl; }
 
-  using Vertex = typename CartesianHSP<nd>::CellVertices::Vertex;
+  using Vertex = typename grid::CartesianHSP<nd>::CellVertices::Vertex;
   std::vector<StreamableVariable> streams_;
   const std::string fileName;
   std::stringstream header_;
@@ -446,6 +446,6 @@ template<SInd nd, class Format = io::format::ascii> struct Vtk {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-} // io namespace
+} } // hom3::io namespace
 ////////////////////////////////////////////////////////////////////////////////
 #endif

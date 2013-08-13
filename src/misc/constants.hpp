@@ -10,6 +10,8 @@
 #include "traits.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
+namespace hom3 {
+
 /// Sometimes you want to represent an empty value,
 /// examples:
 /// - no nghbr has been found
@@ -30,7 +32,7 @@
 
 template<class T, class B> struct Integer;
 
-namespace detail {
+namespace constants { namespace detail {
 
 /// \brief \returns invalid value for identifier of type T
 template<class T> constexpr T invalid_value_(T) {
@@ -46,9 +48,9 @@ template<class T,class B> constexpr Integer<T,B> invalid_value_(Integer<T,B>) {
   return Integer<T,B>{invalid_value_(T())};
 }
 
-}
+}} // constants::detail namespace
 
-template<class T> constexpr T invalid() { return detail::invalid_value_(T()); }
+template<class T> constexpr T invalid() { return constants::detail::invalid_value_(T()); }
 
 /// \brief \returns [bool] Has the identifier "o" a valid value?
 template<class T> static constexpr bool is_valid(const T& o) {
@@ -74,5 +76,7 @@ template<class T> constexpr auto dimensions(T&& t) -> decltype(t.cols()) {
 
 } // math
 
+////////////////////////////////////////////////////////////////////////////////
+} // hom3 namespace
 ////////////////////////////////////////////////////////////////////////////////
 #endif

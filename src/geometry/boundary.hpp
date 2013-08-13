@@ -7,6 +7,8 @@
 /// \file \brief This file implements the boundary condition interface
 ////////////////////////////////////////////////////////////////////////////////
 
+namespace hom3 {
+
 /// \brief Boundary conditions
 namespace boundary {
 
@@ -85,7 +87,7 @@ template<SInd nd> struct Interface {
   const SolverIdx solverIdx_;
 };
 
-} // boundary namespace
+}} // hom3::boundary namespace
 
 ////////////////////////////////////////////////////////////////////////////////
 #endif

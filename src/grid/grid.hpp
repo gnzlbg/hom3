@@ -8,14 +8,13 @@
 /// Includes:
 #include "../containers/hierarchical.hpp"
 #include "generation.hpp"
-#include "cellvertex.hpp"
 #include "../geometry/boundary.hpp"
 /// Options:
 #define ENABLE_DBG_ 0
 #include "../misc/dbg.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace grid {
+namespace hom3 { namespace grid {
 
 /// \name Grid tags
 ///@{
@@ -129,8 +128,6 @@ template<int nd> struct RootCell {
   }
 };
 
-} // grid namespace
-
 /// \brief Hierarchical Cartesian Grid data-structure
 /// - couples the spatial information (e.g. coordinates) with the connectivity
 /// graph (e.g. neighbor/parent-child relationships)
@@ -142,9 +139,9 @@ template <SInd nd> struct CartesianHSP {
   using This = CartesianHSP<nd>;
   using Boundary = boundary::Interface<nd>;
   using Boundaries = std::vector<Boundary>;
-  using dim = grid::dim<nd>;
-  using D2 = grid::dim<2>;
-  using D3 = grid::dim<3>;
+  using Dim = dim<nd>;
+  using D2 = dim<2>;
+  using D3 = dim<3>;
   using Connectivity = typename container::Hierarchical<nd>;
   /// \name Construction
   ///@{
@@ -154,12 +151,12 @@ template <SInd nd> struct CartesianHSP {
       : properties_(input),
         nodes_(io::read<Ind>(properties_,"maxNoGridNodes"),
                io::read<SInd>(properties_,"maxNoContainers")),
-        rootCell_(io::read<grid::RootCell<nd>>(properties_,"rootCell")),
+        rootCell_(io::read<RootCell<nd>>(properties_,"rootCell")),
         ready_(false)
   { TRACE_IN_(); TRACE_OUT(); }
 
   /// \brief Constructs and initializes a grid from a set of input properties
-  CartesianHSP(io::Properties input, grid::initialize_t) : CartesianHSP(input) {
+  CartesianHSP(io::Properties input, initialize_t) : CartesianHSP(input) {
     TRACE_IN_();
     initialize();
     TRACE_OUT();
@@ -262,14 +259,14 @@ template <SInd nd> struct CartesianHSP {
   /// \todo some sort of constexpr assertion for valid childPos and d
   ///
   static constexpr SInt child_rel_pos(const SInd childPos, const SInd d) {
-    return child_rel_pos_(childPos,d,dim());
+    return child_rel_pos_(childPos,d,Dim());
   }
 
   /// \brief Relative position of child localted at \p childPos w.r.t. its parent
   ///
   /// \returns vector of relative positions
   static constexpr SIntA<nd> child_rel_pos(const SInd childPos) {
-    return child_rel_pos_(childPos,dim());
+    return child_rel_pos_(childPos,Dim());
   }
 
   /// \brief Relative position of neighbor in position \p nghbrPos w.r.t. cell
@@ -299,14 +296,14 @@ template <SInd nd> struct CartesianHSP {
   ///
   ///
   static constexpr SInt nghbr_rel_pos(const SInd nghbrPos, const SInd d) {
-    return ghbr_rel_pos_(nghbrPos,d,dim());
+    return ghbr_rel_pos_(nghbrPos,d,Dim());
   }
 
   /// \brief Relative position of neighbor localted at \p nghbrPos w.r.t. its parent
   ///
   /// \returns vector of relative positions
   static constexpr SIntA<nd> nghbr_rel_pos(const SInd nghbrPos) {
-    return nghbr_rel_pos_(nghbrPos,dim());
+    return nghbr_rel_pos_(nghbrPos,Dim());
   }
 
   /// \brief Relative position of vertex in position \p vertexId (sorted in
@@ -334,7 +331,7 @@ template <SInd nd> struct CartesianHSP {
   ///  - the stencil is the same one as that for the relative child position,
   ///    just sorted in a different order.
   static constexpr SInt vertex_pos(const NodeIdx childIdx, const SInt d) {
-    return vertex_pos_(childIdx,d,dim());
+    return vertex_pos_(childIdx,d,Dim());
   }
 
   /// \brief Length of cells at \p level
@@ -669,7 +666,7 @@ template <SInd nd> struct CartesianHSP {
   Connectivity nodes_;
 
   /// Grid root cell information
-  const grid::RootCell<nd> rootCell_;
+  const RootCell<nd> rootCell_;
 
   /// Domain boundaries
   std::vector<Boundary> boundaries_;
@@ -686,17 +683,17 @@ template <SInd nd> struct CartesianHSP {
   /// \brief Relative position (-1 or +1) of child located at \p childPos w.r.t
   /// its parent along the \p d -axis for 2D.
   static constexpr SInt child_rel_pos_(const SInd childPos, const SInd d, D2) {
-    return grid::child_rel_pos_2d_arr[childPos * nd + d];
+    return child_rel_pos_2d_arr[childPos * nd + d];
   }
 
   static constexpr SIntA<nd> child_rel_pos_(const SInd childPos, D2) {
-    return { child_rel_pos_(childPos,0,dim()), child_rel_pos_(childPos,1,dim()) };
+    return { child_rel_pos_(childPos,0,Dim()), child_rel_pos_(childPos,1,Dim()) };
   }
 
   /// \brief Relative position (-1 or +1) of child located at \p childPos w.r.t
   /// its parent along the \p d -axis for 3D.
   static constexpr SInt child_rel_pos_(const SInd childPos, const SInd d, D3) {
-    return grid::child_rel_pos_3d_arr[childPos * nd + d];
+    return child_rel_pos_3d_arr[childPos * nd + d];
   }
 
   static constexpr SIntA<nd> child_rel_pos_(const SInd childPos, D3) {
@@ -708,7 +705,7 @@ template <SInd nd> struct CartesianHSP {
   /// \brief Relative position of neighbor in position \p nghbrPos w.r.t. cell
   /// along the \p -axis for 2D.
   static constexpr SInt nghbr_rel_pos_(const SInd nghbrPos, const SInd d, D2) {
-    return grid::nghbr_rel_pos_2d_arr[nghbrPos * nd + d];
+    return nghbr_rel_pos_2d_arr[nghbrPos * nd + d];
   }
 
   static constexpr SIntA<nd> nghbr_rel_pos_(const SInd nghbrPos, D2) {
@@ -718,7 +715,7 @@ template <SInd nd> struct CartesianHSP {
   /// \brief Relative position of neighbor in position \p nghbrPos w.r.t. cell
   /// along the \p -axis for 3D.
   static constexpr SInt nghbr_rel_pos_(const SInt nghbrPos, const SInt d, D3) {
-    return grid::nghbr_rel_pos_3d_arr[nghbrPos * nd + d];
+    return nghbr_rel_pos_3d_arr[nghbrPos * nd + d];
   }
 
   static constexpr SIntA<nd> nghbr_rel_pos_(const SInd nghbrPos, D3) {
@@ -730,13 +727,13 @@ template <SInd nd> struct CartesianHSP {
   /// \brief Relative position of vertex in position \p vertexId (sorted in
   /// counter clock-wise order) w.r.t. to cell along the \p -axis for 2D.
   static constexpr SInt vertex_pos_(const SInt vertexPos, const SInt d, D2) {
-    return grid::vertex_pos_2d_arr[vertexPos * nd + d];
+    return vertex_pos_2d_arr[vertexPos * nd + d];
   }
 
   /// \brief Relative position of vertex in position \p vertexId (sorted in
   /// counter clock-wise order) w.r.t. to cell along the \p -axis for 3D.
   static constexpr SInt vertex_pos_(const SInt vertexPos, const SInt d, D3) {
-    return grid::vertex_pos_3d_arr[vertexPos * nd + d];
+    return vertex_pos_3d_arr[vertexPos * nd + d];
   }
 
   ///@}
@@ -745,6 +742,8 @@ template <SInd nd> struct CartesianHSP {
 /// \brief Backwards compatibility
 template<SInd nd> using Grid = CartesianHSP<nd>;
 
+////////////////////////////////////////////////////////////////////////////////
+}} // hom3::grid namespace
 ////////////////////////////////////////////////////////////////////////////////
 #undef ENABLE_DBG_
 ////////////////////////////////////////////////////////////////////////////////

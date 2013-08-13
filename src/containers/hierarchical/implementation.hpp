@@ -7,13 +7,10 @@
 #define ENABLE_DBG_ 0
 #include "../../misc/dbg.hpp"
 ////////////////////////////////////////////////////////////////////////////////
-
-namespace container { namespace hierarchical {
-
+/// File macros:
 ////////////////////////////////////////////////////////////////////////////////
 /// \name Assertion macros (for very common assertions)
 ///@{
-
 /// \brief Asserts that a node must exist
 #define assert_valid(nId) \
   ASSERT(is_valid((nId)),"Call with non-existent node.")
@@ -23,9 +20,13 @@ namespace container { namespace hierarchical {
 /// \brief Asserts that a child position must be in range [0,no_childs())
 #define assert_child_position(pos) \
   ASSERT((pos) < no_child_pos(), "Child position " << (pos) << " does not exist!")
-
 ///@}
 ////////////////////////////////////////////////////////////////////////////////
+
+namespace hom3 { namespace container {
+
+/// \brief Hierarchical container utilities
+namespace hierarchical {
 
 /// Stencil of relative sibling positions
 static constexpr std::array<std::array<SInd,6>,8>  rel_sibling_position_arr {{
@@ -784,8 +785,12 @@ template<SInd nd> struct Implementation {
 
 template<SInd nd> using Hierarchical = hierarchical::Implementation<nd>;
 
-} // container namespace
+}} // hom3::container namespace
 
+////////////////////////////////////////////////////////////////////////////////
+#undef assert_valid
+#undef assert_active
+#undef assert_child_position
 #undef ENABLE_DBG_
 ////////////////////////////////////////////////////////////////////////////////
 #endif

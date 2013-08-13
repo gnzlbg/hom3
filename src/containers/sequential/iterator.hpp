@@ -7,9 +7,7 @@
 /// Include:
 #include "traits.hpp"
 ////////////////////////////////////////////////////////////////////////////////
-namespace container { namespace sequential {
-////////////////////////////////////////////////////////////////////////////////
-
+/// File macros:
 #define assert_in_cell_range(cIdx)                                      \
   ASSERT(cIdx() <= c()->last(),                                         \
          "Iterator's cell index " << cIdx()                             \
@@ -18,6 +16,9 @@ namespace container { namespace sequential {
 
 #define assert_same_containers(lhs,rhs)                         \
   ASSERT(same_container(lhs,rhs), "Different containers")
+////////////////////////////////////////////////////////////////////////////////
+namespace hom3 { namespace container { namespace sequential {
+////////////////////////////////////////////////////////////////////////////////
 
 /// \brief Boilerplate for implementing a value proxy type
 ///
@@ -234,7 +235,7 @@ template<class Container> struct Iterator {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-}} // container::sequential namespace
+}}} // container::sequential namespace
 
 ////////////////////////////////////////////////////////////////////////////////
 #undef assert_in_cell_range

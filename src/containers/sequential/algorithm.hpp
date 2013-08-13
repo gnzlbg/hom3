@@ -2,25 +2,16 @@
 #define HOM3_CONTAINER_SEQUENTIAL_ALGORITHMS_HPP_
 ////////////////////////////////////////////////////////////////////////////////
 // Include:
-#include <boost/range/algorithm.hpp>
-#include <boost/algorithm/cxx11/all_of.hpp>
-#include <boost/algorithm/cxx11/any_of.hpp>
-#include <boost/algorithm/cxx11/copy_if.hpp>
-#include <boost/algorithm/cxx11/copy_n.hpp>
-#include <boost/algorithm/cxx11/iota.hpp>
-#include <boost/algorithm/cxx11/none_of.hpp>
-#include <boost/algorithm/cxx11/one_of.hpp>
-#include <boost/algorithm/cxx11/partition_point.hpp>
 ////////////////////////////////////////////////////////////////////////////////
-namespace container { namespace sequential {
+namespace hom3 { namespace container { namespace sequential {
 ////////////////////////////////////////////////////////////////////////////////
 
 /// \brief Range algorithms that operate on cell containers
 namespace algorithm {
 
 
-/// Bring all boost::range::algorithms into the namespace
-using namespace boost::algorithm;
+// /// Bring all boost::range::algorithms into the namespace
+// using namespace boost::algorithm;
 
 /// \name Non-modifying operations
 ///@{
@@ -69,7 +60,7 @@ Container& erase_remove_if(Container&& c, Predicate&& p) {
 ///@}
 
 ////////////////////////////////////////////////////////////////////////////////
-} } } // container::sequential::algorithm
+} } } } // hom3::container::sequential::algorithm
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////

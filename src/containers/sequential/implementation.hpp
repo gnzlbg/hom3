@@ -5,11 +5,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 /// Includes:
 #include <type_traits>
+////////////////////////////////////////////////////////////////////////////////
+#include "traits.hpp"
+#include "iterator.hpp"
+#include "algorithm.hpp"
+////////////////////////////////////////////////////////////////////////////////
 /// Options:
 #define ENABLE_DBG_ 0
 #include "../../misc/dbg.hpp"
 ////////////////////////////////////////////////////////////////////////////////
-
+/// File macros:
 #define assert_variable_node_container()                                \
   static_assert(std::is_same<container_type,tag::variable_nodes>::value, \
                 "Function defined only for variable_node_size containers!")
@@ -37,9 +42,12 @@
   ASSERT(is_valid_node_range(fromIdx,toIdx),   \
          "Invalid node range [" << fromIdx     \
          << ", " << toIdx << ").")
+////////////////////////////////////////////////////////////////////////////////
 
-namespace container { namespace sequential {
+namespace hom3 { namespace container {
 
+/// \brief Sequiential container
+namespace sequential {
 
 
 /// \brief Sequential container (base implementation)
@@ -631,8 +639,9 @@ template<class Cells> struct Implementation {
 
 template<class T> using Sequential = sequential::Implementation<T>;
 
-} // namespace container
+} } // hom3::container namespace
 
+////////////////////////////////////////////////////////////////////////////////
 #undef assert_variable_node_container
 #undef assert_in_cell_range
 #undef assert_in_node_range

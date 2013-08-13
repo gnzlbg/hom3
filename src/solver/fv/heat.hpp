@@ -7,7 +7,9 @@
 #include "../../misc/dbg.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace solver { namespace fv { namespace heat {
+namespace hom3 { namespace solver { namespace fv {
+
+namespace heat {
 
 /// \brief Indices to access conservative/primitive variables
 template<SInd nd_> struct Indices {
@@ -164,7 +166,7 @@ template<class Solver> struct Neumann : boundary::Condition {
 
 } // bc namespace
 
-}}} // solver::fv::heat namespace
+}}}} // hom3::solver::fv::heat namespace
 
 ////////////////////////////////////////////////////////////////////////////////
 #undef ENABLE_DBG_

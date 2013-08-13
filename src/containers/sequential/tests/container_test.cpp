@@ -13,6 +13,8 @@
 #include "../../../misc/dbg.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
+using namespace hom3;
+
 static const SInd nD = 2U;
 using TestContainer2D = test::fixed::Container<2> ;
 using TestNodalContainer2D = test::nodal::Container<2> ;

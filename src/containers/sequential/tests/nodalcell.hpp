@@ -7,7 +7,8 @@
 #define ENABLE_DBG_ 0
 #include "../../../misc/dbg.hpp"
 ////////////////////////////////////////////////////////////////////////////////
-
+namespace hom3 {
+////////////////////////////////////////////////////////////////////////////////
 
 /// Forward declarations:
 namespace test { namespace nodal {
@@ -181,7 +182,7 @@ template<SInd nd> struct Reference : container::sequential::ReferenceFacade<Cont
   Reference(Container<nd>* c, Ind i) : Base(c,i) {}
 };
 
-}} // namespace test::nodal
+}}} // hom3::test::nodal namespace
 
 #undef ENABLE_DBG_
 ////////////////////////////////////////////////////////////////////////////////

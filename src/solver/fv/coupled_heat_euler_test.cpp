@@ -11,6 +11,8 @@
 #include "../../misc/dbg.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
+using namespace hom3;
+
 static const SInd nd = 3;
 static const auto eulerSolverId = SolverIdx{0};
 static const auto heatSolverId = SolverIdx{1};
@@ -25,14 +27,14 @@ auto cubeH = geometry::make_geometry<geometry::implicit::Square<nd>>(NumA<nd>{0.
                                                                     NumA<nd>{0.2,0.2,0.2});
 auto cubeE = geometry::make_geometry<geometry::implicit::Square<nd>>(NumA<nd>{0.5,0.5,0.5},
                                                                      NumA<nd>{0.26,0.26,0.26});
-Grid<nd> test_grid(grid::helpers::cube::properties<nd>(rootCell,minRefLevel,2));
+grid::Grid<nd> test_grid(grid::helpers::cube::properties<nd>(rootCell,minRefLevel,2));
 
 // Euler Fv Solver:
 namespace euler_physics = solver::fv::euler;
 template<SInd nd, class S> using EulerPhysics = euler_physics::Physics<nd,S>;
 using EulerSolver = solver::fv::Solver<nd,EulerPhysics, euler_physics::flux::ausm>;
 
-io::Properties euler_properties(Grid<nd>* grid) {
+io::Properties euler_properties(grid::Grid<nd>* grid) {
   using namespace grid::helpers::cube;
   const Ind maxNoCells = no_solver_cells_with_gc<nd>(minRefLevel)*2;
   static const SInd nvars = EulerSolver::nvars;
@@ -53,7 +55,7 @@ io::Properties euler_properties(Grid<nd>* grid) {
   };
 
   io::Properties properties;
-  io::insert_property<Grid<nd>*>(properties,"grid", grid);
+  io::insert_property<grid::Grid<nd>*>(properties,"grid", grid);
   io::insert_property<Ind>(properties,"maxNoCells", maxNoCells);
   io::insert_property<bool>(properties,"restart",false);
   io::insert_property<EulerSolver::InitialDomain>(properties,"initialDomain",initialDomain);
@@ -64,7 +66,7 @@ io::Properties euler_properties(Grid<nd>* grid) {
   return properties;
 }
 
-Grid<nd>::Boundaries euler_bcs(EulerSolver& solver) {
+grid::Grid<nd>::Boundaries euler_bcs(EulerSolver& solver) {
   using namespace grid::helpers; using namespace cube; using namespace edge;
   auto bc
   = boundary::make_condition<euler_physics::bc::Neumann<EulerSolver>>(solver);
@@ -78,7 +80,7 @@ namespace heat_physics = solver::fv::heat;
 template<SInd nd, class S> using HeatPhysics = heat_physics::Physics<nd,S>;
 using HeatSolver = solver::fv::Solver<nd,HeatPhysics, heat_physics::flux::three_point>;
 
-io::Properties heat_properties(Grid<nd>* grid) {
+io::Properties heat_properties(grid::Grid<nd>* grid) {
   using namespace grid::helpers::cube;
   const Ind maxNoCells = no_solver_cells_with_gc<nd>(minRefLevel);
   static const SInd nvars = HeatSolver::nvars;
@@ -92,7 +94,7 @@ io::Properties heat_properties(Grid<nd>* grid) {
       = [](const NumA<nd>) { return NumA<nvars>::Constant(1.0); };
 
   io::Properties properties;
-  io::insert_property<Grid<nd>*>(properties,"grid", grid);
+  io::insert_property<grid::Grid<nd>*>(properties,"grid", grid);
   io::insert_property<Ind>(properties,"maxNoCells", maxNoCells);
   io::insert_property<bool>(properties,"restart",false);
   io::insert_property<HeatSolver::InitialDomain>(properties,"initialDomain",initialDomain);

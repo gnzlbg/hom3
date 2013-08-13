@@ -1,5 +1,8 @@
 #include "gtest/gtest.h"
 #include "../../globals.hpp"
+////////////////////////////////////////////////////////////////////////////////
+
+using namespace hom3;
 
 TEST(types_test, integer_conversions) {
 

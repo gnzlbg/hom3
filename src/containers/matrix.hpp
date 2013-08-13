@@ -6,7 +6,7 @@
 #include <type_traits>
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace container {
+namespace hom3 { namespace container {
 
 /// \todo rename tags/move them somewhere else/replace tag dispatch with crtp.
 
@@ -154,6 +154,6 @@ template<class C, class T, template <SInd> class V, class RowIdx, class ColIdx, 
 template<class C,class RowIdx,class ColIdx = SInd>
 using NodeIndices = Matrix<C,matrix::tag::NodeIndices,IndM,RowIdx,ColIdx,1>;
 ////////////////////////////////////////////////////////////////////////////////
-} // namespace cell
+}} // hom3::container
 ////////////////////////////////////////////////////////////////////////////////
 #endif

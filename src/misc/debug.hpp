@@ -25,6 +25,8 @@
 #include <boost/preprocessor.hpp>
 ////////////////////////////////////////////////////////////////////////////////
 
+namespace hom3 {
+
 ////////////////////////////////////////////////////////////////////////////////
 /// \brief Contains debugging functionality
 namespace debug {
@@ -58,7 +60,7 @@ template <class H, class... T> void dout(const bool on, H&& head, T&&... tail) {
 ///@}
 
 ////////////////////////////////////////////////////////////////////////////////
-} // debug namespace
+}} // hom3::debug namespace
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef NDEBUG
@@ -66,7 +68,7 @@ template <class H, class... T> void dout(const bool on, H&& head, T&&... tail) {
 #define DOUT(...)                                             \
   do {                                                        \
     if (true) {                                               \
-      debug::dout(__VA_ARGS__);                               \
+      hom3::debug::dout(__VA_ARGS__);                         \
     }                                                         \
   } while (false)
 #else
@@ -74,7 +76,7 @@ template <class H, class... T> void dout(const bool on, H&& head, T&&... tail) {
 #define DOUT(...)                                           \
   do {                                                      \
     if (false) {                                            \
-      debug::dout(__VA_ARGS__);                             \
+      hom3::debug::dout(__VA_ARGS__);                       \
     }                                                       \
   } while (false)
 #endif
@@ -85,7 +87,7 @@ template <class H, class... T> void dout(const bool on, H&& head, T&&... tail) {
   do {                                                          \
     if (true) {                                                 \
       if(condition) {                                           \
-        debug::dout(__VA_ARGS__);                               \
+        hom3::debug::dout(__VA_ARGS__);                         \
       }                                                         \
     }                                                           \
   } while (false)
@@ -95,7 +97,7 @@ template <class H, class... T> void dout(const bool on, H&& head, T&&... tail) {
   do {                                                          \
     if (false) {                                                \
       if(condition) {                                           \
-        debug::dout(__VA_ARGS__);                               \
+        hom3::debug::dout(__VA_ARGS__);                         \
       }                                                         \
     }                                                           \
   } while (false)

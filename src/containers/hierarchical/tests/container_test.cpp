@@ -8,8 +8,10 @@
 #include "../../../misc/dbg.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
+using namespace hom3;
+
 template<SInd nd> io::Properties small_grid(const SInd minRefLevel) {
-  using Boundaries = typename Grid<nd>::Boundaries;
+  using Boundaries = typename grid::Grid<nd>::Boundaries;
   Boundaries boundaries;
   auto properties
       = grid::helpers::cube::properties<nd>
@@ -26,7 +28,7 @@ template<SInd nd> struct nghbrIds {
 /// verify that if a node nId has another node nghbrId as nghbr in pos nghbrPos,
 /// nghbrId must have nId as neighbor also but in position oppositeNghbrPos
 template<SInd nd>
-void consistency_nghbr_check(const Grid<nd>& grid) {
+void consistency_nghbr_check(const grid::Grid<nd>& grid) {
   for(const auto nId : grid.nodes().nodes()) {
     for(const auto nghbrPos : grid.nodes().nghbr_pos()) {
       const auto nghbrId = grid.nodes().find_samelvl_nghbr(nId,nghbrPos);
@@ -40,14 +42,14 @@ void consistency_nghbr_check(const Grid<nd>& grid) {
 
 /// \test tests Grid constructor
 TEST(hierarchical_container_test, constructor) {
-  Grid<3> grid(small_grid<3>(2));
+  grid::Grid<3> grid(small_grid<3>(2));
   grid.read_mesh_generator();
   grid.generate_mesh();
 
   EXPECT_EQ(grid.nodes().size(),Ind(73));
 }
 
-Grid<3> small3DGrid(small_grid<3>(2),grid::initialize);
+grid::Grid<3> small3DGrid(small_grid<3>(2),grid::initialize);
 
 TEST(hierarchical_container_test, test_write_grid_domain_3d) {
   write_domain("grid_3D",&small3DGrid);
@@ -190,7 +192,7 @@ TEST(hierarchical_container_test, test_nghbrs_ranges) {
 }
 
 
-Grid<2> small2DGrid(small_grid<2>(3),grid::initialize);
+grid::Grid<2> small2DGrid(small_grid<2>(3),grid::initialize);
 
 TEST(hierarchical_container_test, test_write_grid_domain_2d) {
   write_domain("grid_2D",&small2DGrid);

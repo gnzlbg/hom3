@@ -7,6 +7,7 @@
 #define ENABLE_DBG_ 0
 #include "../../../misc/dbg.hpp"
 ////////////////////////////////////////////////////////////////////////////////
+namespace hom3 {
 
 /// Forward declarations:
 namespace test { namespace fixed {
@@ -125,7 +126,7 @@ template<SInd nd> struct Reference : container::sequential::ReferenceFacade<Cont
 };
 
 
-}} // test::fixed namespace
+}}} // hom3::test::fixed namespace
 
 #undef ENABLE_DBG_
 ////////////////////////////////////////////////////////////////////////////////

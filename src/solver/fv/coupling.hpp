@@ -6,7 +6,9 @@
 #include "../../misc/dbg.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace solver { namespace fv { namespace coupling {
+namespace hom3 { namespace solver { namespace fv {
+
+namespace coupling {
 
 /// \brief Computes the local boundary cell ids of solver0 and solver1
 ///
@@ -156,8 +158,7 @@ struct EulerEulerWall : boundary::Condition {
 
 } // namespace bc
 
-}}} // solver::fv::coupling namespace
-
+}}}} // hom3::solver::fv::coupling namespace
 ////////////////////////////////////////////////////////////////////////////////
 #undef ENABLE_DBG_
 ////////////////////////////////////////////////////////////////////////////////

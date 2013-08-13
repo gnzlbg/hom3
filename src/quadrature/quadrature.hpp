@@ -6,11 +6,13 @@
 #include "../grid/grid.hpp"
 #include "../geometry/cell_cartesian.hpp"
 ////////////////////////////////////////////////////////////////////////////////
+namespace hom3 {
+////////////////////////////////////////////////////////////////////////////////
 
 namespace quadrature {
 
 template<SInd nd> struct GaussPoints {
-  static const SInd size = Grid<nd>::no_edge_vertices();
+  static const SInd size = grid::Grid<nd>::no_edge_vertices();
   using type = std::array<NumA<nd>,size>;
 
   type operator()() {
@@ -53,15 +55,16 @@ auto gauss_points_x(Vector&& x, const Num dx)
 template<SInd nd, class Vector, class Functor>
 auto integrate(Functor&& f, Vector&& xc, const Num dx)
     -> decltype(f(xc)) {
+  constexpr auto no_edge_vertices = grid::Grid<nd>::no_edge_vertices();
   auto x_gps = gauss_points_x<nd>(std::forward<Vector>(xc),dx);
   /// \todo stop hating c++ and use something better
   typename std::remove_reference<decltype(f(xc))>::type v_gp;
-  std::array<decltype(v_gp),Grid<nd>::no_edge_vertices()> v_gps;
-  for(SInd gp_i = 0; gp_i < Grid<nd>::no_edge_vertices(); ++gp_i) {
+  std::array<decltype(v_gp),no_edge_vertices> v_gps;
+  for(SInd gp_i = 0; gp_i < no_edge_vertices; ++gp_i) {
     v_gps[gp_i] = f(x_gps[gp_i]);
   }
   typename std::remove_reference<decltype(f(xc))>::type result = math::zero(decltype(f(xc))());
-  for(SInd gp_i = 0; gp_i < Grid<nd>::no_edge_vertices(); ++gp_i) {
+  for(SInd gp_i = 0; gp_i < no_edge_vertices; ++gp_i) {
     result = result + v_gps[gp_i];
   }
   result = result * geometry::cell::cartesian::volume<nd>(dx) / math::ct::ipow(2,nd);
@@ -70,5 +73,7 @@ auto integrate(Functor&& f, Vector&& xc, const Num dx)
 
 } // quadrature namespace
 
+////////////////////////////////////////////////////////////////////////////////
+} // hom3 namespace
 ////////////////////////////////////////////////////////////////////////////////
 #endif

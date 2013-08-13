@@ -8,6 +8,8 @@
 #include "../../misc/dbg.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
+using namespace hom3;
+
 static const SInd nd = 3;
 
 namespace physics = solver::fv::euler;

@@ -11,6 +11,8 @@
 #include "../../misc/dbg.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
+using namespace hom3;
+
 static const SInd nd = 3;
 static const auto euler0SolverId = SolverIdx{0};
 static const auto euler1SolverId = SolverIdx{1};
@@ -25,14 +27,14 @@ auto cubeH = geometry::make_geometry<geometry::implicit::Square<nd>>(NumA<nd>{0.
                                                                     NumA<nd>{0.2,0.2,0.2});
 auto cubeE = geometry::make_geometry<geometry::implicit::Square<nd>>(NumA<nd>{0.5,0.5,0.5},
                                                                      NumA<nd>{0.26,0.26,0.26});
-Grid<nd> test_grid(grid::helpers::cube::properties<nd>(rootCell,minRefLevel,2));
+grid::Grid<nd> test_grid(grid::helpers::cube::properties<nd>(rootCell,minRefLevel,2));
 
 // EulerG Fv Solver:
 namespace physics = solver::fv::euler;
 template<SInd nd, class S> using EulerPhysics = physics::Physics<nd,S>;
 using EulerSolver = solver::fv::Solver<nd,EulerPhysics, physics::flux::ausm>;
 
-io::Properties euler_properties(Grid<nd>* grid, SolverIdx solverId) {
+io::Properties euler_properties(grid::Grid<nd>* grid, SolverIdx solverId) {
   using namespace grid::helpers::cube;
   const Ind maxNoCells = no_solver_cells_with_gc<nd>(minRefLevel)*2;
   static const SInd nvars = EulerSolver::nvars;
@@ -79,7 +81,7 @@ io::Properties euler_properties(Grid<nd>* grid, SolverIdx solverId) {
   };
 
   io::Properties properties;
-  io::insert_property<Grid<nd>*>(properties,"grid", grid);
+  io::insert_property<grid::Grid<nd>*>(properties,"grid", grid);
   io::insert_property<Ind>(properties,"maxNoCells", maxNoCells);
   io::insert_property<bool>(properties,"restart",false);
   io::insert_property<EulerSolver::InitialDomain>(properties,"initialDomain",initialDomain);
@@ -92,7 +94,7 @@ io::Properties euler_properties(Grid<nd>* grid, SolverIdx solverId) {
 
 
 
-Grid<nd>::Boundaries euler0_bcs(EulerSolver& solver) {
+grid::Grid<nd>::Boundaries euler0_bcs(EulerSolver& solver) {
   using namespace grid::helpers; using namespace cube; using namespace edge;
   auto bc
   = boundary::make_condition<physics::bc::Neumann<EulerSolver>>(solver);

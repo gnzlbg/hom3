@@ -10,7 +10,8 @@
 #define ENABLE_DBG_ 0
 #include "../../misc/dbg.hpp"
 ////////////////////////////////////////////////////////////////////////////////
-/// Finite Volume cell:
+namespace hom3 {
+////////////////////////////////////////////////////////////////////////////////
 
 namespace solver { namespace fv {
 
@@ -70,7 +71,7 @@ struct Solver : PhysicsTT<nd_,Solver<nd_,PhysicsTT,NumFlux_/*,NumFluxTT*/>> { //
   using InitialCondition  = std::function<NumA<nvars>(const NumA<nd>)>;
   using InitialDomain     = std::function<bool(const NumA<nd>)>;
 
-  using Grid = CartesianHSP<nd>;
+  using Grid              = grid::CartesianHSP<nd>;
 
   using rhs               = rhs_tag;
   using lhs               = lhs_tag;
@@ -879,6 +880,8 @@ private:
 
 }} // namespace solver::fv
 
+////////////////////////////////////////////////////////////////////////////////
+} // hom3 namespace
 ////////////////////////////////////////////////////////////////////////////////
 #undef ENABLE_DBG_
 ////////////////////////////////////////////////////////////////////////////////

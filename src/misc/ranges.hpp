@@ -10,11 +10,19 @@
 #include <boost/algorithm/cxx11/any_of.hpp>
 #include <boost/algorithm/cxx11/all_of.hpp>
 #include <boost/algorithm/cxx11/none_of.hpp>
+#include <boost/algorithm/cxx11/copy_if.hpp>
+#include <boost/algorithm/cxx11/copy_n.hpp>
+#include <boost/algorithm/cxx11/iota.hpp>
+#include <boost/algorithm/cxx11/one_of.hpp>
+#include <boost/algorithm/cxx11/partition_point.hpp>
 #include <boost/range/numeric.hpp>
 #include <boost/iterator/counting_iterator.hpp>
 #include <boost/range/adaptors.hpp>
 #include <boost/range/any_range.hpp>
 #include <boost/range/join.hpp>
+////////////////////////////////////////////////////////////////////////////////
+namespace hom3 {
+////////////////////////////////////////////////////////////////////////////////
 
 /// \brief Range utilities and helper classes
 namespace range {
@@ -73,14 +81,18 @@ using RangeTransformer = decltype(boost::adaptors::transformed(std::function<To(
 // brief Range algorithms (i.e. all Boost.Range algorithms)
 namespace algorithm {
 // makes all Boost.Range algorithms available
-using namespace boost::algorithm;
-using boost::join;
+ using namespace boost::algorithm;
+ using boost::join;
 }
 
 } // range
 
 using namespace range; // all range utilities are available in the hom3 namespace
 
+} // namespace hom3
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
 namespace boost { namespace range_detail { // (Note: adding stuff to
                                            // range_detail is pretty ugly)
 /// Negates range filters:
@@ -90,6 +102,7 @@ template <typename T> auto operator!(filter_holder<T> const& f)
 }
 
 } } // boost::range_detail namespace
+////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 #endif
