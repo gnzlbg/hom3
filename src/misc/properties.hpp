@@ -2,6 +2,8 @@
 #define PROPERTY_INPUT_HPP_
 ////////////////////////////////////////////////////////////////////////////////
 /// Includes:
+#include <utility>
+#include <string>
 #include <boost/any.hpp>
 #include <unordered_map>
 #include <type_traits>

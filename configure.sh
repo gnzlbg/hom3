@@ -1,6 +1,6 @@
 echo "Configuring Hom3..."
 
-./cleanup.sh
+./tools/cleanup.sh
 
 echo "Running cmake..."
 while getopts "drhx" option

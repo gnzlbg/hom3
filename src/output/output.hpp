@@ -1,10 +1,11 @@
 #ifndef HOM3_OUTPUT_
 #define HOM3_OUTPUT_
 ////////////////////////////////////////////////////////////////////////////////
-#include<iostream>
-#include<fstream>
-#include <unordered_set>
-#include <boost/functional/hash.hpp>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <algorithm>
+#include <vector>
 #include "../globals.hpp"
 #include "../misc/helpers.hpp"
 ////////////////////////////////////////////////////////////////////////////////
@@ -375,14 +376,14 @@ template<SInd nd, class Format = io::format::ascii> struct Vtk {
   }
   template<class T> inline void write_formated_num(T&& t, io::format::binary) {
     auto tmp = floatSwap(interpret_num(t));
-    os.write(reinterpret_cast<const char*>(&tmp),sizeof(float));
+    os.write(reinterpret_cast<const char*>(&tmp),sizeof(tmp));
   }
   template<class T> inline void write_formated_num(T&& t, io::format::ascii) {
     os << interpret_num(t) << " ";
   }
   template<class T> inline void write_formated_id(T&& t, io::format::binary) {
     auto tmp = intSwap(interpret_id(t));
-    os.write(reinterpret_cast<const char*>(&tmp),sizeof(int));
+    os.write(reinterpret_cast<const char*>(&tmp),sizeof(tmp));
   }
   template<class T> inline void write_formated_id(T&& t, io::format::ascii) {
     os << interpret_id(t) << " ";

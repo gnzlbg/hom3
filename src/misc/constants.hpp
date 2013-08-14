@@ -61,11 +61,11 @@ namespace math {
 static constexpr Num eps = std::numeric_limits<Num>::epsilon();
 static constexpr Num pi = boost::math::constants::pi<Num>();
 
-template<class T, traits::EnableIf<traits::is_eigen_matrix<T>> = traits::dummy>
+template<class T, EnableIf<traits::is_eigen_matrix<T>> = traits::dummy>
 constexpr auto zero(T&&) -> decltype(T::Zero()) {
   return T::Zero();
 }
-template<class T, traits::DisableIf<traits::is_eigen_matrix<T>> = traits::dummy>
+template<class T, DisableIf<traits::is_eigen_matrix<T>> = traits::dummy>
 constexpr auto zero(T&&) -> decltype(T(0)) {
   return T(0);
 }

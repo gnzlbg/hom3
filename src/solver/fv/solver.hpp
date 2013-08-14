@@ -2,6 +2,10 @@
 #define HOM3_SOLVERS_FV_SOLVER_HPP_
 ////////////////////////////////////////////////////////////////////////////////
 /// Includes:
+#include <limits>
+#include <string>
+#include <vector>
+#include <algorithm>
 #include "../../grid/grid.hpp"
 #include "../../geometry/algorithms.hpp"
 #include "container.hpp"

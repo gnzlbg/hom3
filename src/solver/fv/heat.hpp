@@ -1,6 +1,7 @@
 #ifndef HOM3_SOLVERS_FV_HEAT_HPP_
 #define HOM3_SOLVERS_FV_HEAT_HPP_
 ////////////////////////////////////////////////////////////////////////////////
+#include <string>
 #include "solver.hpp"
 /// Options:
 #define ENABLE_DBG_ 0

@@ -2,6 +2,9 @@
 #define HOM3_MISC_INTEGER_HPP_
 ////////////////////////////////////////////////////////////////////////////////
 #include <type_traits>
+#include <limits>
+#include <string>
+#include <algorithm>
 #include <boost/iterator/counting_iterator.hpp>
 #include "constants.hpp"
 ////////////////////////////////////////////////////////////////////////////////
@@ -175,38 +178,38 @@ template<class T> struct is_integer
 };
 
 
-template<class T, traits::EnableIf<is_integer<T>> = traits::dummy>
+template<class T, EnableIf<is_integer<T>> = traits::dummy>
 constexpr inline auto&& primitive_cast(T&& t) {
   static_assert(is_integer<T>::value,"T must be an integer!");
   return t();
 }
 
-template<class T, traits::EnableIf<is_integer<T>> = traits::dummy>
+template<class T, EnableIf<is_integer<T>> = traits::dummy>
 constexpr inline auto primitive_cast(const T& t) {
   static_assert(is_integer<T>::value,"T must be an integer!");
   return t();
 }
 
-template<class T, traits::EnableIf<is_integer<T>> = traits::dummy>
+template<class T, EnableIf<is_integer<T>> = traits::dummy>
 constexpr inline auto& primitive_cast(T& t) {
   static_assert(is_integer<T>::value,"T must be an integer!");
   return t();
 }
 
 
-template<class T, traits::DisableIf<is_integer<T>> = traits::dummy>
+template<class T, DisableIf<is_integer<T>> = traits::dummy>
 constexpr inline auto&& primitive_cast(T&& t) {
   static_assert(!is_integer<T>::value, "T can't be an integer!");
   return std::forward<T>(t);
 }
 
-template<class T, traits::DisableIf<is_integer<T>> = traits::dummy>
+template<class T, DisableIf<is_integer<T>> = traits::dummy>
 constexpr inline auto primitive_cast(const T& t) {
   static_assert(!is_integer<T>::value, "T can't be an integer!");
   return t;
 }
 
-template<class T, traits::DisableIf<is_integer<T>> = traits::dummy>
+template<class T, DisableIf<is_integer<T>> = traits::dummy>
 constexpr inline auto& primitive_cast(T& t) {
   static_assert(!is_integer<T>::value, "T can't be an integer!");
   return t;

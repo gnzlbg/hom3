@@ -1,6 +1,7 @@
 #ifndef HOM3_SOLVERS_FV_CONTAINER_HPP_
 #define HOM3_SOLVERS_FV_CONTAINER_HPP_
 /// Includes:
+#include <algorithm>
 #include "../../containers/sequential.hpp"
 /// Options:
 #define ENABLE_DBG_ 0

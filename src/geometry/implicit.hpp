@@ -2,6 +2,8 @@
 #define HOM3_GEOMETRY_IMPLICIT_HPP_
 ////////////////////////////////////////////////////////////////////////////////
 #include <type_traits>
+#include <string>
+#include <algorithm>
 /// \file \brief Contains functions for describing implicit geometries
 ///
 /// \todo rename this file to implicit.hpp

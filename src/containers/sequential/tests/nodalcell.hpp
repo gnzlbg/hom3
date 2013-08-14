@@ -2,6 +2,7 @@
 #define HOM3_CONTAINER_SEQUENTIAL_TEST_NODALCELL_HPP_
 ////////////////////////////////////////////////////////////////////////////////
 // Includes:
+#include <algorithm>
 #include "../../sequential.hpp"
 /// Options:
 #define ENABLE_DBG_ 0

@@ -131,6 +131,14 @@ if(BUILD_DOCUMENTATION)
     ${PROJECT_BINARY_DIR}/Doxyfile)
 endif()
 
+# Clang-format - enables "make format"
+set(FORMAT_SCRIPT ${PROJECT_BINARY_DIR}/tools/style-check.sh)
+add_custom_target (style ${FORMAT_SCRIPT})
+
+# Clean-up - enables "make clean"
+set(CLEANUP_SCRIPT ${PROJECT_BINARY_DIR}/tools/cleanup.sh)
+add_custom_target (clean ${CLEANUP_SCRIPT})
+
 # Subdirectories:
 add_subdirectory (./src/misc/tests)
 add_subdirectory (./src/containers/sequential/tests)

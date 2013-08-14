@@ -4,6 +4,8 @@
 /// Includes:
 #include "../globals.hpp"
 #include <type_traits>
+#include <algorithm>
+#include <string>
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace hom3 { namespace container {

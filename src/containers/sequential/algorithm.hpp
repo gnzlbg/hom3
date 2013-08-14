@@ -25,8 +25,9 @@ namespace algorithm {
 /// \algorithm non-modifying
 /// \complexity O(n)
 ///@{
-template <class T, class Predicate> T find_if(T first, const T last, Predicate&& p) {
-  while(first != last && !p(first)) {
+template <class T, class Predicate>
+T find_if(T first, const T last, Predicate &&p) {
+  while (first != last && !p(first)) {
     ++first;
   }
   return first;

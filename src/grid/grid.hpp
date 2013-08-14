@@ -6,6 +6,10 @@
 /// \todo Replace warnings by compile-time/run-time assertions
 ////////////////////////////////////////////////////////////////////////////////
 /// Includes:
+#include <limits>
+#include <string>
+#include <algorithm>
+#include <vector>
 #include "../containers/hierarchical.hpp"
 #include "generation.hpp"
 #include "../geometry/boundary.hpp"

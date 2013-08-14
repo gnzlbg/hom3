@@ -1,6 +1,9 @@
 #ifndef HOM3_SOLVERS_FV_CNS_HPP_
 #define HOM3_SOLVERS_FV_CNS_HPP_
 ////////////////////////////////////////////////////////////////////////////////
+#include <limits>
+#include <string>
+#include <algorithm>
 #include "solver.hpp"
 /// Options:
 #define ENABLE_DBG_ 0
@@ -463,7 +466,7 @@ static inline NumA<Indices<nd>::nvars> cv(const NumA<Indices<nd>::nvars> pvars, 
 template<SInd nd, class NumFlux /* = flux::ausm*/>
 using Solver = solver::fv::Solver<nd,Physics,NumFlux>;
 
-template<SInd nd, traits::EnableIf<traits::equal<SInd,nd,2>> = traits::dummy>
+template<SInd nd, EnableIf<traits::equal<SInd,nd,2>> = traits::dummy>
 NumA<nd + 2> isentropic_vortex(const NumA<nd> x, const Num t) {
   using V = Indices<nd>;
   Num beta = 5;
@@ -489,7 +492,7 @@ NumA<nd + 2> isentropic_vortex(const NumA<nd> x, const Num t) {
   return cv<nd>(pvars,1.4);
 }
 
-template<SInd nd, traits::EnableIf<traits::equal<SInd,nd,3>> = traits::dummy>
+template<SInd nd, EnableIf<traits::equal<SInd,nd,3>> = traits::dummy>
 NumA<nd + 2> isentropic_vortex(const NumA<nd>, const Num) {
   NumA<nd+2> tmp = NumA<nd+2>::Zero();
   TERMINATE("unimplemented!");

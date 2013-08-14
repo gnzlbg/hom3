@@ -2,6 +2,8 @@
 #define GRID_HELPERS_HPP_
 ////////////////////////////////////////////////////////////////////////////////
 /// Includes:
+#include <string>
+#include <vector>
 #include "../globals.hpp"
 #include "grid.hpp"
 #include "../geometry/geometry.hpp"
@@ -61,15 +63,15 @@ constexpr Num n(pos) { return -1; }
 // SFNIAE which results in an ambiguity and the bug was filled in 2012 and noone
 // is assigned yet and this month clang announced full c++11 support and that
 // makes me angry and I just hate them.
-template<SInd nd, traits::EnableIf<traits::equal<SInd,nd,2>> = traits::dummy >
+template<SInd nd, EnableIf<traits::equal<SInd,nd,2>> = traits::dummy >
 NumA<nd> vector(x<0>,Num d,Num off){ return NumA<nd>{d,off}; }
-template<SInd nd, traits::EnableIf<traits::equal<SInd,nd,3>> = traits::dummy >
+template<SInd nd, EnableIf<traits::equal<SInd,nd,3>> = traits::dummy >
 NumA<nd> vector(x<0>,Num d,Num off){ return NumA<nd>{d,off,off}; }
-template<SInd nd, traits::EnableIf<traits::equal<SInd,nd,2>> = traits::dummy >
+template<SInd nd, EnableIf<traits::equal<SInd,nd,2>> = traits::dummy >
 NumA<nd> vector(x<1>,Num d,Num off){ return NumA<nd>{off,d}; }
-template<SInd nd, traits::EnableIf<traits::equal<SInd,nd,3>> = traits::dummy >
+template<SInd nd, EnableIf<traits::equal<SInd,nd,3>> = traits::dummy >
 NumA<nd> vector(x<1>,Num d,Num off){ return NumA<nd>{off,d,off}; }
-template<SInd nd, traits::EnableIf<traits::equal<SInd,nd,3>> = traits::dummy >
+template<SInd nd, EnableIf<traits::equal<SInd,nd,3>> = traits::dummy >
 NumA<nd> vector(x<2>,Num d,Num off) {return {off,off,d};}
 
 // build surface center point, and surface normal
@@ -101,11 +103,11 @@ boundary::Interface<nd> make_boundary
 }
 
 template<SInd nd> struct make_conditions {
-  template<class T, traits::EnableIf<traits::equal<SInd,nd,2,T>> = traits::dummy>
+  template<class T, EnableIf<traits::equal<SInd,nd,2,T>> = traits::dummy>
   std::tuple<T,T,T,T> operator()(T t) {
     return std::make_tuple(t,t,t,t);
   }
-  template<class T, traits::EnableIf<traits::equal<SInd,nd,3,T>> = traits::dummy>
+  template<class T, EnableIf<traits::equal<SInd,nd,3,T>> = traits::dummy>
   std::tuple<T,T,T,T,T,T> operator()(T t) {
     return std::make_tuple(t,t,t,t,t,t);
   }
@@ -139,12 +141,12 @@ template<SInd nd> struct make_boundaries {
     return boundaries;
   }
 
-  template<class T, traits::EnableIf<traits::equal<SInd,nd,2,T>> = traits::dummy>
+  template<class T, EnableIf<traits::equal<SInd,nd,2,T>> = traits::dummy>
   Boundaries operator()(SolverIdx solverId, RootCell<nd> rootCell, T&& bcs) {
     return two_dim(solverId,rootCell,std::forward<T>(bcs));
   }
 
-  template<class T, traits::EnableIf<traits::equal<SInd,nd,3,T>> = traits::dummy>
+  template<class T, EnableIf<traits::equal<SInd,nd,3,T>> = traits::dummy>
   Boundaries operator()(SolverIdx solverId, RootCell<nd> rootCell, T&& bcs) {
     auto p = boundary_position(rootCell);
     auto boundaries = two_dim(solverId, rootCell, std::forward<T>(bcs));
