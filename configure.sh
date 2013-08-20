@@ -1,3 +1,4 @@
+#!/bin/bash 
 echo "Configuring Hom3..."
 
 ./tools/cleanup.sh
@@ -13,7 +14,8 @@ do
             exit 1
             ;;
         d)
-            cmake -DCMAKE_CXX_COMPILER=/usr/local/bin/clang++ \
+            cmake -DCMAKE_C_COMPILER=/usr/local/bin/clang \
+		-DCMAKE_CXX_COMPILER=/usr/local/bin/clang++ \
                 -DLIBCXX_INCLUDE_DIR=$LIBCXX/include \
                 -DLIBCXX_LIBRARY=$LIBCXX/lib \
                 -DCMAKE_BUILD_TYPE=Debug
@@ -21,7 +23,8 @@ do
             exit 1
             ;;
         r)
-            cmake -DCMAKE_CXX_COMPILER=/usr/local/bin/clang++ \
+            cmake -DCMAKE_C_COMPILER=/usr/local/bin/clang \
+		-DCMAKE_CXX_COMPILER=/usr/local/bin/clang++ \
                 -DLIBCXX_INCLUDE_DIR=$LIBCXX/include \
                 -DLIBCXX_LIBRARY=$LIBCXX/lib \
                 -DCMAKE_BUILD_TYPE=Release
