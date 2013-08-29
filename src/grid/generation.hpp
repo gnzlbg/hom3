@@ -45,8 +45,8 @@ struct MinLevel : Interface<MinLevel> {
     std::cerr << "minDesLvl: " << minDesiredLvl << std::endl;
     while(!done) {
       done = true;
-      for(auto&& nIdx : g.nodes().nodes()) {
-        if(g.nodes().is_leaf(nIdx) && g.nodes().level(nIdx) != minDesiredLvl) {
+      for(auto&& nIdx : g.nodes()) {
+        if(g.is_leaf(nIdx) && g.level(nIdx) != minDesiredLvl) {
           g.refine_node(nIdx);
           done = false;
         }

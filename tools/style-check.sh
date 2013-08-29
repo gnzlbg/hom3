@@ -1,3 +1,4 @@
+#!/bin/bash 
 EXTENSIONS="h cpp hpp"
 
 echo "Checking coding-style..." # using cpplint

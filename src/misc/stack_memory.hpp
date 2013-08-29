@@ -69,7 +69,12 @@ char* arena<T,M>::allocate(std::size_t n) {
     ptr_ += n;
     return r;
   }
-  TERMINATE("not enough memory " + AT_);
+  TERMINATE(
+    std::string("not enough memory | ")
+    + "in use: " + std::to_string((ptr_ - buf_) / sizeof(T)) + " Ts | "
+    + "available: "  + std::to_string((buf_ + N - ptr_) / sizeof(T)) + " Ts | "
+    + "requested: " + std::to_string(n / sizeof(T)) + " Ts | "
+    + AT_);
   //return static_cast<char*>(::operator new(n));
 }
 
@@ -129,11 +134,21 @@ bool operator!=(const allocator<T, N>& x, const allocator<U, M>& y) noexcept
 template<template<class,class> class C, class T, std::size_t N>
 using Container = C<T,allocator<T,N>>;
 
+/// \brief Makes a container that uses an \p arena_ without
+/// reserving container memory.
 template<template<class,class> class C, class T, std::size_t N>
-Container<C,T,N> make(arena<T,N>& arena_) {
+Container<C,T,N> unsafe_make(arena<T,N>& arena_) {
   return Container<C,T,N>{allocator<T,N>{arena_}};
 }
 
+/// \brief Makes a container with reserved memory equal to the maximum amount of
+/// memory in the \p arena_
+template<template<class,class> class C, class T, std::size_t N>
+Container<C,T,N> make(arena<T,N>& arena_) {
+  auto container = Container<C,T,N>{allocator<T,N>{arena_}};
+  container.reserve(N);
+  return container;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 } // namespace stack

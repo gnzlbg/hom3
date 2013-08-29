@@ -6,79 +6,69 @@
 #include <string>
 #include <vector>
 #include <algorithm>
-#include "../../grid/grid.hpp"
-#include "../../geometry/algorithms.hpp"
+#include <thread>
+#include "grid/grid.hpp"
+#include "boundary_condition.hpp"
 #include "container.hpp"
-#include "../../quadrature/quadrature.hpp"
+#include "geometry/algorithms.hpp"
+#include "quadrature/quadrature.hpp"
+#include "tags.hpp"
 /// Options:
 #define ENABLE_DBG_ 0
-#include "../../misc/dbg.hpp"
+#include "misc/dbg.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 namespace hom3 {
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace solver { namespace fv {
 
-/// \name Tags for rhs and lhs variables
-///@{
-struct rhs_tag {};
-struct lhs_tag {};
-///@}
-
-/// note an option is a template template parameter of the form:
-/// - template <SInd,class> class
-/// numerical methods take a bunch of options:
-/// Method<option...> -> Method<template <SInd,class> class...>
-/// - The first option is special for now (it has to be the physics class),
-/// but it walks like a duck and quacks like a duck -> it's just an option
-///
-/// \todo concept checking (e.g. Boost.ConceptChecking) improves this mess
-// a whole lot => Try C++14::tr::concepts_lite as soon as possible
-// template<SInd nd, // #of spatial dimensions
-//          template <SInd,class> class Physics, // Physics class
-//          template <SInd,class> class... ConfigOptions // configuration options
-//          >
+/// \brief Checks that \p lIdx_ and \p rIdx_ are neighbors located at opposite
+/// positions of each other.
+#define assert_opposite_neighbors(lIdx_, rIdx_)                         \
+  using std::to_string;                                                 \
+  ASSERT(is_valid((lIdx_)), "invalid lIdx!");                           \
+  ASSERT(is_valid((rIdx_)), "invalid rIdx!");                           \
+  ASSERT(is_valid(which_neighbor((lIdx_), (rIdx_))),                    \
+         "lIdx: " + to_string((lIdx_)) + " and rIdx: "                  \
+         + to_string((rIdx_)) + " aren't neighbors!");                  \
+  ASSERT(is_valid(which_neighbor((rIdx_), (lIdx_))),                    \
+         "lIdx: " + to_string((lIdx_)) + " and rIdx: "                  \
+         + to_string((rIdx_)) + " aren't neighbors!");                  \
+  ASSERT(which_neighbor(lIdx_, rIdx_)                                   \
+         == grid().                                                     \
+         opposite_neighbor_position(which_neighbor(rIdx_, lIdx_)),      \
+         "lIdx: " + to_string((lIdx_)) + " and rIdx: "                  \
+         + to_string((rIdx_)) + " aren't opposite neighbors!")
 
 /// \brief Finite Volume solver
 ///
-/// \todo Move to the lId (localId) and gId (globalId) convention for ids
-/// \todo Remove all localIds localCellIds globalIds globalCellIds cId...
-/// \todo cells().globalIds rename to globalId (container variables should be
-/// singular if they have only one element per cell)
-///
+/// Implements a finite volume solver that is:
+/// - first-order accurate for hyperbolic terms, and
+/// - second-order accurate for parabollic terms.
 ///
 /// Requirements on Physics component
 /// - template<class T> auto physics_output(T& output_stream) const;
 /// - template<class T> NumA<nvars> compute_num_flux(Ind cell_i, Ind cell_i+1,
 ///                                                  SInd d, Num dx = opt,
 ///                                                  Num dt = opt) const;
-template<SInd nd_, // pretty ugly, fix in the future! (it's getting better)
-         template <SInd,class> class PhysicsTT,//, // -> class Physics
-         class NumFlux_//         template <SInd,class> class NumFluxTT
-         >
-struct Solver : PhysicsTT<nd_,Solver<nd_,PhysicsTT,NumFlux_/*,NumFluxTT*/>> { //,
-  //                NumFluxTT<nd_,Solver<nd_,PhysicsTT,NumFluxTT>>  {
+template<template <class> class PhysicsTT, class TimeIntegration>
+struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
 
   /// \name Type traits
   ///@{
-  static const SInd nd    = nd_;
-  using NumFlux           = NumFlux_;
-  using Physics           = PhysicsTT<nd,Solver<nd,PhysicsTT,NumFlux/*,NumFluxTT*/>>;
-  using physics_type      = typename Physics::type;
+  using Physics           = PhysicsTT<Solver<PhysicsTT,TimeIntegration>>;
+  using physics_type      = typename Physics::physics_type;
+  static const SInd nd    = Physics::nd;
   static const SInd nvars = Physics::nvars;
 
-
-  //  using NumFlux           = NumFluxTT<nd,Solver<nd,PhysicsTT/*,NumFluxTT*/>>;
-
   using CellContainer     = Container<nd,nvars>;
-  using BoundaryCondition = std::function<void(Ind)>;
   using InitialCondition  = std::function<NumA<nvars>(const NumA<nd>)>;
   using InitialDomain     = std::function<bool(const NumA<nd>)>;
 
-  using Grid              = grid::CartesianHSP<nd>;
+  using Boundary          = bc::Interface<nd>;
+  using Boundaries        = std::vector<Boundary>;
 
-  using rhs               = rhs_tag;
-  using lhs               = lhs_tag;
+  using Grid              = grid::CartesianHSP<nd>;
   ///@}
 
   /// \name Solver interface
@@ -90,13 +80,15 @@ struct Solver : PhysicsTT<nd_,Solver<nd_,PhysicsTT,NumFlux_/*,NumFluxTT*/>> { //
   /// - grid
   /// - maxNoCells
   /// - any extra properties required by the Physics class
-  Solver(SolverIdx solverId, io::Properties input) :
-      Physics(input),
-      solverIdx_(SolverIdx{solverId}),
-      properties_(input),
-      grid_(*io::read<Grid*>(input,"grid")),
-      cells_(io::read<Ind>(input,"maxNoCells"))
-      {}
+  Solver(SolverIdx solverId, io::Properties input)
+    : Physics(input)
+    , solverIdx_(SolverIdx{solverId})
+    , properties_(input)
+    , grid_(*(io::read<Grid*>(input, "grid")))
+    , cells_(io::read<Ind>(input, "maxNoCells"))
+    , firstGC_(invalid<CellIdx>())
+    {}
+  ~Solver() {}
 
   /// \brief Returns the solver id
   /// \complexity O(1)
@@ -104,19 +96,19 @@ struct Solver : PhysicsTT<nd_,Solver<nd_,PhysicsTT,NumFlux_/*,NumFluxTT*/>> { //
   /// \brief Returns the current solution step
   /// \complexity O(1)
   inline Ind step() const { return step_; }
-  /// \brief Returns the current solution time
+  /// \brief Returns the current dimensionless solution time
   /// \complexity O(1)
   inline Num time() const { return time_; }
   /// \brief Returns the min required time-step
   /// \complexity O(N)
   inline Num min_dt() const { return compute_dt(); }
-  /// \brief Returns the current solution time-step
+  /// \brief Returns the current dimensionless solution time-step
   /// \complexity O(1)
   inline Num dt() const { return dt_; }
-  /// \brief Specifies the dt to be used
+  /// \brief Specifies the dimensionless solution time-step to be used
   /// \complexity O(1)
   inline void dt(const Num dt__) { return force_dt(dt__); }
-  /// \brief Returns the maximum solution time allowed
+  /// \brief Returns the maximum dimensionless solution time allowed
   /// \warning executing solve for time >= final_time is undefined
   /// \complexity O(1)
   inline Num final_time() const { return tEnd_; }
@@ -127,7 +119,8 @@ struct Solver : PhysicsTT<nd_,Solver<nd_,PhysicsTT,NumFlux_/*,NumFluxTT*/>> { //
   }
 
   /// \brief Returns the solver type-name (string)
-  /// \warning for I\O only! For boolean operations please use solver_type() (unimplemented?)
+  /// \warning for I\O only!
+  /// For boolean operations please use solver_type() (unimplemented?)
   /// \complexity O(1)
   static std::string solver_type_name() { return "Fv"; }
 
@@ -135,11 +128,12 @@ struct Solver : PhysicsTT<nd_,Solver<nd_,PhysicsTT,NumFlux_/*,NumFluxTT*/>> { //
   void initialize() {
     init_solver_variables();
     create_local_cells();
-    set_initial_condition();
+    impose_initial_condition();
+    set_dt();
   }
   /// \brief Advances the solution by a single step
   void solve() {
-    apply_bcs();
+    apply_bcs(lhs);
     set_dt();
     evolve();
     advance();
@@ -147,6 +141,29 @@ struct Solver : PhysicsTT<nd_,Solver<nd_,PhysicsTT,NumFlux_/*,NumFluxTT*/>> { //
   ///@}
 
   // Following members are public but not part of the solver interface
+
+  /// \name Input
+  ///@{
+  /// \brief Sets an initial condition
+  void set_initial_condition(InitialCondition initialCondition) {
+    io::insert<InitialCondition>
+      (properties_, "initialCondition", initialCondition);
+  }
+
+  /// \brief Appends a boundary condition
+  void append_bc(Boundary bc) {
+    boundaryConditions_.push_back(bc);
+    grid().append_boundary(bc);
+  }
+
+  /// \brief Appends boundary conditions
+  void append_bcs(Boundaries bcs) {
+    for(auto&& bc : bcs) {
+      append_bc(bc);
+    }
+  }
+
+  ///@}
 
   /// \name Grid/Cell data accessors/ranges
   ///@{
@@ -160,21 +177,47 @@ struct Solver : PhysicsTT<nd_,Solver<nd_,PhysicsTT,NumFlux_/*,NumFluxTT*/>> { //
   inline const CellContainer& cells() const { return cells_; }
 
   /// \brief Conservative variables
-  template<class T> inline NumA<nvars> Q(const CellIdx lId) const {
-    return vars_(T(),lId);
-  }
-  template<class T> inline Eigen::Block<NumM<nvars>,1,nvars> Q(const CellIdx lId) {
-    return vars_(T(),lId);
-  }
-  template<class T> inline Num  Q(const CellIdx lId, const SInd varId) const {
-    return vars_(T(), lId, varId);
-  }
-  template<class T> inline Num& Q(const CellIdx lId, const SInd varId)       {
-    return vars_(T(), lId, varId);
-  }
+  template<class T>
+  inline NumA<nvars> Q(const CellIdx cIdx) const noexcept
+  { return Q(T(),cIdx); }
+  template<class T>
+  inline Eigen::Block<NumM<nvars>, 1, nvars> Q(const CellIdx cIdx) noexcept
+  { return Q(T(),cIdx); }
+  template<class T>
+  inline Num  Q(const CellIdx cIdx, const SInd varId) const noexcept
+  { return Q(T(), cIdx, varId); }
+  template<class T>
+  inline Num& Q(const CellIdx cIdx, const SInd varId) noexcept
+  { return Q(T(), cIdx, varId); }
 
+  /// \name Tag-dispatching for conservative variables (rhs/lhs)
+  ///@{
+  inline  Num  Q(rhs_tag, const CellIdx cIdx, const SInd varId) const {
+    return cells().rhs(cIdx,varId);
+  }
+  inline  Num& Q(rhs_tag, const CellIdx cIdx, const SInd varId)       {
+    return cells().rhs(cIdx,varId);
+  }
+  inline NumA<nvars> Q(rhs_tag, const CellIdx cIdx) const {
+    return cells().rhs.row(cIdx);
+  }
+  inline Eigen::Block<NumM<nvars>,1,nvars> Q(rhs_tag, const CellIdx cIdx) {
+    return cells().rhs.row(cIdx);
+  }
+  inline Num  Q(lhs_tag, const CellIdx cIdx, const SInd varId) const {
+    return cells().lhs(cIdx,varId);
+  }
+  inline Num& Q(lhs_tag, const CellIdx cIdx, const SInd varId)       {
+    return cells().lhs(cIdx,varId);
+  }
+  inline NumA<nvars> Q(lhs_tag, const CellIdx cIdx) const {
+    return cells().lhs.row(cIdx);
+  }
+  inline Eigen::Block<NumM<nvars>,1,nvars> Q(lhs_tag, const CellIdx cIdx) {
+    return cells().lhs.row(cIdx);
+  }
+  ///@}
 private:
-
   /// \todo C&P code: REFACTOR: see grid/container.hpp (move to grid/range.hpp?)
   /// \brief Returns [RangeFilter] of existing node ids
 
@@ -194,65 +237,80 @@ private:
     return {[&](const CellIdx cIdx){ return is_valid(cells().bc_idx(cIdx)); }};
   }
 
-  inline RangeFilter<CellIdx> boundary(const SInd bcId) const {
-    return {[&](const CellIdx cIdx){ return cells().bc_idx(cIdx) == bcId; }};
+  inline RangeFilter<CellIdx> boundary(const SInd bcIdx) const {
+    return {[&](const CellIdx cIdx){ return cells().bc_idx(cIdx) == bcIdx; }};
   }
 
   inline RangeTransformer<CellIdx,NodeIdx> cell_to_node() const {
     return {[&](const CellIdx cIdx){ return node_idx(cIdx); }};
   }
 
+  /// \todo to remove when auto works again with lambdas
+  /// (see all_neighbors below: the problem is with RETURNS you can't use
+  /// a lambda directly
+  inline auto pos_to_neighbor(const CellIdx cIdx) const
+  -> RangeTransformer<SInd,CellIdx> {
+    return { [&, cIdx](const SInd nghbrPos) {
+        return cells().neighbors(cIdx, nghbrPos);
+      } };
+  }
+
   /// \brief Range of all local ids (previously all_cells)
   /// \warning This includes local ids without a global id
-  inline auto cell_ids() const -> Range<CellIdx> {
-    return cells().all_cells();
-  }
+  inline auto cell_ids() const RETURNS(cells().all_cells());
 
-  inline auto ghost_cells() const -> FRange<CellIdx> {
-      return cell_ids() | ghosts();
-  }
+  inline auto ghost_cells() const RETURNS(cell_ids() | ghosts());
+  inline auto boundary_cells() const RETURNS(cell_ids() | boundary());
+  inline auto boundary_cells(const SInd bcIdx) const
+  RETURNS(cell_ids() | boundary(bcIdx));
 
-  inline auto boundary_cells() const -> FRange<CellIdx> {
-      return cell_ids() | boundary();
-  }
+  inline auto all_neighbors(const CellIdx cIdx) const
+  RETURNS(grid().neighbor_positions() | pos_to_neighbor(cIdx));
 
-  inline auto boundary_cells(const SInd bcId) const -> FRange<CellIdx> {
-      return cell_ids() | boundary(bcId);
-  }
+  inline auto neighbors(const CellIdx cIdx) const
+  RETURNS(all_neighbors(cIdx) | valid());
 
 public:
-
   /// \brief Range of all internal cells
   /// i.e. all cells which are not ghost cells
-  inline auto internal_cells() const -> FRange<CellIdx> {
-      return cell_ids() | not_ghosts();
+  /// \warning internal_cells assumes that the Ghost Cells have
+  /// been sorted!
+  inline auto internal_cells() const -> Range<CellIdx> {
+    return boost::counting_range(CellIdx{0}, is_valid(firstGC_)?
+                                 firstGC_ : cells().last());
   }
 
   /// \brief Range of global ids
-  inline auto node_ids() const -> decltype(cell_ids() | cell_to_node() | grid().nodes().valid()) {
-    return cell_ids() | cell_to_node() | grid().nodes().valid();
-  }
+  inline auto node_ids() const
+  RETURNS(cell_ids() | cell_to_node() | grid().valid());
 
-  /// \brief Returns the id of the boundary cell associated with the ghost cell
-  /// \p ghostCellId as well as its position w.r.t. the ghost cell
-  ///
-  /// Note: use std/boost::get<pos>(returned_object) to extract the information
-  /// \returns at pos 0: boundary cell id (Ind)
-  /// \returns at pos 1: boundary cell position (SInd)
-  ///
-  /// \warning You shall not rely on whatever specific type this function might
-  /// return at a given moment in time!
+  /// \brief Boudnary information: cell indices and positions wrt each other.
+  struct BndryInfo {
+    const CellIdx bndryIdx; ///< Boundary cell index.
+    const SInd    bndryPos; ///< Boundary cell position wrt the ghost cell.
+    const CellIdx ghostIdx; ///< Ghost cell index.
+    const SInd    ghostPos; ///< Ghost cell position wrt the boundary cell.
+  };
+
+  /// \brief Returns the ids and positions of the cells involved in the boundary
+  /// associated with the ghost cell \p ghostCellIdx
   ///
   /// Note: ghost cells can only have one boundary cell associated with them.
-  inline auto boundary_cell_id(const CellIdx ghostCellId) const -> std::tuple<CellIdx,SInd> {
-    for(const auto nghbrPos : grid().nodes().nghbr_pos()) {
-      if(is_valid(cells().neighbors(ghostCellId,nghbrPos))) {
-        return std::make_tuple(cells().neighbors(ghostCellId,nghbrPos),nghbrPos);
+  inline auto boundary_info(const CellIdx ghostCellIdx) const noexcept
+  -> BndryInfo {
+    ASSERT(is_ghost_cell(ghostCellIdx), "Expecting a ghost cell!");
+    SInd bndryPos = invalid<SInd>();
+    CellIdx bndryIdx = invalid<CellIdx>();
+    for(const auto nghbrPos : grid().neighbor_positions()) {
+      if(is_valid(cells().neighbors(ghostCellIdx, nghbrPos))) {
+        bndryPos = nghbrPos;
+        bndryIdx = cells().neighbors(ghostCellIdx, nghbrPos);
+        break;
       }
     }
-    /// this actually doesnt check for multiple nghbrs which can happen...
-    ASSERT(false,"ghostcell are required to have only one neighbor!");
-    return std::make_tuple(invalid<CellIdx>(),invalid<SInd>());
+    const SInd ghostPos = grid().opposite_neighbor_position(bndryPos);
+    ASSERT(is_valid(bndryIdx), "boundary cell not found!");
+    return {bndryIdx, bndryPos, ghostCellIdx, ghostPos};
   }
 
   ///@}
@@ -261,52 +319,65 @@ public:
   /// \name Output
   ///@{
 
-  /// \brief Writes solver domain to VTK
-  friend void write_domain(Solver* solver) {
-    using std::to_string;
-    std::string fName = solver->solver_type_name() + "_"
-                        + solver->physics_name() + "_"
-                        + "Id" + to_string(solver->solver_idx())
-                        + "_" + to_string(solver->step());
-    solver->apply_bcs();
-    write_domain(fName,solver);
+  /// \brief Returns the domain name
+  inline std::string domain_name() const noexcept {
+    return solver_type_name() + "_"
+        + this->physics_name() + "_"
+        + "Id" + to_string(solver_idx());
   }
 
   /// \brief Writes solver domain to VTK
-  friend void write_domain(const std::string fName, const Solver* solver) {
+  friend void write_domain(Solver& solver) {
+    using std::to_string;
+    std::string fName = solver.domain_name() + "_" + to_string(solver.step());
+    solver.apply_bcs(lhs);
+    write_domain(fName, solver);
+  }
 
-    io::Vtk<nd,io::format::binary> out(
-        io::StreamableDomain<nd>( // the following is not necessary but really cool:
-            [&]() -> AnyRange<Ind> {
-              return {algorithm::join(solver->cell_ids() | solver->not_ghosts(),
-                                      solver->cell_ids() | solver->ghosts())
+  /// \brief Writes solver domain to VTK
+  friend void write_domain(const std::string fName, const Solver& solver) {
+    std::cerr << "Writing domain: " << solver.domain_name() << " "
+              << "| Step: " << solver.step() << " "
+              << "| Time: " << solver.time() << "\n";
+    io::Vtk<nd,io::format::binary> out
+      (io::StreamableDomain<nd>
+        ( // the following is not necessary but really cool:
+          [&]() -> AnyRange<Ind> {
+            return {algorithm::join(solver.cell_ids() | solver.not_ghosts(),
+                                    solver.cell_ids() | solver.ghosts())
                     | boost::adaptors::transformed([](CellIdx i){ return i();})
-                    }; },
-            [&](const Ind lId){ return solver->cell_vertices(CellIdx{lId});}),
+          }; },
+          [&](const Ind cIdx){ return solver.cell_vertices(CellIdx{cIdx});}),
         fName, io::precision::standard());
 
-    out << io::stream("locallCellIds",1,[](const Ind cId, const SInd){ return cId; });
-    out << io::stream("local_nghbrs",solver->grid().nodes().no_samelvl_nghbr_pos(),
-                      [&](const Ind lId, const SInd pos) -> Ind {
-                        return solver->cells().neighbors(CellIdx{lId},pos)();
-                      });
-    out << io::stream("ghost_cell",1,[&](const Ind lId, const SInd) -> Ind {
-        return solver->is_ghost_cell(CellIdx{lId}) ? 1 : invalid<Ind>();
-      });
-    out << io::stream("bcId",1,[&](const Ind lId, const SInd) -> Ind {
-        return solver->cells().bc_idx(CellIdx{lId});
-      });
+    out << io::stream("locallCellIds",1,[](const Ind cId, const SInd) {
+        return cId;
+    });
+    out << io::stream("gridNodeIds",1,[&](const Ind cId, const SInd) {
+        return solver.node_idx(CellIdx{cId})();
+    });
+    out << io::stream("local_nghbrs",
+                      solver.grid().no_samelvl_neighbor_positions(),
+                      [&](const Ind cIdx, const SInd pos) -> Ind {
+                        return solver.cells().neighbors(CellIdx{cIdx},pos)();
+    });
+    out << io::stream("ghost_cell",1,[&](const Ind cIdx, const SInd) -> Ind {
+        return solver.is_ghost_cell(CellIdx{cIdx}) ? 1 : invalid<Ind>();
+    });
+    out << io::stream("bcIdx",1,[&](const Ind cIdx, const SInd) -> Ind {
+        return solver.cells().bc_idx(CellIdx{cIdx});
+    });
 
-    out << io::stream(Solver::V::cv_names,nvars,[&](const Ind cId, const SInd d) -> Num {
-        return solver->cells().lhs(CellIdx{cId}, d);
-      });
+    out << io::stream(Solver::V::cv_names,nvars,
+                      [&](const Ind cIdx, const SInd d) -> Num {
+                        return solver.cells().lhs(CellIdx{cIdx}, d);
+    });
 
-    solver->physics()->template physics_output(out);
+    solver.physics()->template physics_output(out);
   }
   ///@}
 
 private:
-
   /// \name General data
   ///@{
 
@@ -318,16 +389,20 @@ private:
   Grid& grid_;
   /// Cell container
   CellContainer cells_;
+  /// Boundary conditions
+  Boundaries boundaryConditions_;
+
+  Boundaries& boundary_conditions() noexcept { return boundaryConditions_; }
+  const Boundaries& boundary_conditions() const noexcept
+  { return boundaryConditions_; }
+  const Boundary& boundary_condition(const SInd bcIdx) const noexcept {
+    return boundaryConditions_[bcIdx];
+  }
 
   ///@}
 
   /// \name Numerical data
   ///@{
-
-  /// \brief Returns the cfl number
-  Num cfl() const { return cfl_; }
-  /// CFL number
-  Num cfl_;
   /// Time-step
   Num dt_;
   /// Solution time
@@ -350,40 +425,13 @@ private:
   CellIdx lastGC_;
 
   // Avoids insanity while working with Physics CRTP
-  friend PhysicsTT<nd,Solver<nd,PhysicsTT,NumFlux/*,NumFluxTT*/>>;
+  friend Physics;
 
   /// \brief Access to Physics class
-  // Note: think of it as the inverse of a CRTP
-  inline       Physics* physics()       { return static_cast<Physics*>(this); }
-  inline const Physics* physics() const { return static_cast<const Physics*>(this); }
-
-  /// \name Tag-dispatching for conservative variables (rhs/lhs)
-  ///@{
-  inline  Num  vars_(rhs, const CellIdx lId, const SInd varId) const {
-    return cells().rhs(lId,varId);
-  }
-  inline  Num& vars_(rhs, const CellIdx lId, const SInd varId)       {
-    return cells().rhs(lId,varId);
-  }
-  inline NumA<nvars> vars_(rhs, const CellIdx lId) const {
-    return cells().rhs.row(lId);
-  }
-  inline Eigen::Block<NumM<nvars>,1,nvars> vars_(rhs,const CellIdx lId) {
-    return cells().rhs.row(lId);
-  }
-  inline Num  vars_(lhs, const CellIdx lId, const SInd varId) const {
-    return cells().lhs(lId,varId);
-  }
-  inline Num& vars_(lhs, const CellIdx lId, const SInd varId)       {
-    return cells().lhs(lId,varId);
-  }
-  inline NumA<nvars> vars_(lhs, const CellIdx lId) const {
-    return cells().lhs.row(lId);
-  }
-  inline Eigen::Block<NumM<nvars>,1,nvars> vars_(lhs, const CellIdx lId) {
-    return cells().lhs.row(lId);
-  }
-  ///@}
+  inline       Physics* physics()       noexcept
+  { return static_cast<Physics*>(this); }
+  inline const Physics* physics() const noexcept
+  { return static_cast<const Physics*>(this); }
 
   /// \name Numerical functions
   ///@{
@@ -395,56 +443,57 @@ private:
     NumA<nvars> result = NumA<nvars>::Zero();
     const auto dx = cells().length(cIdx);
     for(SInd d = 0; d < nd; ++d) {
-      const SInd nghbrM = d*2;
+      const SInd nghbrM = d * 2;
       const SInd nghbrP = nghbrM + 1;
-      const auto nghbrMId = cells().neighbors(cIdx,nghbrM);
-      const auto nghbrPId = cells().neighbors(cIdx,nghbrP);
-      const auto flux_m = physics()->template compute_num_flux<T,NumFlux>(nghbrMId,cIdx,d,dx,dt());
-      const auto flux_p = physics()->template compute_num_flux<T,NumFlux>(cIdx,nghbrPId,d,dx,dt());
-      result += dt() / dx * (flux_m - flux_p);
+      const auto nghbrMId = cells().neighbors(cIdx, nghbrM);
+      const auto nghbrPId = cells().neighbors(cIdx, nghbrP);
+      const auto flux_m = physics()->template
+                          compute_num_flux<T>(nghbrMId, cIdx, d, dx, dt());
+      const auto flux_p = physics()->template
+                          compute_num_flux<T>(cIdx, nghbrPId, d, dx, dt());
+      result += (flux_m - flux_p);
       DBGV((cIdx)(d)(dx)(dt())(nghbrMId)(nghbrPId)(flux_m)(flux_p)(result)
            (Q<T>(nghbrMId))(Q<T>(cIdx))(Q<T>(nghbrPId)));
     }
-    return result;
+    // return dt() / V * A * result.array();
+    return dt() / dx * result.array();
   }
 
-  /// \brief Performs an Euler-Forward step for all cells in range \p cells
+  template<class T>
+  inline NumA<nvars> source_term(T, const CellIdx cIdx) const noexcept {
+    return physics()->template compute_source_term(T(), cIdx);
+  }
+
+  /// \brief Performs an 1st-order Euler-Forward step for all cells in range \p
+  /// cells
   template<class CellIdxRange>
-  inline void ef(CellIdxRange&& cells) {
-    apply_bcs();
+  inline void evolve(CellIdxRange&& cells, time_integration::euler_forward) {
     for(auto&& cIdx : cells) {
-      Q<rhs>(cIdx) = Q<lhs>(cIdx) + num_flux<lhs>(cIdx).transpose();
+      Q(rhs, cIdx) = Q(lhs, cIdx) + num_flux<lhs_tag>(cIdx).transpose()
+                     + source_term(lhs, cIdx).transpose();
     }
     for(auto&& cIdx : cells) {
-      Q<lhs>(cIdx) = Q<rhs>(cIdx);
+      Q(lhs, cIdx) = Q(rhs, cIdx);
     }
   }
 
-  /// \brief Performs a RK2 step for all cells in range \p cells
-  ///
-  /// \todo apply_bcs should be parametrized to with rhs/lhs to decide when what
-  /// should be applied
+  /// \brief Performs a 2nd-order RK2 step for all cells in range \p cells
   template<class CellIdxRange>
-  inline void rk2(CellIdxRange&& cells) {
-    apply_bcs();
+  inline void evolve(CellIdxRange&& cells, time_integration::runge_kutta_2) {
     for(auto&& cIdx : cells) {
-      Q<rhs>(cIdx) = Q<lhs>(cIdx) + num_flux<lhs>(cIdx).transpose();
+      Q(rhs, cIdx) = Q(lhs, cIdx) + num_flux<lhs_tag>(cIdx).transpose();
     }
 
-    apply_bcs();
+    apply_bcs(rhs);
     for(auto&& cIdx : cells) {
-      Q<lhs>(cIdx) = 0.5 * (Q<lhs>(cIdx) + Q<rhs>(cIdx)
-                           + num_flux<rhs>(cIdx).transpose());
+      Q(lhs, cIdx) = 0.5 * (Q(lhs, cIdx) + Q<rhs_tag>(cIdx)
+                           + num_flux<rhs_tag>(cIdx).transpose());
     }
   }
 
-  /// \brief Integrates cells in time
-  // uses a hard-coded time integration method
-  // \todo parametrize on time-integration method (using TP?)
+  /// \brief Integrates the solution in time
   inline void evolve() {
-    ef(internal_cells());
-    //rk2(internal_cells());
-    apply_bcs();
+    evolve(internal_cells(), TimeIntegration());
   }
 
   /// \brief Advances the solution to the next time-step
@@ -460,16 +509,26 @@ private:
   inline Num compute_dt() const {
     auto dt = std::numeric_limits<Num>::max();
     for(auto&& cIdx : internal_cells())  {
-      dt = std::min(dt,physics()->template compute_dt<lhs>(cIdx));
+      dt = std::min(dt,physics()->template compute_dt<lhs_tag>(cIdx));
     }
     return dt;
   }
 
-  inline void force_dt(const Num dt__) {
+  /// \brief Use the time-step \p dtForce for the current solution step
+  ///
+  /// Note: the current solution step is the result of step()
+  inline void force_dt(const Num dtForced) {
     forced_dt_step_ = step();
-    forced_dt_ = dt__;
+    forced_dt_ = dtForced;
   }
 
+  /// \brief Returns a solution step in which instead of computing the
+  /// time-step (using compute_dt), its value will be forced.
+  ///
+  /// Note: The time-step will be forced to whatever value is passed
+  /// via force_dt before calling solve.
+  /// \warning Forcing the time-step without setting it to a value
+  /// using force_dt results in undefined behavior!
   inline Ind forced_dt_step() const { return forced_dt_step_; }
 
   /// \brief Sets the solver time-step
@@ -490,38 +549,130 @@ private:
   }
 
   /// \brief Applies all boundary conditions
-  // better: sort ghost cells by bcId
+  // better: sort ghost cells by bcIdx
   // then get a [fromGhostCell,toGhostCell) range
-  // apply bcId kernel to range
+  // apply bcIdx kernel to range
   //
   // unsolved: kernel needs to access the boudnary cell
   // this access is random access
   // it would be nice to eliminate this random access
-  void apply_bcs() {
+  template<class _>
+  void apply_bcs(_) {
+    namespace csa = container::sequential::algorithm;
     auto firstBndryCell
-        = container::sequential::algorithm::find_if
-        (cells(),[&](CellIdx i){return cells().bc_idx(i) != invalid<SInd>(); });
+      = csa::find_if(cells(), [&](const CellIdx i) {
+          return cells().bc_idx(i) != invalid<SInd>();
+    });
     // this should check the #of bndry conditions for the solver,
     // if it is indeed 0 nothing should happen, but if its not, ASSERT is fine
     ASSERT(firstBndryCell != cells().last(), "no boundary cells found!");
-    SInd bcId = cells().bc_idx(firstBndryCell); // first bcId
-    auto eql_bcId = [&](CellIdx i) { return cells().bc_idx(i) == bcId; };
-    auto firstGhostCell = container::sequential::algorithm::find_if(cells(),eql_bcId);
+    SInd bcIdx = cells().bc_idx(firstBndryCell); // first bcIdx
+    auto eql_bcIdx = [&](const CellIdx i) {
+      return cells().bc_idx(i) == bcIdx;
+    };
+    auto firstGhostCell = csa::find_if(cells(), eql_bcIdx);
     auto lastGhostCell = firstGhostCell;
-    //DBGV((bcId)(firstGhostCell));
-    for(auto& boundary : grid().boundaries(solver_idx())) {
-      for(auto&& condition : boundary.conditions()) {
-        ++bcId;
-        firstGhostCell = lastGhostCell;
-        lastGhostCell = container::sequential::algorithm::find_if(firstGhostCell,cells().last(),eql_bcId);
-        //DBGV((physics()->physics_name())(bcId)(firstGhostCell)(lastGhostCell));
-        auto GCRange = Range<CellIdx>{firstGhostCell,lastGhostCell};
-        (*condition)(GCRange);
+    //DBGV((bcIdx)(firstGhostCell));
+    for(auto& boundaryCondition : boundary_conditions()) {
+      ++bcIdx;
+      firstGhostCell = lastGhostCell;
+      lastGhostCell = csa::find_if(firstGhostCell, cells().last(), eql_bcIdx);
+      //DBGV((physics()->physics_name())(bcIdx)(firstGhostCell)(lastGhostCell));
+      auto GCRange = Range<CellIdx>{firstGhostCell,lastGhostCell};
+      boundaryCondition.apply(_(), GCRange);
+    }
+  }
+public:
+  /// \brief Distance between cell centers of \p a and \p b
+  auto cell_dx(CellIdx a, CellIdx b)
+  RETURNS(geometry::algorithm::distance(cells().x_center.row(a).transpose(),
+                                        cells().x_center.row(b).transpose()));
+
+  /// \brief Computes the slope of the variable \p v at the center of cell \p
+  /// cIdx in direction \p dir
+  template<class _>
+  auto slope(const CellIdx cIdx, const SInd v, const SInd dir) const noexcept {
+    using namespace container::hierarchical; // todo remove!
+    const auto nghbrNegIdx
+      = cells().neighbors(cIdx, neighbor_position(dir, neg_dir));
+    const auto nghbrPosIdx
+      = cells().neighbors(cIdx, neighbor_position(dir, pos_dir));
+
+    if(is_valid(nghbrNegIdx) && is_valid(nghbrPosIdx)) {
+      // both neighbors exists
+      return (Q(_(), nghbrPosIdx, v) - Q(_(), nghbrNegIdx, v))
+          / (2. * cells().length(cIdx));
+    } else if (is_valid(nghbrNegIdx)) {  // only neg neighbor exists
+      return slope<_>(nghbrNegIdx, v, dir);
+    } else if (is_valid(nghbrPosIdx)) {  // only pos neighbor exists
+      return slope<_>(nghbrPosIdx, v, dir);
+    } else {
+      // no neighbors exist in direction dir == cIdx is a ghostCell
+      ASSERT(no_nghbrs(cIdx) == 1, "Ghost cells should have one neighbor!");
+      ASSERT(std::begin(neighbors(cIdx)) != std::end(neighbors(cIdx)),
+             "ghost cell with no neighbors?");
+      ASSERT(is_ghost_cell(cIdx), "cIdx is not a ghostCell ?!?!");
+
+      const CellIdx bndryIdx = boundary_info(cIdx).bndryIdx;
+      const auto bcIdx = cells().bc_idx(cIdx);
+      return boundary_condition(bcIdx).slope(_(), bndryIdx, v, dir);
+    }
+  }
+
+  SInd which_neighbor(const CellIdx cIdx, const CellIdx nghbrIdx) const noexcept {
+    using std::to_string;
+    for (auto pos : grid().neighbor_positions()) {
+      if (cells().neighbors(cIdx, pos) == nghbrIdx) {
+        return pos;
       }
+    }
+    return invalid<SInd>();
+  }
+
+  /// \brief Conservative variable \p v at surface between cells \p lIdx and \p
+  /// rIdx
+  template<class _> auto Q_srfc
+  (_, const CellIdx lIdx, const CellIdx rIdx, const SInd v) const noexcept {
+    assert_opposite_neighbors(lIdx, rIdx);
+    return at_surface(lIdx, rIdx, [&, v](const CellIdx cIdx){
+        return Q(_(), cIdx, v); });
+  }
+
+  /// \brief Evaluates \p f at the surface between cells \p lIdx and \p rIdx
+  template<class F> auto at_surface
+  (const CellIdx lIdx, const CellIdx rIdx, F&& f) const noexcept {
+    assert_opposite_neighbors(lIdx, rIdx);
+    return 0.5 * (f(lIdx) + f(rIdx));
+  }
+
+  /// \brief Computes the slope of the variable \p var at the surface between
+  /// cells \p lIdx and \p rIdx in direction \p slopeDir
+  template<class _>
+  auto surface_slope(_, const CellIdx lIdx, const CellIdx rIdx,
+                     const SInd v, const SInd slopeDir) const noexcept {
+    const auto rIdxPosWrtLIdx = which_neighbor(lIdx, rIdx);
+    ASSERT(is_valid(rIdxPosWrtLIdx), "lIdx = " + to_string(lIdx)
+           + " and rIdx = " + to_string(rIdx) + " are not neighbors!");
+
+    const auto nghbrDir = grid().neighbor_direction(rIdxPosWrtLIdx);
+    ASSERT(cells().x_center(rIdx, nghbrDir) > cells().x_center(lIdx, nghbrDir),
+           "cells are in the wrong order!");
+
+    if(nghbrDir == slopeDir) {
+      // if they are neighbors in the same direction as slopeDir then use a
+      // central difference:
+      auto dx = cells().length(rIdx);
+      ASSERT(math::approx(dx, cells().length(lIdx)), "different cell lengths!");
+      return (Q(_(), rIdx, v) - Q(_(), lIdx, v)) / dx;
+    } else {
+      // otherwise: average the slopes
+      return 0.5 * (slope<_>(rIdx, v, slopeDir) + slope<_>(lIdx, v, slopeDir));
     }
   }
 
   ///@}
+
+  private:
 
   /// \name Debugging utilities
   ///@{
@@ -540,12 +691,13 @@ private:
   void check_nghbrs(const CellIdx cIdx) const {
     const auto nodeIdx = node_idx(cIdx);
     ASSERT(is_valid(nodeIdx), "you can only check cells that have valid global ids!");
-    const auto nodeNghbrIds = grid().nodes().template all_samelvl_nghbrs<strict>(nodeIdx);
+    const auto nodeNghbrIds = grid().template all_samelvl_neighbors<strict>(nodeIdx);
     SInd nghbrPos = 0;
     for(auto nodeNghbrIdx : nodeNghbrIds) {
-      if(is_valid(nodeNghbrIdx) // is there a global neighbor there belonging to the same domain?
-         && grid().nodes().has_solver(nodeNghbrIdx,solver_idx())) {
-        const auto cellNghbrIdx = grid().nodes().cell_id(nodeNghbrIdx,solver_idx());
+      // is there a global neighbor there belonging to the same domain?
+      if(is_valid(nodeNghbrIdx)
+         && grid().has_solver(nodeNghbrIdx,solver_idx())) {
+        const auto cellNghbrIdx = grid().cell_id(nodeNghbrIdx,solver_idx());
         ASSERT(cells().neighbors(cIdx,nghbrPos) == cellNghbrIdx,
                "cell: cIdx = " << cIdx << " (nodeIdx = " << node_idx(cIdx)
                <<  ") has a wrong nghbr in pos " << nghbrPos
@@ -568,7 +720,8 @@ private:
   void check_cell(const CellIdx cIdx) const {
     const auto nodeIdx = node_idx(cIdx);
     ASSERT(is_valid(nodeIdx), "you can only check cells that have valid global ids!");
-    ASSERT(grid().nodes().cell_id(nodeIdx,solver_idx()) == cIdx, "grid node has wrong cellIdx!");
+    ASSERT(grid().cell_id(nodeIdx,solver_idx()) == cIdx,
+           "grid node has wrong cellIdx!");
   }
 
   /// \brief Checks the grid/solver links of all internal cells
@@ -587,7 +740,7 @@ private:
   /// \brief Number of cell neighbors (including ghost-cells)
   SInd no_nghbrs(const CellIdx cIdx) const {
     SInd noNghbrs = 0;
-    for(const auto nghbrPos : grid().nodes().nghbr_pos()) {
+    for(const auto nghbrPos : grid().neighbor_positions()) {
       if(is_valid(cells().neighbors(cIdx,nghbrPos))) {
         ++noNghbrs;
       }
@@ -603,8 +756,7 @@ private:
         = !is_ghost_cell(cIdx)
         ? grid().cell_length(node_idx(cIdx)) // cell is a global cell -> get its length
         : [&](){ // cell is a ghost cell -> get its boundary cell's length
-      auto bndryCellId = invalid<CellIdx>();
-      std::tie(bndryCellId,std::ignore) = boundary_cell_id(cIdx);
+      const auto bndryCellId = boundary_info(cIdx).bndryIdx;
       return grid().cell_length(node_idx(bndryCellId));
     }();
 
@@ -618,20 +770,21 @@ private:
   inline bool is_ghost_cell(const CellIdx cIdx) const { return !is_valid(node_idx(cIdx)); }
 
   /// \brief Computes the cell-center coordinates of the ghost cell \p
-  /// ghostCellId
+  /// ghostCellIdx
   NumA<nd> ghost_cell_coordinates(const CellIdx ghostCellIdx)  {
     ASSERT(no_nghbrs(ghostCellIdx) == 1, "Invalid ghost cell!");
 
     /// Find local boundary cell id and the ghost cell position w.r.t. the
     /// boundary cell
-    auto bndryCellIdx = invalid<CellIdx>();
-    auto position_wrt_ghostCell = invalid<SInd>();
-    std::tie(bndryCellIdx,position_wrt_ghostCell) = boundary_cell_id(ghostCellIdx);
+    auto const bndryInfo = boundary_info(ghostCellIdx);
+    auto const bndryCellIdx = bndryInfo.bndryIdx;
+    auto position_wrt_ghostCell = bndryInfo.bndryPos;
     ASSERT(is_valid(position_wrt_ghostCell), "ERROR!");
     ASSERT(is_valid(bndryCellIdx),"ERROR!");
 
     /// \todo: opposite nghbr position should be a non-member function!
-    const auto position_wrt_boundary = grid().nodes().opposite_nghbr_position(position_wrt_ghostCell);
+    const auto position_wrt_boundary
+        = grid().opposite_neighbor_position(position_wrt_ghostCell);
     ASSERT(is_valid(position_wrt_boundary),"ERROR!");
 
     auto length = cells().length(bndryCellIdx);
@@ -644,7 +797,7 @@ private:
   /// the first ghost cell
   CellIdx sort_gc() {
 
-    /// Sort ghost cells by bcId:
+    /// Sort ghost cells by bcIdx:
     auto valid_bcIdx = [&](CellIdx i) { return is_valid(cells().bc_idx(i)); };
     const auto firstGhostCell
         = container::sequential::algorithm::find_if(cells(),valid_bcIdx);
@@ -657,10 +810,10 @@ private:
 
     /// Correct nghbrs in boundary cells:
     for(auto gcIdx : ghost_cells()) {
-      for(auto nghbrPos : grid().nodes().nghbr_pos()) {
+      for(auto nghbrPos : grid().neighbor_positions()) {
         auto nghbrIdx = cells().neighbors(gcIdx,nghbrPos);
         if(is_valid(nghbrIdx)) {
-          auto oppositeNghbrPos = grid().nodes().opposite_nghbr_position(nghbrPos);
+          auto oppositeNghbrPos = grid().opposite_neighbor_position(nghbrPos);
           cells().neighbors(nghbrIdx,oppositeNghbrPos) = gcIdx;
         }
       }
@@ -668,10 +821,11 @@ private:
     return firstGhostCell;
   }
 
-  /// Creates a ghost-cell for \p localBCellId located in the position of the neighbor
-  /// \p nghbrPos (w.r.t the boundary cell) and sets the ghost cell coordinates.
+  /// Creates a ghost-cell for \p localBCellId located in the position of the
+  /// neighbor \p nghbrPos (w.r.t the boundary cell) and sets the ghost cell
+  /// coordinates.
   ///
-  /// \returns the local ghostCellId
+  /// \returns the local ghostCellIdx
   ///
   /// Precondition: cell at \p localBCellId has no neighbor in \nghbrPos
   CellIdx create_ghost_cell(const CellIdx bndryCellIdx, const SInd nghbrPos) {
@@ -682,7 +836,7 @@ private:
     cells().node_idx(ghostCellIdx) = invalid<NodeIdx>();
 
     /// 1) Set neighbor relationships:
-    const auto oppositeNghbrPos = grid().nodes().opposite_nghbr_position(nghbrPos);
+    const auto oppositeNghbrPos = grid().opposite_neighbor_position(nghbrPos);
     cells().neighbors(bndryCellIdx,nghbrPos) = ghostCellIdx;
     cells().neighbors(ghostCellIdx,oppositeNghbrPos) = bndryCellIdx;
 
@@ -697,7 +851,6 @@ private:
   /// \name Initialization
   ///@{
   void init_solver_variables() {
-    cfl_ = io::read<Num>(properties_,"CFL");
     dt_ = 0;
     time_ = 0;
     tEnd_ = io::read<Num>(properties_,"timeEnd");
@@ -707,19 +860,18 @@ private:
   }
 
   void create_local_cells() {
-    // Create local cells:
-    // create a local cell for each grid leaf cell
-    // set the nodeIdx in the local cells
-    // set the cIdx in the grid cells
-    // set the cell coordinates
+    // 1) create a local cell for each grid leaf cell
+    //    set the nodeIdx in the local cells
+    //    set the cIdx in the grid cells
+    //    set the cell coordinates
     {
       auto initialDomain = io::read<InitialDomain>(properties_,"initialDomain");
-      for(auto nIdx : grid().nodes().leaf_nodes()) {
+      for(auto nIdx : grid().leaf_nodes()) {
         auto xc = grid().cell_coordinates(nIdx);
         if(!initialDomain(xc)){ continue; }
         auto cIdx = cells().push_cell();
         cells().node_idx(cIdx) = nIdx;
-        grid().nodes().cell_id(nIdx,solver_idx()) = cIdx;
+        grid().cell_id(nIdx,solver_idx()) = cIdx;
         cells().x_center.row(cIdx) = xc;
         cells().length(cIdx) = grid().cell_length(nIdx);
       }
@@ -727,13 +879,15 @@ private:
 
     ASSERT(check_all_cells(),"solver cells / grid node links are wrong!");
 
-    // set local nghbr ids: (localCellId,nIdx) -> globalNghbrIds -> localNghbrIds
+    // set local nghbr ids: (localCellId,nIdx) -> globalNghbrIds ->
+    // localNghbrIds
     for(auto cIdx : cell_ids()) {
-      auto nodeNghbrIds =  grid().nodes().template all_samelvl_nghbrs<strict>(node_idx(cIdx));
-      for(auto nghbrPos : grid().nodes().nghbr_pos()) {
+      auto nodeNghbrIds =  grid().template
+                           all_samelvl_neighbors<strict>(node_idx(cIdx));
+      for(auto nghbrPos : grid().neighbor_positions()) {
         auto nghbrIdx = nodeNghbrIds(nghbrPos);
         cells().neighbors(cIdx,nghbrPos)
-            = is_valid(nghbrIdx) ? grid().nodes().cell_id(nghbrIdx,solver_idx())
+            = is_valid(nghbrIdx) ? grid().cell_id(nghbrIdx,solver_idx())
                                  : invalid<CellIdx>();
       }
     }
@@ -748,13 +902,11 @@ private:
     /// set distances to nghbrs
     {
       for(auto cIdx : cell_ids()) {
-        for(const auto nghbrPos : grid().nodes().nghbr_pos()) {
-          auto nghbrId = cells().neighbors(cIdx,nghbrPos);
-          if(!is_valid(nghbrId)) { continue; } // \todo might not be necessary
-          DBGV((cIdx)(nghbrId)(nghbrPos));
-          cells().distances(cIdx,nghbrPos)
-              = geometry::algorithm::distance(cells().x_center.row(cIdx).transpose(),
-                                              cells().x_center.row(nghbrId).transpose());
+        for(const auto nghbrPos : grid().neighbor_positions()) {
+          auto nghbrIdx = cells().neighbors(cIdx,nghbrPos);
+          if(!is_valid(nghbrIdx)) { continue; } // \todo might not be necessary
+          DBGV((cIdx)(nghbrIdx)(nghbrPos));
+          cells().distances(cIdx, nghbrPos) = cell_dx(cIdx, nghbrIdx);
           DBGV((cells().distances(cIdx,nghbrPos)));
         }
       }
@@ -766,110 +918,53 @@ private:
   ///
   /// \warning this only works for cutoff right now
   void create_ghost_cells() {
+    memory::stack::arena<SInd, 6 + 2> stackMemory; // 6nghbrs + 2 alignment
     auto noLeafCells = cells().size();
-    for(auto boundaryCell : grid().boundary_cells(solver_idx())) {
+    SInd ghostCellBoundaryIdx = 0;
+    for (auto boundary : boundary_conditions()) {
+      for (auto bndryNodeIdx : node_ids() | grid().cut_by_boundary(boundary)) {
+        const auto bndryCellIdx
+          = grid().cell_id(bndryNodeIdx, solver_idx());
+        ASSERT(is_valid(bndryCellIdx), "invalid bndryCellIdx!");
+        ASSERT(node_idx(bndryCellIdx) == bndryNodeIdx,
+               "solver and grid are not synchronized");
+        ASSERT(is_valid(node_idx(bndryCellIdx)),
+               "the global id has to be valid!");
 
-      const auto bndryNodeIdx = boundaryCell.node_idx();
-
-      const auto bndryCellIdx = grid().nodes().cell_id(bndryNodeIdx, solver_idx());
-      ASSERT(is_valid(bndryCellIdx), "invalid bndryCellIdx!");
-      ASSERT(node_idx(bndryCellIdx) == bndryNodeIdx, "solver and grid are not synchronized");
-      ASSERT(is_valid(node_idx(bndryCellIdx)), "the global id has to be valid!");
-      auto noCutBoundaries = boundaryCell.boundaries().size();
-
-      switch(noCutBoundaries) {
-        case 1: { // cell is only cut by one boundary
-          const auto noMissingNghbrs = (cells().neighbors.row(bndryCellIdx).array()
-                                        == invalid<CellIdx>()).count();
-          // find in which direction the cell has no neighbor
-          if(noMissingNghbrs == 0) {
-            continue; // \todo remove at cut-off cleanup
-          } else if(noMissingNghbrs == 1) {
-            ASSERT( (cells().neighbors.row(bndryCellIdx).array()
-                     == invalid<CellIdx>()).count() == 1,
-                    "cell: localCellId = " << bndryCellIdx
-                    << " (nodeIdx = " << node_idx(bndryCellIdx)
-                    << ") is not missing one neighbor!");
-            const CellIdxA<2*nd> nghbrs = cells().neighbors.row(bndryCellIdx);
-            const auto nghbrIt = boost::find(nghbrs, invalid<CellIdx>());
-            ASSERT(nghbrIt != boost::end(nghbrs), "missing neighbor not found!");
-            const auto nghbrPos = nghbrIt - boost::begin(nghbrs);
-            const auto ghostCellId = create_ghost_cell(bndryCellIdx,nghbrPos); // also sets coordinates!
-            lastGC_ = ghostCellId;
-            /// 2) Set boundary condition in the ghostcell
-            cells().bc_idx(ghostCellId) = boundaryCell.boundaries()[0];
-            break;
-          } else { // if( noMissingNghbrs > 1 ) {
-            /// \todo remove this cut-off hack
-            const CellIdxA<2*nd> nghbrs = cells().neighbors.row(bndryCellIdx);
-            auto nghbrIt = boost::find(nghbrs, invalid<CellIdx>());
-            while(nghbrIt != boost::end(nghbrs)) {
-              const auto nghbrPos = nghbrIt - boost::begin(nghbrs);
-              const auto ghostCellId = create_ghost_cell(bndryCellIdx, nghbrPos); // also sets coordinates!
-              lastGC_ = ghostCellId;
-              cells().bc_idx(ghostCellId) = boundaryCell.boundaries()[0];
-              nghbrIt = std::find(nghbrIt + 1, boost::end(nghbrs), invalid<CellIdx>());
-            }
-            break;
+        // find missing neighbor positions
+        auto missingNghbrPositions
+            = memory::stack::make<std::vector>(stackMemory);
+        for(const auto nghbrPos : grid().neighbor_positions()) {
+          if(cells().neighbors(bndryCellIdx, nghbrPos) == invalid<CellIdx>()) {
+            missingNghbrPositions.emplace_back(nghbrPos);
           }
         }
-        case 2:
-        case 3:
-        case 4:
-          /// \todo enable 5-6 only in 3D!
-        case 5:
-        case 6: { // cell is cut by more than one boundary ([2,6]) in 3D,
-          // find where ghost cells should be added:
-          std::vector<SInd> missingNghbrPos;
-          for(const auto nghbrPos : grid().nodes().nghbr_pos()) {
-            if(cells().neighbors(bndryCellIdx,nghbrPos) == invalid<CellIdx>()) {
-              missingNghbrPos.push_back(nghbrPos);
-            }
-          }
 
-          /// create ghost cells:
-          std::vector<CellIdx> ghostCellIds;
-          for(auto nghbrPos : missingNghbrPos) {
-            ghostCellIds.push_back(create_ghost_cell(bndryCellIdx,nghbrPos));
-          }
+        auto neg_distance = [&](const SInd pos) {
+          return boundary.signed_distance
+          (grid().neighbor_coordinates(bndryNodeIdx, pos)) < 0.;
+        };
 
-          /// each ghost cell has a negative signed distance for only one boundary
-          std::vector<SInd> ghostCellBCIds;
-          ghostCellBCIds.resize(ghostCellIds.size());
-          for(auto ghostCellId : ghostCellIds) {
-            auto ghostCellBoundaryId = invalid<SInd>();
-            const typename Grid::CellVertices ghostCellVertices = cell_vertices(ghostCellId);
-
-            for(auto gridBoundaryId : boundaryCell.boundaries()) {
-              if(algorithm::all_of(ghostCellVertices(),[&](const NumA<nd>& x) {
-                    return grid().boundaries()[gridBoundaryId].signed_distance(x) < 0;
-                  })) {
-                ASSERT(!is_valid(ghostCellBoundaryId),"overwritting boudnary id!");
-                ghostCellBoundaryId = gridBoundaryId;
-              }
-            }
-            ASSERT(is_valid(ghostCellBoundaryId),"boundary id not set!");
-            cells().bc_idx(ghostCellId) = ghostCellBoundaryId;
-          }
-          break;
-        }
-        default: {
-          TERMINATE(std::string("boundary cell is cut by ")
-                    + std::to_string(noCutBoundaries)
-                    + " boundaries!!");
+        using boost::adaptors::filtered;
+        for(auto nghbrPos : missingNghbrPositions | filtered(neg_distance)) {
+          auto ghostCellIdx = create_ghost_cell(bndryCellIdx, nghbrPos);
+          cells().bc_idx(ghostCellIdx) = ghostCellBoundaryIdx;
         }
       }
+      ++ghostCellBoundaryIdx;
     }
+
     auto newTotalNoCells = cells().size();
     std::cerr << "fv container | #of leafs: " << noLeafCells
               << " | #of ghosts: " << newTotalNoCells - noLeafCells
               << " | #of cells: " << newTotalNoCells << "\n";
+    ASSERT(newTotalNoCells - noLeafCells > 0, "#of ghost cells is 0!");
   }
 
-  /// \brief Sets the initial condition on the lhs
-  void set_initial_condition() {
+  /// \brief Imposes the initial condition on the lhs
+  void impose_initial_condition() {
     auto initialCondition = io::read<InitialCondition>(properties_,"initialCondition");
-    for(auto cIdx : internal_cells()) {
+    for (auto cIdx : internal_cells()) {
       const auto length = grid().cell_length(node_idx(cIdx));
       const auto x_c = cells().x_center.row(cIdx).transpose();
       const auto cellVol = geometry::cell::cartesian::volume<nd>(length);
@@ -880,9 +975,20 @@ private:
     }
   }
   ///@}
+
 };
 
-}} // namespace solver::fv
+#define HOM3_FV_PHYSICS_SOLVER_() \
+  template<SInd nd, class NumFlux, class TimeIntegration> struct SolverBuilder { \
+    template<class S> using physics = Physics<nd, NumFlux, S>;          \
+    using type = solver::fv::Solver<physics, TimeIntegration>;          \
+  };                                                                    \
+  template<SInd nd, class NumFlux, class TimeIntegration>               \
+  using Solver = typename SolverBuilder<nd,NumFlux,TimeIntegration>::type
+
+} // namespace fv
+
+} // namespace solver
 
 ////////////////////////////////////////////////////////////////////////////////
 } // hom3 namespace

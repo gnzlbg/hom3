@@ -1,3 +1,4 @@
+#!/bin/bash 
 # Removes all cmake-generated files
 # Note: it doesn't remove any binaries
 echo "Cleaning up..."

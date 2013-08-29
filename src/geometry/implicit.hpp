@@ -155,8 +155,8 @@ template<class T> struct Inverted {
  private:
   std::shared_ptr<T> t_;
 };
-template<class T> Inverted<T> invert(std::shared_ptr<T> t) { return Inverted<T>(t); }
-template<class T> std::shared_ptr<Inverted<T>> invert2(std::shared_ptr<T> t) {
+template<class T> Inverted<T> invert2(std::shared_ptr<T> t) { return Inverted<T>(t); }
+template<class T> std::shared_ptr<Inverted<T>> invert(std::shared_ptr<T> t) {
   return make_geometry<Inverted<T>>(t);
 }
 

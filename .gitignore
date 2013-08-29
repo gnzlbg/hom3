@@ -31,3 +31,4 @@ Doxyfile
 
 # Backup files (e.g. from emacs)
 *~
+.#*

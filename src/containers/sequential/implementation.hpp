@@ -77,10 +77,12 @@ template<class Cells> struct Implementation {
 
   /// \name Constructors
   ///@{
-  Implementation(const cell_size_type n,  const std::string name) : Implementation(n,0,name) {}
-  Implementation(const cell_size_type ne, const node_size_type nn, const std::string name)
-      : maxCellSize_(ne), maxNodeSize_(nn), cellSize_(0),
-        nodeSize_(0), nodes_(c(),"nodes"), name_(name) {
+  Implementation(const cell_size_type n,  const std::string name)
+    : Implementation(n, 0, name) {}
+  Implementation(const cell_size_type ne, const node_size_type nn,
+                 const std::string name)
+      : maxCellSize_(ne), maxNodeSize_(nn), cellSize_(0)
+      , nodeSize_(0), nodes_(c(),"nodes"), name_(name) {
     TRACE_IN((ne)(nn));
 
     if (capacity() == 0) {
@@ -96,9 +98,9 @@ template<class Cells> struct Implementation {
   }
 
   Implementation(const Implementation& other)
-      : maxCellSize_(other.capacity()), maxNodeSize_(other.node_capacity()),
-        cellSize_(other.size()), nodeSize_(other.node_size()), nodes_(other.nodes_),
-        name_(other.name_) {
+      : maxCellSize_(other.capacity()), maxNodeSize_(other.node_capacity())
+      , cellSize_(other.size()), nodeSize_(other.node_size())
+      , nodes_(other.nodes_), name_(other.name_) {
     TRACE_IN_();
 
     init_nodes_(container_type());
@@ -107,8 +109,9 @@ template<class Cells> struct Implementation {
   }
 
   Implementation(Implementation&& other)
-      : maxCellSize_(other.capacity()), maxNodeSize_(other.node_capacity()),
-        cellSize_(other.size()), nodeSize_(other.node_size()), nodes_(other.nodes_)
+      : maxCellSize_(other.capacity()), maxNodeSize_(other.node_capacity())
+      , cellSize_(other.size()), nodeSize_(other.node_size())
+      , nodes_(other.nodes_)
   {
     TRACE_IN_();
     TRACE_OUT();
@@ -141,10 +144,9 @@ template<class Cells> struct Implementation {
   /// \brief Returns the current #of cells stored in the container
   inline cell_size_type  size()          const { return cellSize_;      }
   /// \brief Returns the current #of nodes stored in the container
-  inline node_size_type  node_size()     const
-  { assert_variable_node_container(); return nodeSize_;      }
+  inline node_size_type  node_size()     const { return nodeSize_;      }
   /// \brief Returns the current #of nodes of the element \p cellId
-  inline node_size_type  node_size(const CIdx cellId) const { ///< Returns #nodes of "cellId"
+  inline node_size_type  node_size(const CIdx cellId) const {
     assert_variable_node_container();
     ASSERT(first_node(cellId) <= last_node(cellId),"Invalid cell node range!");
     return last_node(cellId) - first_node(cellId);

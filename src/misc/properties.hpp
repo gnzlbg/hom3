@@ -38,6 +38,11 @@ typename std::remove_reference<T>::type value = typename std::remove_reference<T
   properties.insert(make_property(name,std::move(value)));
 }
 
+template<class T> void insert (Properties& properties, std::string name,
+typename std::remove_reference<T>::type value = typename std::remove_reference<T>::type()) {
+  properties.insert(make_property(name,std::move(value)));
+}
+
 /// \brief Reads property of type \p T with \p name from container \p
 /// properties
 ///

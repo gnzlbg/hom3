@@ -2,10 +2,10 @@
 #define HOM3_SOLVERS_FV_CONTAINER_HPP_
 /// Includes:
 #include <algorithm>
-#include "../../containers/sequential.hpp"
+#include "containers/sequential.hpp"
 /// Options:
 #define ENABLE_DBG_ 0
-#include "../../misc/dbg.hpp"
+#include "misc/dbg.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 namespace hom3 {
 ////////////////////////////////////////////////////////////////////////////////
@@ -13,15 +13,15 @@ namespace hom3 {
 /// Forward declarations:
 namespace solver { namespace fv {
 
-template<SInd nd,SInd nvars> struct Container;
-template<SInd nd,SInd nvars> struct Reference;
-template<SInd nd,SInd nvars> struct Value;
+template<SInd nd, SInd nvars> struct Container;
+template<SInd nd, SInd nvars> struct Reference;
+template<SInd nd, SInd nvars> struct Value;
 
 }} // solver::fv namespace
 
 /// Cell traits specialization:
 namespace container { namespace sequential {
-template<SInd nd,SInd nvars> struct traits<solver::fv::Container<nd,nvars>> {
+template<SInd nd, SInd nvars> struct traits<solver::fv::Container<nd,nvars>> {
   using container_type    = tag::fixed_nodes;
   using value_type        = typename solver::fv::Value<nd,nvars>;
   using reference         = typename solver::fv::Reference<nd,nvars>;

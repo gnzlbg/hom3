@@ -141,5 +141,23 @@ template <class H, class... T> void dout(const bool on, H&& head, T&&... tail) {
 #define DBG_EXPR(A)
 #endif
 
+#ifndef NDEBUG
+/// \brief Executes in debug mode
+#define DEBUG_DO(f)                                           \
+  do {                                                        \
+    if (true) {                                               \
+      f();                                                    \
+    }                                                         \
+  } while (false)
+#else
+/// \brief Does nothing if NDEBUG is not defined
+#define DEBUG_DO(...)                                       \
+  do {                                                      \
+    if (false) {                                            \
+      f();                                                  \
+    }                                                       \
+  } while (false)
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 #endif

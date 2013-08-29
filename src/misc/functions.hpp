@@ -11,15 +11,8 @@ namespace hom3 {
 
 /// \brief Performs a cold computation preventing inlining and branch prediction
 template<class F>
-[[noinline,cold]] auto cold_do(F&& f) -> decltype(f()) {
+[[noinline,cold]] auto cold_do(F&& f) {
   return f();
-}
-
-/// \brief Creates a std::unique_ptr of type T (analog to make_shared)
-/// \todo move into some memory.hpp header
-template<class T, class... Args>
-std::unique_ptr<T> make_unique(Args&&... args) {
-  return std::unique_ptr<T>( new T(std::forward<Args>(args)...) );
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -10,12 +10,12 @@
 #include <string>
 #include <algorithm>
 #include <vector>
-#include "../containers/hierarchical.hpp"
+#include "containers/hierarchical.hpp"
 #include "generation.hpp"
-#include "../geometry/boundary.hpp"
+#include "boundary.hpp"
 /// Options:
 #define ENABLE_DBG_ 0
-#include "../misc/dbg.hpp"
+#include "misc/dbg.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace hom3 { namespace grid {
@@ -105,31 +105,36 @@ static constexpr std::array<SInt,8*3> vertex_pos_3d_arr {{
 template<int nd> struct RootCell {
   RootCell(const RootCell<nd>&) = default;
   RootCell(const NumA<nd>& min, const NumA<nd>& max) : length(math::eps) {
-    for(Ind d = 0; d != nd; ++d) {
-      const Num lengthD = max(d) - min(d);
+    ASSERT([&](){
+      NumA<nd> lengths = max - min;
+      Num previous_length = lengths(0);
+      for (SInd d = 1; d != nd; ++d) {
+        ASSERT(math::approx(lengths(d), previous_length),
+          "Error length mismatch between dimensions d = "
+          + std::to_string(d - 1) + " (x_min = " + std::to_string(min(d - 1))
+          + ", x_max = " + std::to_string(max(d - 1))
+          + ", length = " + std::to_string(lengths(d - 1)) + "),"
+          + " and d = " + std::to_string(d) + " (x_min = " + std::to_string(min(d))
+          + ", x_max = " + std::to_string(max(d))
+          + ", length = " + std::to_string(lengths(d)) + ")."
+          + " Root cell is not square shaped!");
+        }
+        return true;
+      }(), "Root cell must be square shaped!");
+
+    for (SInd d = 0; d != nd; ++d) {
+      const Num lengthD = max(d) - min(d); // move up! length( (max-min).max() )
       ASSERT(lengthD > math::eps, "Negative length not allowed!");
       length = std::max(length, lengthD);
-      coordinates(d) = min(d) + 0.5 * lengthD;
+      coordinates(d) = min(d) + 0.5 * lengthD; // move up! coords( min + 0.5 * length)
     }
   }
 
   static const int nDim = nd;
   Num length;
   NumA<nd> coordinates;
-  NumA<nd> x_min() const {
-    NumA<nd> m;
-    for(SInd d = 0; d < nd; ++d) {
-      m(d) = coordinates(d) - 0.5 * length;
-    }
-    return m;
-  }
-  NumA<nd> x_max() const {
-    NumA<nd> m;
-    for(SInd d = 0; d < nd; ++d) {
-      m(d) = coordinates(d) + 0.5 * length;
-    }
-    return m;
-  }
+  NumA<nd> x_min() const noexcept { return coordinates.array() - 0.5 * length; }
+  NumA<nd> x_max() const noexcept { return coordinates.array() + 0.5 * length; }
 };
 
 /// \brief Hierarchical Cartesian Grid data-structure
@@ -138,25 +143,36 @@ template<int nd> struct RootCell {
 /// - manages the boundaries/geometry of each sub domain
 ///
 /// \todo rename to CartesianHSP
-template <SInd nd> struct CartesianHSP {
+template <SInd nd_> struct CartesianHSP : container::Hierarchical<nd_> {
 
+  static const SInd nd = nd_;
   using This = CartesianHSP<nd>;
   using Boundary = boundary::Interface<nd>;
   using Boundaries = std::vector<Boundary>;
   using Dim = dim<nd>;
   using D2 = dim<2>;
   using D3 = dim<3>;
+
+  /// \name Connectivity requirements (for internal use)
+  ///@{
   using Connectivity = typename container::Hierarchical<nd>;
+  using Connectivity::nodes;
+  using Connectivity::leaf_nodes;
+  using Connectivity::no_leaf_nodes;
+  using Connectivity::level;
+  using Connectivity::parent;
+  using Connectivity::position_in_parent;
+  ///@}
+
   /// \name Construction
   ///@{
 
   /// \brief Construct a grid from a set of input properties
   CartesianHSP(io::Properties input)
-      : properties_(input),
-        nodes_(io::read<Ind>(properties_,"maxNoGridNodes"),
-               io::read<SInd>(properties_,"maxNoContainers")),
-        rootCell_(io::read<RootCell<nd>>(properties_,"rootCell")),
-        ready_(false)
+      : container::Hierarchical<nd>(input)
+      , properties_(input)
+      , rootCell_(io::read<RootCell<nd>>(properties_,"rootCell"))
+      , ready_(false)
   { TRACE_IN_(); TRACE_OUT(); }
 
   /// \brief Constructs and initializes a grid from a set of input properties
@@ -170,22 +186,12 @@ template <SInd nd> struct CartesianHSP {
   /// generator from the properties if they haven't been set yet and generates
   /// the mesh
   void initialize() {
-    if(boundaries().empty()) {
-      read_boundaries();
-    }
+    //ASSERT(!boundaries().empty(), "Grid has no boundaries!"); // -> warning!
     if(!meshGeneration_) {
       read_mesh_generator();
       generate_mesh();
     }
     ready_ = true;
-  }
-
-  /// \brief Reads boundaries from input set
-  ///
-  /// \warning Overwrites previously-set boundaries!
-  void read_boundaries() { read_boundaries(properties_); }
-  void read_boundaries(const io::Properties& boundaryProperties) {
-    io::read(boundaryProperties,"boundaries",boundaries_);
   }
 
   /// \brief Reads mesh-generator from input set
@@ -219,12 +225,7 @@ template <SInd nd> struct CartesianHSP {
   ///@{
 
   /// \brief Range over space dimensions
-  inline auto dims() const -> Range<SInd> { return {SInd(0),nd}; }
-
-  /// \brief Mesh topology
-  inline const Connectivity& nodes() const { return nodes_; }
-  inline       Connectivity& nodes()       { return nodes_; }
-
+  inline auto dimensions() const -> Range<SInd> { return {SInd(0), nd}; }
   ///@}
 
   /// \name Spatial information
@@ -300,7 +301,7 @@ template <SInd nd> struct CartesianHSP {
   ///
   ///
   static constexpr SInt nghbr_rel_pos(const SInd nghbrPos, const SInd d) {
-    return ghbr_rel_pos_(nghbrPos,d,Dim());
+    return nghbr_rel_pos_(nghbrPos,d,Dim());
   }
 
   /// \brief Relative position of neighbor localted at \p nghbrPos w.r.t. its parent
@@ -345,7 +346,7 @@ template <SInd nd> struct CartesianHSP {
 
   /// \brief Length of cell at node \p nIdx
   Num cell_length(const NodeIdx nIdx) const {
-    return cell_length_at_level(nodes().level(nIdx));
+    return cell_length_at_level(level(nIdx));
   }
 
   /// \brief Centroid coordinates of cell at node \p nIdx
@@ -355,10 +356,10 @@ template <SInd nd> struct CartesianHSP {
   /// \complexity O(logN) - logarithmic in the number of cells.
   NumA<nd> cell_coordinates(const NodeIdx nIdx) const {
     TRACE_IN((nIdx));
-    const Ind level = nodes().level(nIdx);
-    if( level != 0 ) {
-      const auto pIdx      = nodes().parent(nIdx);
-      const auto posInParent  = nodes().position_in_parent(nIdx);
+    const Ind level_ = level(nIdx);
+    if( level_ != 0 ) {
+      const auto pIdx      = parent(nIdx);
+      const auto posInParent  = position_in_parent(nIdx);
       const auto relLength = 0.25 * cell_length(pIdx);
       const NumA<nd> relativePosition
           = cell_coordinates(pIdx)
@@ -369,6 +370,22 @@ template <SInd nd> struct CartesianHSP {
       TRACE_OUT();
       return rootCell_.coordinates;
     }
+  }
+
+  /// \brief Centroid coordinates of neighbor at \p nghbrPos of node \p nIdx
+  ///
+  /// Works even if the neighbor doesn't exist.
+  NumA<nd> neighbor_coordinates(const NodeIdx nIdx, const SInd nghbrPos) const {
+    TRACE_IN((nIdx)(nghbrPos));
+    const auto x_node = cell_coordinates(nIdx);
+    const auto length = cell_length(nIdx);
+
+    NumA<nd> x_nghbr;
+    for(auto d : dimensions()) {
+      x_nghbr(d) = x_node(d) + nghbr_rel_pos(nghbrPos,d) * length;
+    }
+    TRACE_OUT();
+    return x_nghbr;
   }
 
   /// \todo rename cell_id to node_id
@@ -388,7 +405,8 @@ template <SInd nd> struct CartesianHSP {
   };
 
   using CellVerticesRange
-  = boost::transformed_range<std::function<CellVertices (NodeIdx)>, const  AnyRange<NodeIdx>>;
+  = boost::transformed_range<std::function<CellVertices(NodeIdx)>,
+                             const AnyRange<NodeIdx>>;
 
   /// \brief Vertices of cell at \p x_cell with cell length \p cellLength sorted
   /// in counter clockwise direction
@@ -400,13 +418,14 @@ template <SInd nd> struct CartesianHSP {
     const VTK element_type = VTK::Pixel;
     const auto cellHalfLength = 0.5 * cellLength;
     typename CellVertices::Vertices relativePosition;
-    for(auto v : boost::counting_range(0U,no_edge_vertices())) {
+    for(auto v : boost::counting_range(SInd{0},no_edge_vertices())) {
       if(element_type == VTK::Pixel) {
-        relativePosition[v] = x_cell + cellHalfLength * child_rel_pos(v).template cast<Num>();
+        relativePosition[v] = x_cell + cellHalfLength
+                              * child_rel_pos(v).template cast<Num>();
       } else if(element_type == VTK::Polyline) {
         TERMINATE("polyline support deprecated? (TODO: decide!)");
-        // old implementation, needs update:
-        // relativePosition[v][d] = vertex_pos(v,d) * relLength + cellCoordinates[d];
+        // old implementation, needs update: relativePosition[v][d] =
+        // vertex_pos(v,d) * relLength + cellCoordinates[d];
       }
     }
     TRACE_OUT();
@@ -427,52 +446,41 @@ template <SInd nd> struct CartesianHSP {
   /// \brief Total #of _leaf_ cell vertices
   /// \warning Returns the #of vertices for the leaf nodes
   /// \todo Should return the #of vertices for a grid!
-  Ind no_cell_vertices() const { return nodes().no_leaf_nodes() * no_edge_vertices(); };
+  Ind no_cell_vertices() const
+  { return no_leaf_nodes() * no_edge_vertices(); };
 
   /// \brief Lazy range of all _leaf_ cell vertices
   /// \warning Returns the range for the leaf nodes
   /// \todo Should return the range for a grid!
-  auto cell_vertices() const -> CellVerticesRange const {
+  auto cell_vertices() const -> CellVerticesRange {
     std::function<CellVertices(const NodeIdx)> f = [&](const NodeIdx nIdx){
       return compute_cell_vertices(nIdx);
     };
-    return AnyRange<Ind>(nodes().leaf_nodes()) | boost::adaptors::transformed(f);
-  }
-
-  ///@}
-
-  /// \name Operations on mesh topology (i.e. grid connectivity)
-  ///@{
-
-  /// \brief Refines node \p nIdx isotropically.
-  ///
-  /// \complexity O(1) - constant time ?!? (I guess average constant time due to
-  /// compression but should really check this out)
-  void refine_node(const NodeIdx nIdx) {
-    TRACE_IN((nIdx));
-    nodes_.refine_node(nIdx);
-    TRACE_OUT();
+    return AnyRange<NodeIdx>(leaf_nodes()) | boost::adaptors::transformed(f);
   }
 
   ///@}
 
   /// \name Operations on boundary conditions
-  /// (some of this stuff is still hacky/experimental)
   ///@{
 
-  /// \brief Range of boundaries
-  inline const std::vector<Boundary>& boundaries() const { return boundaries_; }
+  /// \brief Appends boundary \p b to the grid boundaries
+  void append_boundary(Boundary b) noexcept {
+    boundaries_.emplace_back(std::move(b));
+  }
 
-  /// \biref Range of boundaries belonging to the solver \p solverIdx
+  /// \brief Range of _all_ boundaries
+  inline const Boundaries& boundaries() const { return boundaries_; }
+
+  /// \biref Range of \p solverIdx 's boundaries
   inline auto boundaries(const SolverIdx solverIdx) const
-  -> decltype(boundaries() | boost::adaptors::filtered(std::function<bool(Boundary)>())) {
+  -> decltype(boundaries()
+              | boost::adaptors::filtered(std::function<bool(Boundary)>())) {
     std::function<bool(Boundary)> valid
         = [=](const Boundary& b){ return b.is_valid(solverIdx); };
     return boundaries() | boost::adaptors::filtered(valid);
   }
 
-  /// \brief Appends boundary \p b to the grid boundaries
-  void append_boundary(Boundary&& b) { boundaries_.push_back(b); }
 
   /// \brief Boundary cell information
   ///
@@ -480,7 +488,7 @@ template <SInd nd> struct CartesianHSP {
   /// that share that boundary are provided.
   struct BoundaryCell {
     BoundaryCell(const NodeIdx nodeIdx, const std::vector<SInd> boundaries)
-        : nodeIdx_(nodeIdx), boundaries_(boundaries) {}
+      : nodeIdx_(nodeIdx), boundaries_(boundaries) {}
     NodeIdx node_idx() const { return nodeIdx_; }
     Ind size() const { return boundaries_.size(); }
     const std::vector<SInd>& boundaries() const { return boundaries_; }
@@ -510,13 +518,13 @@ template <SInd nd> struct CartesianHSP {
   BoundaryCells boundary_cells(const SolverIdx solverIdx) {
     BoundaryCells boundaryCells;
 
-    for(auto nIdx : nodes().nodes(solverIdx)) {
+    for(auto nIdx : nodes(solverIdx)) {
       auto allCellBoundaryIds = is_cut_by_boundaries(nIdx);
       if( allCellBoundaryIds.empty() ) { continue; } // not a boundary cell
       // is a boundary cell, but maybe not from solver
       std::vector<SInd> boundaryIds; // cell might be cut by n-boundaries!
       for(auto bndryId : allCellBoundaryIds) {
-        if(boundaries()[bndryId].is_valid(solverIdx)) {
+        if(boundaries()[bndryId].solver_idx() == solverIdx) {
           boundaryIds.push_back(bndryId);
         }
       }
@@ -528,6 +536,16 @@ template <SInd nd> struct CartesianHSP {
       // e.g this can happen over a volume coupling
     }
     return boundaryCells;
+  }
+
+  /// \brief Filters those nodes cut by the \p boundary .
+  template<class Boundary>
+  inline auto cut_by_boundary(Boundary&& boundary) -> RangeFilter<NodeIdx> {
+    return {[&, boundary](const NodeIdx nIdx) {
+        return is_cut_by(nIdx, [&, boundary](const NumA<nd> x) {
+            return boundary.signed_distance(x); }
+          ); }
+    };
   }
 
   struct VolumeCoupledCell {
@@ -551,7 +569,7 @@ template <SInd nd> struct CartesianHSP {
     std::vector<VolumeCoupledCell> volumeCoupledCells;
     for(auto nIdx : solver.node_ids()) {
       std::vector<SInd> solverIds;
-      for(auto otherSolver : nodes().grid_ids(nIdx)) {
+      for(auto otherSolver : grid_ids(nIdx)) {
         if(otherSolver == solverIdx) { continue; }
         solverIds.push_back(otherSolver);
       }
@@ -637,25 +655,35 @@ template <SInd nd> struct CartesianHSP {
   /// \todo unused / deprecate?
   inline bool is_ready() const { return ready_; }
 
-  /// \todo take grid by const reference instead of pointer (requires changes to io::Vtk!)
-  friend void write_domain(const std::string fName, const This* const grid) {
+  /// \brief Root cell
+  RootCell<nd> root_cell() const noexcept { return rootCell_; }
 
-    io::Vtk<nd,io::format::binary> out(grid, fName, io::precision::standard());
+  friend void write_domain(const This& grid) {
+    write_domain(std::to_string(nd) + "D_Grid", grid);
+  }
 
-    out << io::stream("nodeIds",1,[](const Ind nIdx, const SInd){ return nIdx; });
+  /// \todo take grid by const reference instead of pointer (requires changes to
+  /// io::Vtk!)
+  friend void write_domain(const std::string fName, const This& grid) {
+    io::Vtk<nd, io::format::ascii> out(&grid, fName, io::precision::standard());
 
-    out << io::stream("nghbrIds",grid->nodes().no_samelvl_nghbr_pos(),
-                      [&](const Ind nIdx, const SInd pos){
-                        return grid->nodes().find_samelvl_nghbr(NodeIdx{nIdx},pos)();
-                      });
-    out << io::stream("solver",grid->nodes().solver_capacity(),
-                      [&](const Ind nIdx, const SInd pos){
-                        return grid->nodes().has_solver(NodeIdx{nIdx},SolverIdx{pos}) ? pos : invalid<SInd>();
-                      });
-    for(const auto& i : grid->boundaries()) {
-      out << io::stream(i.name(),1,[&](const Ind nIdx, const SInd) {
-          return i.signed_distance(grid->cell_coordinates(NodeIdx{nIdx}));
-        });
+    out << io::stream("nodeIds", 1, [](const Ind nIdx, const SInd) {
+      return nIdx;
+    });
+
+    out << io::stream("nghbrIds", grid.no_samelvl_neighbor_positions(),
+      [&](const Ind nIdx, const SInd pos) {
+        return grid.find_samelvl_neighbor(NodeIdx{nIdx}, pos)();
+    });
+    out << io::stream("solver", grid.solver_capacity(),
+      [&](const Ind nIdx, const SInd pos) {
+        return grid.has_solver(NodeIdx{nIdx}, SolverIdx{pos}) ?
+               pos : invalid<SInd>();
+    });
+    for(const auto& i : grid.boundaries()) {
+      out << io::stream(i.name(), 1, [&](const Ind nIdx, const SInd) {
+        return i.signed_distance(grid.cell_coordinates(NodeIdx{nIdx}));
+      });
     }
   }
 
@@ -666,14 +694,11 @@ template <SInd nd> struct CartesianHSP {
   /// Contains the grid properties
   io::Properties properties_;
 
-  /// Grid node connectivity graph
-  Connectivity nodes_;
-
   /// Grid root cell information
   const RootCell<nd> rootCell_;
 
   /// Domain boundaries
-  std::vector<Boundary> boundaries_;
+  Boundaries boundaries_;
 
   /// Grid generator
   std::function<void(This&)> meshGeneration_;

@@ -33,8 +33,8 @@ template<class T> struct traits {
 template<class T, int r, int c, int t, int p1, int p2>
 struct traits<Eigen::Matrix<T,r,c,t,p1,p2>> {
  using value_type      = typename Eigen::Matrix<T,r,c,t,p1,p2>::Scalar;
- using reference       = typename Eigen::Matrix<T,r,c,t,p1,p2>::Scalar&;
- using const_reference = const reference;
+ using reference       = value_type      &;
+ using const_reference = value_type const&;
  using type            = tag::eigen;
 };
 

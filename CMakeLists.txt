@@ -18,12 +18,16 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
   find_package(LIBCXX REQUIRED)
   include_directories(SYSTEM ${LIBCXX_INCLUDE_DIR})
   message("libcxx_include: ${LIBCXX_INCLUDE_DIR} | libcxx_lib: ${LIBCXX_LIBRARY}")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L${LIBCXX_LIBRARY}")
+  set(CMAKE_EXE_LINKER_FLAGS " ${CMAKE_EXE_LINKER_FLAGS} -L${LIBCXX_LIBRARY} -lc++")
+  message("linker flags: ${CMAKE_EXE_LINKER_FLAGS}")
+
+  # link using clang or the sanitizers _might_ fail to link:
+  set(CMAKE_CXX_LINK_EXECUTABLE=${CMAKE_CXX_COMPILER})
 
   # compiler flags:
   set(CMAKE_CXX_FLAGS_LIST
     "-arch x86_64" "-Wall" "-Wextra" "-std=c++1y" "-stdlib=libc++"
-    "-I${LIBCXX_INCLUDE_DIR}" "-pedantic" "-Wshadow" "-Woverloaded-virtual"
+    "-pedantic" "-Wshadow" "-Woverloaded-virtual"
     "-pedantic-errors" "-Wcast-align" "-Wcomment" "-Wcast-qual"
     "-Wchar-subscripts" "-Wdisabled-optimization" "-Wfloat-equal" "-Wformat=2"
     "-Winvalid-pch" "-Wformat-nonliteral" "-Wformat-security" "-Wformat-y2k"
@@ -41,19 +45,36 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     "-Wno-attributes"
     )
   set(CMAKE_CXX_FLAGS_DEBUG_LIST
-    "-O0" "-g3" "-fno-inline" "-fstack-protector-all" "-D_FORTIFY_SOURCE=2"
+    "-O1" "-g3" "-fstack-protector-all" "-D_FORTIFY_SOURCE=2"
     ) # -D_LIBCPP_DEBUG2=1
   set(CMAKE_CXX_FLAGS_RELEASE_LIST
     "-O3" "-DNDEBUG" "-march=native" "-mtune=native" "-fstrict-aliasing"
     "-fomit-frame-pointer" "-pipe" "-fdata-sections" "-ffunction-sections"
     "-fvectorize" "-fslp-vectorize-aggressive" "-DEIGEN_FAST_MATH"
     "-DEIGEN_NO_DEBUG" "-ffast-math"
-    ) # -fno-rtti -fno-exceptions 
+    ) # -fno-rtti -fno-exceptions
+  set(CMAKE_CXX_FLAGS_ASAN_LIST
+    ${CMAKE_CXX_FLAGS_RELEASE_LIST}
+    "-fsanitize=address" "-fno-omit-frame-pointer"
+    )
+  set(CMAKE_CXX_FLAGS_MSAN_LIST
+    ${CMAKE_CXX_FLAGS_RELEASE_LIST}
+    "-fsanitize=memory" "-fno-omit-frame-pointer"
+    "-fsanitize-memory-track-origins"
+    )
+  set(CMAKE_CXX_FLAGS_TSAN_LIST
+    ${CMAKE_CXX_FLAGS_RELEASE_LIST}
+    "-fsanitize=thread" "-fno-omit-frame-pointer"
+    "-fsanitize-memory-track-origins"
+    )
 
   # set flags:
   string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_LIST}")
   string(REPLACE ";" " " CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG_LIST}")
   string(REPLACE ";" " " CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE_LIST}")
+  string(REPLACE ";" " " CMAKE_CXX_FLAGS_ASAN "${CMAKE_CXX_FLAGS_ASAN_LIST}")
+  string(REPLACE ";" " " CMAKE_CXX_FLAGS_MSAN "${CMAKE_CXX_FLAGS_MSAN_LIST}")
+  string(REPLACE ";" " " CMAKE_CXX_FLAGS_TSAN "${CMAKE_CXX_FLAGS_TSAN_LIST}")
 
   # output flags:
   message("...clang flags set: " ${CMAKE_CXX_FLAGS})
@@ -61,6 +82,13 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     message("...clang optimization flags set: ${CMAKE_CXX_FLAGS_DEBUG}")
   elseif("${CMAKE_BUILD_TYPE}" MATCHES "Release")
     message("...clang optimization flags set: ${CMAKE_CXX_FLAGS_RELEASE}")
+  elseif("${CMAKE_BUILD_TYPE}" MATCHES "Asan")
+    message("...clang optimization flags set: ${CMAKE_CXX_FLAGS_ASAN}")
+    set(CMAKE_EXE_LINKER_FLAGS " ${CMAKE_EXE_LINKER_FLAGS} -L${LIBCXX_LIBRARY} -lc++")
+  elseif("${CMAKE_BUILD_TYPE}" MATCHES "Msan")
+    message("...clang optimization flags set: ${CMAKE_CXX_FLAGS_MSAN}")
+  elseif("${CMAKE_BUILD_TYPE}" MATCHES "Tsan")
+    message("...clang optimization flags set: ${CMAKE_CXX_FLAGS_TSAN}")
   else()
     message(FATAL_ERROR "Unknown build type. Options are \"Debug\" and \"Release\". Quit.")
   endif()
@@ -68,19 +96,6 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 else()
   message(FATAL_ERROR "Unknown compiler, quit.")
 endif()
-
-# Configure valgrind
-set(CMAKE_MEMORYCHECK_COMMAND "valgrind")
-# set(CMAKE_MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes --quiet
-# --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=100
-# --verbose --demangle=yes")
-set(CMAKE_MEMORYCHECK_COMMAND_OPTIONS "--quiet --tool=memcheck --error-exitcode=1")
-function(add_memcheck_test name binary)
-  set(memcheck_command "${CMAKE_MEMORYCHECK_COMMAND} ${CMAKE_MEMORYCHECK_COMMAND_OPTIONS}")
-  separate_arguments(memcheck_command)
-  add_test(${name} ${binary} ${ARGN})
-  add_test(memcheck_${name} ${memcheck_command} ./${binary} ${ARGN})
-endfunction(add_memcheck_test)
 
 # Eigen
 find_package(Eigen3 REQUIRED)
@@ -140,10 +155,4 @@ set(CLEANUP_SCRIPT ${PROJECT_BINARY_DIR}/tools/cleanup.sh)
 add_custom_target (clean ${CLEANUP_SCRIPT})
 
 # Subdirectories:
-add_subdirectory (./src/misc/tests)
-add_subdirectory (./src/containers/sequential/tests)
-add_subdirectory (./src/containers/hierarchical/tests)
-add_subdirectory (./src/grid/)
-add_subdirectory (./src/output/)
-add_subdirectory (./src/solver/fv)
-add_subdirectory (./src/geometry/)
+add_subdirectory (./src)

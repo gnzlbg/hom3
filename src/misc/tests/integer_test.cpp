@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "../../globals.hpp"
+#include "globals.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
 using namespace hom3;

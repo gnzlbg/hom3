@@ -83,6 +83,7 @@ namespace algorithm {
 // makes all Boost.Range algorithms available
  using namespace boost::algorithm;
  using boost::join;
+ using namespace boost::adaptors;
 }
 
 } // range

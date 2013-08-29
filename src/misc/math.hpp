@@ -7,36 +7,11 @@
 #include <limits>
 #include "types.hpp"
 ////////////////////////////////////////////////////////////////////////////////
-namespace hom3 { namespace math {
+namespace hom3 {
 ////////////////////////////////////////////////////////////////////////////////
 
-/// Takes the difference of two unsigned integers (without wrapping)
-template<class T> inline T absdiff(const T& a, const T& b) {
-  return (a > b) ? (a - b) : (b - a);
-}
-
-template <class T> inline constexpr 
-int signum(T&& x, std::false_type) { return T(0) < x; }
-
-template <class T> inline constexpr
-int signum(T&& x, std::true_type) { return (T(0) < x) - (x < T(0)); }
-
-template <class T> inline constexpr
-int signum(T&& x) { return signum(std::forward<T>(x), std::is_signed<T>()); }
-
-
-inline Num central_diff(const Num l, const Num r, const Num dx) {
-  return (r - l) / dx;
-}
-
-template<SInd nd> inline NumA<nd> central_diff
-(const NumA<nd> l, const NumA<nd> r, const NumA<nd> dx) {
-  NumA<nd> result;
-  for(SInd d = 0; d < nd; ++d) {
-    result(d) = (r(d) - l(d)) / dx(d);
-  }
-  return result;
-}
+/// \brief Mathematical functions and helper classes
+namespace math {
 
 ////////////////////////////////////////////////////////////////////////////////
 // The following code is from the Google Test Testing Framework.
@@ -150,28 +125,32 @@ template <> struct TypeWithSize<8> {
 template <typename RawType> struct FloatingPoint {
   /// Defines the unsigned integer type that has the same size as the
   /// floating point number.
-  typedef typename TypeWithSize<sizeof(RawType)>::UInt Bits;
+  using Bits = typename TypeWithSize<sizeof(RawType)>::UInt;
 
   /// Constants.
 
   /// # of bits in a number.
-  static constexpr size_t kBitCount = 8*sizeof(RawType);
+  static const constexpr size_t kBitCount = 8*sizeof(RawType);
 
   /// # of fraction bits in a number.
-  static constexpr size_t kFractionBitCount =
-    std::numeric_limits<RawType>::digits - 1;
+  static const constexpr size_t kFractionBitCount
+  = std::numeric_limits<RawType>::digits - 1;
 
   /// # of exponent bits in a number.
-  static constexpr size_t kExponentBitCount = kBitCount - 1 - kFractionBitCount;
+  static const constexpr size_t kExponentBitCount
+  = kBitCount - 1 - kFractionBitCount;
 
   /// The mask for the sign bit.
-  static constexpr Bits kSignBitMask = static_cast<Bits>(1) << (kBitCount - 1);
+  static const constexpr Bits kSignBitMask
+  = static_cast<Bits>(1) << (kBitCount - 1);
 
   // The mask for the fraction bits.
-  static constexpr Bits kFractionBitMask = (~static_cast<Bits>(0) >> (kExponentBitCount + 1));
+  static const constexpr Bits kFractionBitMask
+  = (~static_cast<Bits>(0) >> (kExponentBitCount + 1));
 
   /// The mask for the exponent bits.
-  static constexpr Bits kExponentBitMask = ~(kSignBitMask | kFractionBitMask);
+  static const constexpr Bits kExponentBitMask
+  = ~(kSignBitMask | kFractionBitMask);
 
   /// How many ULP's (Units in the Last Place) we want to tolerate when
   /// comparing two numbers.  The larger the value, the more error we
@@ -185,7 +164,7 @@ template <typename RawType> struct FloatingPoint {
   ///
   /// See the following article for more details on ULP:
   /// http://www.cygnus-software.com/papers/comparingfloats/comparingfloats.htm.
-  static const size_t kMaxUlps = 4;
+  static const constexpr size_t kMaxUlps = 4;
 
   /// Constructs a FloatingPoint from a raw floating-point number.
   ///
@@ -193,40 +172,43 @@ template <typename RawType> struct FloatingPoint {
   /// around may change its bits, although the new value is guaranteed
   /// to be also a NAN.  Therefore, don't expect this constructor to
   /// preserve the bits in x when x is a NAN.
-  explicit FloatingPoint(const RawType& x) { u_.value_ = x; }
+  explicit FloatingPoint(const RawType& x) noexcept { u_.value_ = x; }
 
   /// Static methods
 
   /// Reinterprets a bit pattern as a floating-point number.
   ///
   /// This function is needed to test the AlmostEquals() method.
-  static RawType ReinterpretBits(const Bits bits) {
+  static inline constexpr RawType ReinterpretBits(const Bits bits) noexcept {
     FloatingPoint fp(0);
     fp.u_.bits_ = bits;
     return fp.u_.value_;
   }
 
   /// Returns the floating-point number that represent positive infinity.
-  static RawType Infinity() {
+  static inline constexpr RawType Infinity() noexcept {
     return ReinterpretBits(kExponentBitMask);
   }
 
   /// Non-static methods
 
   /// Returns the bits that represents this number.
-  const Bits &bits() const { return u_.bits_; }
+  inline constexpr const Bits &bits() const noexcept { return u_.bits_; }
 
   /// Returns the exponent bits of this number.
-  Bits exponent_bits() const { return kExponentBitMask & u_.bits_; }
+  inline constexpr Bits exponent_bits() const noexcept
+  { return kExponentBitMask & u_.bits_; }
 
   /// Returns the fraction bits of this number.
-  Bits fraction_bits() const { return kFractionBitMask & u_.bits_; }
+  inline constexpr Bits fraction_bits() const noexcept
+  { return kFractionBitMask & u_.bits_; }
 
   /// Returns the sign bit of this number.
-  Bits sign_bit() const { return kSignBitMask & u_.bits_; }
+  inline constexpr Bits sign_bit() const noexcept
+  { return kSignBitMask & u_.bits_; }
 
   /// Returns true iff this is NAN (not a number).
-  bool is_nan() const {
+  inline constexpr bool is_nan() const noexcept {
     /// It's a NAN if the exponent bits are all ones and the fraction
     /// bits are not entirely zeros.
     return (exponent_bits() == kExponentBitMask) && (fraction_bits() != 0);
@@ -238,7 +220,7 @@ template <typename RawType> struct FloatingPoint {
   ///   - returns false if either number is (or both are) NAN.
   ///   - treats really large numbers as almost equal to infinity.
   ///   - thinks +0.0 and -0.0 are 0 DLP's apart.
-  bool AlmostEquals(const FloatingPoint& rhs) const {
+  inline constexpr bool AlmostEquals(const FloatingPoint& rhs) const noexcept {
     /// The IEEE standard says that any comparison operation involving
     /// a NAN must return false.
     if (is_nan() || rhs.is_nan()) return false;
@@ -269,7 +251,8 @@ template <typename RawType> struct FloatingPoint {
   ///
   /// Read http://en.wikipedia.org/wiki/Signed_number_representations
   /// for more details on signed number representations.
-  static Bits SignAndMagnitudeToBiased(const Bits &sam) {
+  inline constexpr static Bits SignAndMagnitudeToBiased
+  (const Bits &sam) noexcept {
     if (kSignBitMask & sam) {
       /// sam represents a negative number.
       return ~sam + 1;
@@ -281,8 +264,8 @@ template <typename RawType> struct FloatingPoint {
 
   /// \brief Given two numbers in the sign-and-magnitude representation,
   /// returns the distance between them as an unsigned number.
-  static Bits DistanceBetweenSignAndMagnitudeNumbers(const Bits &sam1,
-                                                     const Bits &sam2) {
+  inline constexpr static Bits DistanceBetweenSignAndMagnitudeNumbers
+  (const Bits &sam1, const Bits &sam2) noexcept {
     const Bits biased1 = SignAndMagnitudeToBiased(sam1);
     const Bits biased2 = SignAndMagnitudeToBiased(sam2);
     return (biased1 >= biased2) ? (biased1 - biased2) : (biased2 - biased1);
@@ -290,6 +273,7 @@ template <typename RawType> struct FloatingPoint {
 
   FloatingPointUnion u_;
 };
+////////////////////////////////////////////////////////////////////////////////
 
 /// \brief Creates a floating point type
 ///
@@ -302,33 +286,41 @@ template <typename RawType> struct FloatingPoint {
 ///
 template<class T> using FP = FloatingPoint<T>;
 
-/// \brief Comparison operator for floating point types
+/// \todo Compares two floating point values for equality
 template<class T>
-inline bool operator==(const FP<T>&& a, const FP<T>&& b) {
-  return a.AlmostEquals(std::forward<FP<T>>(b));
-}
+static inline constexpr bool approx(const T& a, const T& b) noexcept
+{ return FP<T>(a).AlmostEquals(FP<T>(b)); }
 
-/// \todo Rename to approx
+/// Takes the difference of two unsigned integers (without wrapping)
 template<class T>
-inline bool apprx(const T& a, const T& b) { return FP<T>(a).AlmostEquals(FP<T>(b)); }
+static inline constexpr T absdiff(const T& a, const T& b) noexcept
+{ return (a > b) ? (a - b) : (b - a); }
 
-////////////////////////////////////////////////////////////////////////////////
+template <class T>
+static inline constexpr int signum(const T& x, std::false_type) noexcept
+{ return T{0} < x; }
+
+template <class T>
+static inline constexpr int signum(const T& x, std::true_type) noexcept
+{ return (T{0} < x) - (x < T{0}); }
+
+/// \brief Returns the signum of \p x, i.e. -1 if x < 0, +1 if x > 0, and 0
+/// otherwise
+template <class T>
+static inline constexpr int signum(const T& x) noexcept
+{ return signum(x, std::is_signed<T>()); }
+
 /// Useful traits
 namespace traits {
-////////////////////////////////////////////////////////////////////////////////
 
-template<class T> struct is_long_int { static const bool value = false; };
-template<> struct is_long_int<Ind>   { static const bool value = true; };
-template<> struct is_long_int<Int>   { static const bool value = true; };
+template<class T> struct is_long_int : std::false_type {};
+template<> struct is_long_int<Ind> : std::true_type {};
+template<> struct is_long_int<Int> : std::true_type {};
 
-////////////////////////////////////////////////////////////////////////////////
 } // namespace traits
-////////////////////////////////////////////////////////////////////////////////
 
-////////////////////////////////////////////////////////////////////////////////
 /// \brief Compile-time numeric functions
 namespace ct {
-////////////////////////////////////////////////////////////////////////////////
 
 /// \brief Computes the logarithm log_b(n) for (b,n) integers
 ///
@@ -347,14 +339,10 @@ constexpr long ipow(const long b, const long e){
          b * ipow(b,e-1l);
 }
 
-////////////////////////////////////////////////////////////////////////////////
 } // namespace ct
-////////////////////////////////////////////////////////////////////////////////
 
-////////////////////////////////////////////////////////////////////////////////
 /// \brief Run-time numeric functions
 namespace rt {
-////////////////////////////////////////////////////////////////////////////////
 
 namespace detail_ {
 
@@ -398,11 +386,11 @@ Integral1 ipow(Integral1 b, Integral2 e) {
   return result;
 }
 
-////////////////////////////////////////////////////////////////////////////////
 } // namespace rt
-////////////////////////////////////////////////////////////////////////////////
+
+} // namespace math
 
 ////////////////////////////////////////////////////////////////////////////////
-} } // hom3::math namespace
+} // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #endif

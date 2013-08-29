@@ -4,9 +4,9 @@
 /// Includes:
 #include <string>
 #include <vector>
-#include "../globals.hpp"
+#include "globals.hpp"
 #include "grid.hpp"
-#include "../geometry/geometry.hpp"
+#include "geometry/geometry.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 namespace hom3 { namespace grid {
 ////////////////////////////////////////////////////////////////////////////////
@@ -95,29 +95,25 @@ template<SInd nd, class edg> auto make_edge(edg, Num d, Num off)
 
 using edge::make_edge;
 
-template<SInd nd,class position>
-boundary::Interface<nd> make_boundary
-(position, Num d, Num off, std::string name, SolverIdx solverIdx,
- std::vector<boundary::ConditionHandler> bcs) {
-  return {name,make_edge<nd>(position(),d,off),solverIdx,std::move(bcs)};
+/// \brief Makes a single boundary condition
+template<SInd nd, class Solver, class position, class BC>
+typename Solver::Boundary make_boundary
+(position, Num d, Num off, std::string name, Solver& solver, BC&& bc) {
+  return {name, make_edge<nd>(position(), d, off), solver, std::forward<BC>(bc)};
 }
 
-template<SInd nd> struct make_conditions {
-  template<class T, EnableIf<traits::equal<SInd,nd,2,T>> = traits::dummy>
-  std::tuple<T,T,T,T> operator()(T t) {
-    return std::make_tuple(t,t,t,t);
-  }
-  template<class T, EnableIf<traits::equal<SInd,nd,3,T>> = traits::dummy>
-  std::tuple<T,T,T,T,T,T> operator()(T t) {
-    return std::make_tuple(t,t,t,t,t,t);
-  }
-};
+template<SInd nd, class T, EnableIf<traits::equal<SInd,nd,2,T>> = traits::dummy>
+std::tuple<T,T,T,T> make_conditions(T t) {
+  return std::make_tuple(t,t,t,t);
+}
 
+template<SInd nd, class T, EnableIf<traits::equal<SInd,nd,3,T>> = traits::dummy>
+std::tuple<T,T,T,T,T,T> make_conditions(T t) {
+  return std::make_tuple(t,t,t,t,t,t);
+}
+
+/// \brief Build boundaries for an unit cube
 template<SInd nd> struct make_boundaries {
-  using Boundary = typename Grid<nd>::Boundary;
-  using Boundaries = typename Grid<nd>::Boundaries;
-  using Condition = boundary::ConditionHandler;
-
   struct BoundaryPosition { Num x_max, x_min, off; };
   auto boundary_position(RootCell<nd> rootCell) -> BoundaryPosition {
     auto length = rootCell.length;
@@ -129,29 +125,40 @@ template<SInd nd> struct make_boundaries {
     return pos;
   }
 
-  template<class T>
-  Boundaries two_dim(SolverIdx solverId, RootCell<nd> rootCell, T&& bcs) {
+  template<class Solver, class BCs>
+  typename Solver::Boundaries
+  two_dim(Solver& solver, RootCell<nd> rootCell, BCs&& bcs) {
     auto p = boundary_position(rootCell);
 
-    Boundaries boundaries;
-    boundaries.push_back(make_boundary<nd>(edge::xneg<0>(),p.x_min,p.off,"left"  ,{solverId},{std::get<0>(bcs)}));
-    boundaries.push_back(make_boundary<nd>(edge::xpos<0>(),p.x_max,p.off,"right" ,{solverId},{std::get<1>(bcs)}));
-    boundaries.push_back(make_boundary<nd>(edge::xneg<1>(),p.x_min,p.off,"bottom",{solverId},{std::get<2>(bcs)}));
-    boundaries.push_back(make_boundary<nd>(edge::xpos<1>(),p.x_max,p.off,"top"   ,{solverId},{std::get<3>(bcs)}));
+    typename Solver::Boundaries boundaries;
+    boundaries.emplace_back
+    (make_boundary<nd>(edge::xneg<0>(), p.x_min, p.off, "left"  , solver, std::get<0>(bcs)));
+    boundaries.emplace_back
+    (make_boundary<nd>(edge::xpos<0>(), p.x_max, p.off, "right" , solver, std::get<1>(bcs)));
+    boundaries.emplace_back
+    (make_boundary<nd>(edge::xneg<1>(), p.x_min, p.off, "bottom", solver, std::get<2>(bcs)));
+    boundaries.emplace_back
+    (make_boundary<nd>(edge::xpos<1>(), p.x_max, p.off, "top"   , solver, std::get<3>(bcs)));
     return boundaries;
   }
 
-  template<class T, EnableIf<traits::equal<SInd,nd,2,T>> = traits::dummy>
-  Boundaries operator()(SolverIdx solverId, RootCell<nd> rootCell, T&& bcs) {
-    return two_dim(solverId,rootCell,std::forward<T>(bcs));
+  template<class Solver, class BCs,
+           EnableIf<traits::equal<SInd, nd, 2, BCs>> = traits::dummy>
+  typename Solver::Boundaries
+  operator()(Solver& solver, RootCell<nd> rootCell, BCs&& bcs) {
+    return two_dim(solver, rootCell, std::forward<BCs>(bcs));
   }
 
-  template<class T, EnableIf<traits::equal<SInd,nd,3,T>> = traits::dummy>
-  Boundaries operator()(SolverIdx solverId, RootCell<nd> rootCell, T&& bcs) {
+  template<class Solver, class BCs,
+           EnableIf<traits::equal<SInd, nd, 3, BCs>> = traits::dummy>
+  typename Solver::Boundaries
+  operator()(Solver& solver, RootCell<nd> rootCell, BCs&& bcs) {
     auto p = boundary_position(rootCell);
-    auto boundaries = two_dim(solverId, rootCell, std::forward<T>(bcs));
-    boundaries.push_back(make_boundary<nd>(edge::xneg<2>(),p.x_min,p.off,"front" ,{solverId},{std::get<4>(bcs)}));
-    boundaries.push_back(make_boundary<nd>(edge::xpos<2>(),p.x_max,p.off,"back " ,{solverId},{std::get<5>(bcs)}));
+    auto boundaries = two_dim(solver, rootCell, std::forward<BCs>(bcs));
+    boundaries.emplace_back
+    (make_boundary<nd>(edge::xneg<2>(), p.x_min, p.off, "front", solver, std::get<4>(bcs)));
+    boundaries.emplace_back
+    (make_boundary<nd>(edge::xpos<2>(), p.x_max, p.off, "back ", solver, std::get<5>(bcs)));
     return boundaries;
   }
 };
@@ -159,7 +166,7 @@ template<SInd nd> struct make_boundaries {
 
 template<SInd nd, class MeshGen = grid::generation::MinLevel>
 io::Properties properties
-(const RootCell<nd> rootCell, const SInd minRefLvl, const SInd maxNoContainers = 1) {
+(const RootCell<nd> rootCell, const SInd minRefLvl, const SInd maxNoGridSolvers = 1) {
 
   const Ind maxNoGridNodes = no_nodes<nd>(minRefLvl);
 
@@ -171,7 +178,7 @@ io::Properties properties
   io::insert_property<grid::RootCell<nd>>(properties,"rootCell",rootCell);
   io::insert_property<Ind>(properties,"maxNoGridNodes",maxNoGridNodes);
   io::insert_property<std::function<void(Grid<nd>&)>>(properties,"meshGeneration", mesh_gen);
-  io::insert_property<SInd>(properties,"maxNoContainers",maxNoContainers);
+  io::insert_property<SInd>(properties,"maxNoGridSolvers",maxNoGridSolvers);
   return properties;
 }
 

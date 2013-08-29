@@ -1,11 +1,11 @@
 /// Includes:
-#include "../../../grid/grid.hpp"
-#include "../../../grid/helpers.hpp"
+#include "grid/grid.hpp"
+#include "grid/helpers.hpp"
 /// External Includes:
 #include "gtest/gtest.h"
 /// Options:
 #define ENABLE_DBG_ 0
-#include "../../../misc/dbg.hpp"
+#include "misc/dbg.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
 using namespace hom3;
@@ -29,12 +29,12 @@ template<SInd nd> struct nghbrIds {
 /// nghbrId must have nId as neighbor also but in position oppositeNghbrPos
 template<SInd nd>
 void consistency_nghbr_check(const grid::Grid<nd>& grid) {
-  for(const auto nId : grid.nodes().nodes()) {
-    for(const auto nghbrPos : grid.nodes().nghbr_pos()) {
-      const auto nghbrId = grid.nodes().find_samelvl_nghbr(nId,nghbrPos);
+  for(const auto nId : grid.nodes()) {
+    for(const auto nghbrPos : grid.neighbor_positions()) {
+      const auto nghbrId = grid.find_samelvl_neighbor(nId,nghbrPos);
       if(is_valid(nghbrId)) {
-        const auto oppositeNghbrPos = grid.nodes().opposite_nghbr_position(nghbrPos);
-        EXPECT_EQ(nId,grid.nodes().find_samelvl_nghbr(nghbrId,oppositeNghbrPos));
+        const auto oppositeNghbrPos = grid.opposite_neighbor_position(nghbrPos);
+        EXPECT_EQ(nId,grid.find_samelvl_neighbor(nghbrId,oppositeNghbrPos));
       }
     }
   }
@@ -46,13 +46,13 @@ TEST(hierarchical_container_test, constructor) {
   grid.read_mesh_generator();
   grid.generate_mesh();
 
-  EXPECT_EQ(grid.nodes().size(),Ind(73));
+  EXPECT_EQ(grid.size(),Ind(73));
 }
 
 grid::Grid<3> small3DGrid(small_grid<3>(2),grid::initialize);
 
 TEST(hierarchical_container_test, test_write_grid_domain_3d) {
-  write_domain("grid_3D",&small3DGrid);
+  write_domain("grid_3D", small3DGrid);
 }
 
 /// \test tests childs ranges
@@ -63,7 +63,7 @@ TEST(hierarchical_container_test, test_childs_range) {
     std::array<SInd,8> childs_0 = {{1,2,3,4,5,6,7,8}};
     return childs_0[pos];
   };
-  auto childs = small3DGrid.nodes().childs(NodeIdx{0});
+  auto childs = small3DGrid.childs(NodeIdx{0});
   int posCounter = 0;
   for(auto child : childs) {
     EXPECT_EQ(expected_childs_0(posCounter),child());
@@ -75,7 +75,7 @@ TEST(hierarchical_container_test, test_childs_range) {
     std::array<SInd,8> childs_1 = {{9,10,11,12,13,14,15,16}};
     return childs_1[pos];
   };
-  childs = small3DGrid.nodes().childs(NodeIdx{1});
+  childs = small3DGrid.childs(NodeIdx{1});
   posCounter = 0;
   for(auto child : childs) {
     EXPECT_EQ(expected_childs_1(posCounter),child());
@@ -92,13 +92,13 @@ TEST(hierarchical_container_test, test_child_position_in_parent) {
     return childs_1[(nIdx - NodeIdx{1})()];
   };
 
-  for(auto child : small3DGrid.nodes().childs(NodeIdx{0})) {
-    EXPECT_EQ(expected_positions_0(child),small3DGrid.nodes().position_in_parent(child));
+  for(auto child : small3DGrid.childs(NodeIdx{0})) {
+    EXPECT_EQ(expected_positions_0(child),small3DGrid.position_in_parent(child));
   }
 
   // if the child has no parent you should expect a death in debug mode
   #ifndef NDEBUG
-  EXPECT_DEATH(small3DGrid.nodes().position_in_parent(NodeIdx{0}),"[\\S\\s]+");
+  EXPECT_DEATH(small3DGrid.position_in_parent(NodeIdx{0}),"[\\S\\s]+");
   #endif
 }
 
@@ -107,8 +107,8 @@ TEST(hierarchical_container_test, test_is_leaf_cell) {
   auto expected_leaf = [](const NodeIdx nIdx) {
     return nIdx < NodeIdx{9} ? false : true;
   };
-  for(auto nIdx : small3DGrid.nodes().nodes()) {
-    EXPECT_EQ(expected_leaf(nIdx),small3DGrid.nodes().is_leaf(nIdx));
+  for(auto nIdx : small3DGrid.nodes()) {
+    EXPECT_EQ(expected_leaf(nIdx),small3DGrid.is_leaf(nIdx));
   }
 }
 
@@ -116,7 +116,7 @@ TEST(hierarchical_container_test, test_is_leaf_cell) {
 TEST(hierarchical_container_test, test_3D_strict_samelvl_nghbrs) {
 
   /// check # of nghbrs returned is correct
-  auto rootNghbrs = small3DGrid.nodes().all_samelvl_nghbrs<strict>(NodeIdx{0});
+  auto rootNghbrs = small3DGrid.all_samelvl_neighbors<strict>(NodeIdx{0});
   EXPECT_EQ(decltype(boost::distance(rootNghbrs))(2 * 3 /* 2 * nd*/),boost::distance(rootNghbrs));
 
   consistency_nghbr_check(small3DGrid);
@@ -126,8 +126,8 @@ TEST(hierarchical_container_test, test_3D_strict_samelvl_nghbrs) {
 
   // checks nghbrs
   auto check_nghbrs = [](const NodeIdx nId, const std::array<Ind,6>& nghbrsNid) {
-    auto nghbrPos = small3DGrid.nodes().nghbr_pos();
-    auto nghbrs = small3DGrid.nodes().all_samelvl_nghbrs<strict>(nId);
+    auto nghbrPos = small3DGrid.neighbor_positions();
+    auto nghbrs = small3DGrid.all_samelvl_neighbors<strict>(nId);
     for(auto pos : nghbrPos) {
       EXPECT_EQ(NodeIdx{nghbrsNid[pos]},nghbrs[pos]);
     }
@@ -191,17 +191,17 @@ TEST(hierarchical_container_test, test_nghbrs_ranges) {
 }
 
 
-grid::Grid<2> small2DGrid(small_grid<2>(3),grid::initialize);
+grid::Grid<2> small2DGrid(small_grid<2>(3), grid::initialize);
 
 TEST(hierarchical_container_test, test_write_grid_domain_2d) {
-  write_domain("grid_2D",&small2DGrid);
+  write_domain("grid_2D", small2DGrid);
 }
 
 /// \test test computation of samelvl nghbrs
 TEST(hierarchical_container_test, test_2D_strict_samelvl_nghbrs) {
 
   /// check # of nghbrs returned is correct
-  auto rootNghbrs = small2DGrid.nodes().all_samelvl_nghbrs<strict>(NodeIdx{0});
+  auto rootNghbrs = small2DGrid.all_samelvl_neighbors<strict>(NodeIdx{0});
   EXPECT_EQ(boost::distance(rootNghbrs), decltype(boost::distance(rootNghbrs))(2 * 2 /* 2 * nd*/));
 
   auto eIdx = invalid<Ind>();
@@ -210,8 +210,8 @@ TEST(hierarchical_container_test, test_2D_strict_samelvl_nghbrs) {
 
   // checks nghbrs
   auto check_nghbrs = [](const NodeIdx nIdx, const std::array<Ind,4>& shouldNghbrId) {
-    auto nghbrPos = small2DGrid.nodes().nghbr_pos();
-    auto isNghbrId = small2DGrid.nodes().all_samelvl_nghbrs<strict>(nIdx);
+    auto nghbrPos = small2DGrid.neighbor_positions();
+    auto isNghbrId = small2DGrid.all_samelvl_neighbors<strict>(nIdx);
     //DBGV_ON((nId)(isNghbrId[0])(shouldNghbrId[0])(isNghbrId[0])(shouldNghbrId[1])(isNghbrId[1])(shouldNghbrId[2])(isNghbrId[2])(shouldNghbrId[3])(isNghbrId[3]));
     for(auto pos : nghbrPos) {
       EXPECT_EQ(NodeIdx{shouldNghbrId[pos]},isNghbrId[pos]);

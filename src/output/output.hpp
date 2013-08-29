@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <vector>
 #include "../globals.hpp"
-#include "../misc/helpers.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 namespace hom3 {
 
@@ -134,14 +133,12 @@ template<SInd nd> struct StreamableDomain {
   /// \todo this function should be removed eventually, output should be
   /// exclusively range-based
   StreamableDomain(const grid::CartesianHSP<nd>* g)
-      : cells([=](){ return g->nodes().leaf_nodes()
+      : cells([=](){ return g->leaf_nodes()
               | boost::adaptors::transformed(
-                  [&](const NodeIdx i){
-                  return i();
-                })
-              ; }),
-        cell_vertices([=](const Ind nIdx){
-            return g->compute_cell_vertices(NodeIdx{nIdx}); })
+                  [&](const NodeIdx i){ return i(); });
+        })
+      , cell_vertices([=](const Ind nIdx){
+          return g->compute_cell_vertices(NodeIdx{nIdx}); })
   {}
 
   template<class CellRange, class CellVerticesRange>
@@ -272,13 +269,13 @@ template<SInd nd, class Format = io::format::ascii> struct Vtk {
     auto vertex_cmp = [](const Vertex& a, const Vertex& b) {
       if(a(0) > b(0)) { // \todo optimize?
         return false;
-      } else if(math::apprx(a(0),b(0))) {
+      } else if(math::approx(a(0),b(0))) {
         if(a(1) > b(1)) {
           return false;
-        } else if(math::apprx(a(1),b(1))) {
+        } else if(math::approx(a(1),b(1))) {
           if(nd == 2) {
             return false;
-          } else if(nd == 3 && (a(2) > b(2) || math::apprx(a(2),b(2)))) {
+          } else if(nd == 3 && (a(2) > b(2) || math::approx(a(2),b(2)))) {
             return false;
           }
         }
