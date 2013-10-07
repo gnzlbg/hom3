@@ -15,7 +15,7 @@ constexpr auto lhs = lhs_tag{};
 
 namespace bc {
 
-} // namespace bc
+}  // namespace bc
 
 namespace time_integration {
 
@@ -25,11 +25,11 @@ struct euler_forward {};
 struct runge_kutta_2 {};
 ///@}
 
-} // namespace time_integration
+}  // namespace time_integration
 
 ////////////////////////////////////////////////////////////////////////////////
-} // namespace fv
-} // namespace solver
-} // namespace hom3
+}  // namespace fv
+}  // namespace solver
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #endif

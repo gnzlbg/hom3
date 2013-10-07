@@ -17,7 +17,7 @@ static const Ind outputInterval = 10;
 static const Ind maxNoTimeSteps = 1000;
 
 /// General Physical properties:
-static const SInd nd = 3; ///< #of spatial dimensions
+static const SInd nd = 3;  ///< #of spatial dimensions
 
 /// Heat Solver properties:
 
@@ -62,7 +62,7 @@ auto heat_properties(grid::Grid<nd>* grid, const Num timeEnd) {
             << " #nodes/face: "
             << no_nodes_per_face<nd>(minRefLevel) << "\n";
 
-  InitialDomain initialDomain = [](const NumA<nd>){ return true; };
+  InitialDomain initialDomain = [](const NumA<nd>) { return true; };
 
   Properties p;
   insert<grid::Grid<nd>*>  (p, "grid", grid);

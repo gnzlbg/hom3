@@ -151,6 +151,19 @@ template<SInd nd_, class NumFlux, class Solver> struct Physics {
   inline Num gamma()   const noexcept { return quantities.gamma(); }
   inline Num gammaM1() const noexcept { return quantities.gammaM1(); }
 
+  /// \brief Conservative variables from vector of primitive variables \p pvs
+  inline NumA<nvars> cv(const NumA<nvars> pvs) const noexcept
+  { return quantities.template cv<nd>(pvs); }
+  /// \brief Convervative variables of cell \p cIdx.
+  template<class _> inline NumA<nvars> cv(_, const CellIdx cIdx) const noexcept
+  { return b_()->Q(_(), cIdx); }
+  /// \brief Primitive variables from vector of conservative variables \p cvs
+  inline NumA<nvars> pv(const NumA<nvars> cvs) const noexcept
+  { return quantities.template pv<nd>(cvs); }
+  /// \brief Primitive variables of cell \p cIdx.
+  template<class _> inline NumA<nvars> pv(_, const CellIdx cIdx) const noexcept
+  { return pv(cv(_(), cIdx)); }
+
   ///@}
 
   /// \name Numerical functions
@@ -161,7 +174,7 @@ template<SInd nd_, class NumFlux, class Solver> struct Physics {
   template<class _>
   inline NumA<nvars> compute_num_flux
   (const CellIdx lIdx, const CellIdx rIdx, const SInd d, const Num dx,
-   const Num dt) const noexcept
+    const Num dt) const noexcept
   { return compute_num_flux_<_>(lIdx, rIdx, d, dx, dt, NumFlux()); }
 
   /// \brief computes dt at cell \p cIdx
@@ -248,7 +261,7 @@ template<SInd nd_, class NumFlux, class Solver> struct Physics {
   /// the cell centers is \p dx and the time-step is \p dt
   template<class _> inline NumA<nvars> compute_num_flux_
   (const CellIdx lIdx, const CellIdx rIdx, const SInd d, const Num dx,
-   const Num dt, flux::lax_friedrichs) const noexcept {
+    const Num dt, flux::lax_friedrichs) const noexcept {
     return 0.5 * (flux<_>(lIdx, d) + flux<_>(rIdx, d)
                   + dx / dt * (Q(_(), lIdx) - Q(_(), rIdx)));
   }
@@ -262,7 +275,7 @@ template<SInd nd_, class NumFlux, class Solver> struct Physics {
   /// between the cells \p lIdx and \p rIdx.
   template<class _> inline NumA<nvars> compute_num_flux_
   (const CellIdx lIdx, const CellIdx rIdx, const SInd d, const Num,
-   const Num, flux::ausm) const noexcept {
+    const Num, flux::ausm) const noexcept {
     const Num ML = u<_>(lIdx, d) / a<_>(lIdx);
     const Num MR = u<_>(rIdx, d) / a<_>(rIdx);
 
@@ -314,30 +327,16 @@ template<SInd nd_, class NumFlux, class Solver> struct Physics {
   ///@}
 
   ///@}
- public:
-
-  inline NumA<nvars> cv(const NumA<nvars> pvs) const noexcept
-  { return quantities.template cv<nd>(pvs); }
-
-  inline NumA<nvars> pv(const NumA<nvars> cvs) const noexcept
-  { return quantities.template pv<nd>(cvs); }
-
-  template<class _> inline NumA<nvars> cv(_, const CellIdx cIdx) const noexcept
-  { return b_()->Q(_(), cIdx); }
-
-  template<class _> inline NumA<nvars> pv(_, const CellIdx cIdx) const noexcept
-  { return pv(cv(_(), cIdx)); }
-
 };
 
 HOM3_FV_PHYSICS_SOLVER_();
 
-} // namespace euler
+}  // namespace euler
 
 ////////////////////////////////////////////////////////////////////////////////
-} // namespace fv
-} // namespace solver
-} // namespace hom3
+}  // namespace fv
+}  // namespace solver
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #undef ENABLE_DBG_
 ////////////////////////////////////////////////////////////////////////////////

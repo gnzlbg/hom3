@@ -13,7 +13,7 @@ namespace hom3 { namespace solver { namespace fv {
 
 /// \brief Add unit cube bcs to solver
 template<class Solver, class RootCell, class BCs>
-void append_bcs(Solver& solver, RootCell rCell, BCs&& cs) {
+inline void append_bcs(Solver& solver, RootCell rCell, BCs&& cs) {
   using namespace grid::helpers; using namespace cube; using namespace edge;
   static const SInd nd = Solver::nd;
   auto bcs = make_boundaries<nd>()(solver, rCell, std::forward<BCs>(cs));
@@ -42,9 +42,10 @@ template<class Domain, class... Domains> inline void write_domains
   write_domains(domains...);
 }
 
+/// \brief Writes \p solver output every \p outputInterval solution steps
 template<class Solver>
 inline void write_output(const Ind outputInterval, Solver& solver) {
-  if(solver.step() % outputInterval == 0) {
+  if (solver.step() % outputInterval == 0) {
     write_domain(solver);
   }
 }
@@ -54,44 +55,49 @@ template<class Solver, class... Solvers> inline void write_output
   write_output(outputInterval, solvers...);
 }
 
+/// \brief Checks if a \p solver has finished by either achieving its final time
+/// or executing more than \p maxNoSteps solution steps.
 template<class Solver>
-bool solver_finished(const Ind maxNoSteps, const Solver& solver) noexcept {
+inline bool solver_finished(const Ind maxNoSteps,
+                            const Solver& solver) noexcept {
   return solver.time() >= solver.final_time() || solver.step() >= maxNoSteps;
 }
-template<class Solver, class... Solvers> bool solver_finished
-(const Ind maxNoSteps, const Solver& solver, const Solvers&... solvers) noexcept {
+template<class Solver, class... Solvers>
+inline bool solver_finished(const Ind maxNoSteps, const Solver& solver,
+                     const Solvers&... solvers) noexcept {
   return solver_finished(maxNoSteps, solver)
       || solver_finished(maxNoSteps, solvers...);
 }
 
+/// \brief Checks if the solution of \p solver has diverged.
 template<class Solver>
-bool solution_diverged(const Solver& solver) noexcept {
+inline bool solution_diverged(const Solver& solver) noexcept {
   return solver.dt() < 1e-300 || solver.dt() > 1e300;
 }
-
 template<class Solver, class... Solvers>
-bool solution_diverged(const Solver& solver, const Solvers&... solvers) {
+inline bool solution_diverged(const Solver& solver, const Solvers&... solvers) {
   return solution_diverged(solver) || solution_diverged(solvers...);
 }
 
+/// \brief Writes the time-step information of \p solver.
 template<class Solver>
-void write_timestep(const Solver& solver) noexcept {
+inline void write_timestep(const Solver& solver) noexcept {
   std::cerr << "Solver: " << solver.domain_name() << " | "
             << "step: " << solver.step() << " | "
             << "time: " << solver.time() << " | "
             << "dt: " << solver.dt() << "\n";
 }
-
 template<class Solver, class... Solvers>
-void write_timestep(const Solver& solver, const Solvers&... solvers) noexcept {
+inline void write_timestep(const Solver& solver,
+                           const Solvers&... solvers) noexcept {
   write_timestep(solver);
   write_timestep(solvers...);
 }
 
-template<SInd nd, class Solver>
-void run_solver
-(grid::Grid<nd>& grid, Solver& solver,
- const Ind maxNoTimeSteps, const Ind outputInterval) {
+/// \brief Runs solver \p solver on the grid \p grid.
+template<class Grid, class Solver> void run_solver
+(Grid& grid, Solver& solver, const Ind maxNoTimeSteps,
+  const Ind outputInterval) noexcept {
   initialize(grid, solver);
   write_domains(grid, solver);
   while (!solver_finished(maxNoTimeSteps, solver)) {
@@ -107,8 +113,8 @@ void run_solver
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-} // namespace fv
-} // namespace solver
-} // namespace hom3
+}  // namespace fv
+}  // namespace solver
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #endif

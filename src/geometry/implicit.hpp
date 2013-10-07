@@ -201,6 +201,34 @@ Difference<T,U> make_difference(std::shared_ptr<T> t, std::shared_ptr<U> u)
 ////////////////////////////////////////////////////////////////////////////////
 } // implicit namespace
 ////////////////////////////////////////////////////////////////////////////////
+
+/// \brief Makes a cut-off cube
+template<SInd nd> auto make_cube
+(const NumA<nd> x_center, const NumA<nd> dimensions0, const Num cell_length,
+ const Num tol = 0.6) noexcept {
+  const NumA<nd> dimensions1 = dimensions0.array() + (cell_length);
+  const NumA<nd> dimensions2 = dimensions0.array() - tol * (cell_length);
+
+  auto cube0
+    = geometry::make_geometry<
+        geometry::implicit::Square<nd>
+      >(x_center, dimensions0);
+
+  auto cube1
+    = geometry::make_geometry<
+        geometry::implicit::Square<nd>
+      >(x_center, dimensions1);
+
+  auto cube2
+    = geometry::implicit::adaptors::invert
+      (geometry::make_geometry<
+         geometry::implicit::Square<nd>
+       >(x_center, dimensions2));
+
+  return std::make_tuple(cube0, cube1, cube2);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 } // geometry namespace
 ////////////////////////////////////////////////////////////////////////////////
 } // hom3 namespace

@@ -18,7 +18,7 @@ static const Ind outputInterval = 20;
 static const Ind maxNoTimeSteps = 40000;
 
 /// General Physical properties:
-static const SInd nd = 2; ///< #of spatial dimensions
+static const SInd nd = 2;  ///< #of spatial dimensions
 
 /// CNS Solver properties:
 
@@ -47,8 +47,8 @@ const SInd minRefLevel = 8;
 template<SInd nd, class InitD>
 auto cns_properties
 (grid::Grid<nd>* grid, const Num timeEnd, const Num ReInfinity,
- InitD initialDomain = [](const NumA<nd>) { return true; },
- const Num MInfinity = 0.1) {
+  InitD initialDomain = [](const NumA<nd>) { return true; },
+  const Num MInfinity = 0.1) {
   using namespace grid::helpers::cube; using namespace io;
   using namespace quantity; using namespace unit;
   using InitialDomain = typename CNSSolver<nd>::InitialDomain;
@@ -93,7 +93,7 @@ TEST(cns_fv_solver, constant_ic) {
 
   /// Root cell covering the domain [0,1] in each spatial dimension
   const auto rootCell = grid::RootCell<nd> {
-    NumA<nd>{0., 0.}, NumA<nd>{1.,1.}
+    NumA<nd>{0., 0.}, NumA<nd>{1., 1.}
   };
 
   /// Create a cube grid:
@@ -109,7 +109,7 @@ TEST(cns_fv_solver, constant_ic) {
       })
   };
 
-  ///Define an initial condition
+  /// Define an initial condition
   auto constant_ic = [&](const NumA<nd>) {
     NumA<CNSSolver<nd>::nvars> pvars = NumA<CNSSolver<nd>::nvars>::Zero();
     pvars(V::rho()) = cnsSolver.quantities.rho_infinity();
@@ -144,7 +144,7 @@ TEST(cns_fv_solver, sod_shock_tube_ic) {
 
   /// Root cell covering the domain [0,1] in each spatial dimension
   const auto rootCell = grid::RootCell<nd> {
-    NumA<nd>{0., 0.}, NumA<nd>{1.,1.}
+    NumA<nd>{0., 0.}, NumA<nd>{1., 1.}
   };
 
   /// Create a cube grid:
@@ -214,7 +214,7 @@ TEST(cns_fv_solver, flow_past_cube) {
 
   /// Root cell covering the domain [0,1] in each spatial dimension
   const auto rootCell = grid::RootCell<nd> {
-    NumA<nd>{-7., -7.}, NumA<nd>{7.,7.}
+    NumA<nd>{-7., -7.}, NumA<nd>{7., 7.}
   };
 
   /// Create a cube grid:
@@ -242,7 +242,7 @@ TEST(cns_fv_solver, flow_past_cube) {
     pv(V::p())   = cnsSolver.quantities.p_infinity();
     pv(V::rho()) = cnsSolver.quantities.rho_infinity();
 
-    if(x(0) < x0_cube - length && x(0) > x0_cube - 2. * length
+    if (x(0) < x0_cube - length && x(0) > x0_cube - 2. * length
        && x(1) > 0. && x(1) < length) {
       pv(V::rho()) = pv(V::rho()) * 0.9;  // density bump
     }

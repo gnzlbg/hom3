@@ -68,17 +68,17 @@ auto shock_tube(const Num dir, const Num angle, const Num x0,
     uR(0) = umagR * std::cos(alpha);
     uR(1) = umagR * std::sin(alpha);
 
-    const Num pos = math::approx<Num>(alpha,0) ? x0 : x0 * std::sqrt(2.);
+    const Num pos = math::approx<Num>(alpha, 0) ? x0 : x0 * std::sqrt(2.);
 
-    if(x_rot(dir) < pos) {
+    if (x_rot(dir) < pos) {
       pvars(V::rho()) = rhoL;
-      for(SInd d = 0; d < nd; ++d) {
+      for (SInd d = 0; d < nd; ++d) {
         pvars(V::u(d)) = uL(d);
       }
       pvars(V::p()) = pL;
     } else {
       pvars(V::rho()) = rhoR;
-      for(SInd d = 0; d < nd; ++d) {
+      for (SInd d = 0; d < nd; ++d) {
         pvars(V::u(d)) = uR(d);
       }
       pvars(V::p()) = pR;
@@ -89,12 +89,12 @@ auto shock_tube(const Num dir, const Num angle, const Num x0,
   return ic;
 }
 
-} // namespace ic
+}  // namespace ic
 
 ////////////////////////////////////////////////////////////////////////////////
-} // namespace euler
-} // namespace fv
-} // namespace solver
-} // namespace hom3
+}  // namespace euler
+}  // namespace fv
+}  // namespace solver
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #endif

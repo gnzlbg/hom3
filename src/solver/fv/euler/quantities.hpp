@@ -12,7 +12,6 @@ namespace hom3 { namespace solver { namespace fv { namespace euler {
 /// - Convert from dimensionless-to-dimensioned variables and vice-versa.
 /// - Computes free-stream quantities.
 struct Quantities {
-
   /// \brief Quantities constructor
   ///
   /// Requires properties:
@@ -27,8 +26,7 @@ struct Quantities {
       (io::read<quantity::SpecificGasConstant>(properties, "Rspecific"))
     , T0_(io::read<quantity::Temperature>(properties, "T0"))
     , rho0_(io::read<quantity::Density>(properties, "rho0"))
-    , MInfty_(io::read<quantity::Dimensionless>(properties, "Minfty"))
-  {
+    , MInfty_(io::read<quantity::Dimensionless>(properties, "Minfty")) {
     std::cerr << "Free-stream variables: "
               << "MInfty = " << MInfty_ << " "
               << "pInfty = " << p_infinity() << " "
@@ -178,9 +176,9 @@ struct Quantities {
     NumA<V::nvars> pvs = NumA<V::nvars>::Zero();
     pvs(V::rho()) = cvs(V::rho());
     Num velMag2 = 0;
-    for(SInd d = 0; d < nd; ++d) {
+    for (SInd d = 0; d < nd; ++d) {
       pvs(V::u(d)) = cvs(V::rho_u(d)) / cvs(V::rho());
-      velMag2 += std::pow(pvs(V::u(d)),2);
+      velMag2 += std::pow(pvs(V::u(d)), 2);
     }
     pvs(V::p()) = (gamma - 1.0) * (cvs(V::rho_E())
                                    - 0.5 * cvs(V::rho()) * velMag2);
@@ -220,9 +218,9 @@ template<SInd nd> static inline NumA<Indices<nd>::nvars> pv
 { return Quantities::template pv<nd>(cvs, gamma); }
 
 ////////////////////////////////////////////////////////////////////////////////
-} // namespace euler
-} // namespace fv
-} // namespace solver
-} // namespace hom3
+}  // namespace euler
+}  // namespace fv
+}  // namespace solver
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #endif

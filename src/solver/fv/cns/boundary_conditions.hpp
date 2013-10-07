@@ -48,7 +48,7 @@ template<class Solver> struct Inflow : fv::bc::Condition<Inflow<Solver>> {
       }
 
       NumA<nvars> gCellVars;  /// PV of ghost cell:
-      for(SInd d = 0; d < nd; ++d) {  /// velocity_surface = uD
+      for (SInd d = 0; d < nd; ++d) {  /// velocity_surface = uD
         gCellVars(V::u(d)) = this->dirichlet(bndryPVars(V::u(d)), uD(d));
       }
       /// density_surface = rhoD
@@ -88,7 +88,7 @@ template<class Solver> struct Outflow : fv::bc::Condition<Outflow<Solver>>  {
 
       NumA<nvars> gCellVars;  /// PV of ghost cell:
 
-      for (SInd d = 0; d < nd; ++d) { // normal velocity gradient = 0
+      for (SInd d = 0; d < nd; ++d) {  // normal velocity gradient = 0
         gCellVars(V::u(d)) = this->neumann(bndryPVars(V::u(d)));
       }
       /// normal density gradient = 0
@@ -123,7 +123,7 @@ struct AdiabaticNoSlip : fv::bc::Condition<AdiabaticNoSlip<Solver>>  {
 
   template<class _>
   void operator()(_, Range<CellIdx> ghost_cells) const noexcept {
-    for(auto ghostIdx : ghost_cells) {
+    for (auto ghostIdx : ghost_cells) {
       const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
       const auto bndryPVars = s.pv(_(), bndryIdx);  /// PV of boundary cell
 
@@ -163,7 +163,7 @@ struct AdiabaticSlip  : fv::bc::Condition<AdiabaticSlip<Solver>> {
 
   template<class _>
   void operator()(_, Range<CellIdx> ghost_cells) const noexcept {
-    for(auto ghostIdx : ghost_cells) {
+    for (auto ghostIdx : ghost_cells) {
       const auto bndryInfo = s.boundary_info(ghostIdx);
       const CellIdx bndryIdx = bndryInfo.bndryIdx;
       auto pos_wrt_ghostCell = bndryInfo.bndryPos;
@@ -208,7 +208,7 @@ struct IsothermalNoSlip : fv::bc::Condition<IsothermalNoSlip<Solver>> {
 
   template<class _>
   void operator()(_, Range<CellIdx> ghost_cells) const noexcept {
-    for(auto ghostIdx : ghost_cells) {
+    for (auto ghostIdx : ghost_cells) {
       const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
       const auto bndryPVars = s.pv(_(), bndryIdx);  /// PV of boundary cell
 
@@ -217,7 +217,7 @@ struct IsothermalNoSlip : fv::bc::Condition<IsothermalNoSlip<Solver>> {
         gCellVars(d) = this->dirichlet(bndryPVars(d));
       }
       /// density surface = gamma * p_srfc / T_srfc
-      auto p_srfc = bndryPVars(V::p()); // i.e. ~= p_bndryCell
+      auto p_srfc = bndryPVars(V::p());  // i.e. ~= p_bndryCell
       const Num rho_srfc = p_srfc * s.quantities.gamma() / T_srfc(ghostIdx);
       gCellVars(V::rho()) = this->dirichlet(bndryPVars(V::rho()), rho_srfc);
       /// normal pressure gradient = 0
@@ -242,9 +242,9 @@ struct IsothermalNoSlip : fv::bc::Condition<IsothermalNoSlip<Solver>> {
 }  // namespace bc
 
 ////////////////////////////////////////////////////////////////////////////////
-} // namespace cns
-} // namespace fv
-} // namespace solver
-} // namespace hom3
+}  // namespace cns
+}  // namespace fv
+}  // namespace solver
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #endif

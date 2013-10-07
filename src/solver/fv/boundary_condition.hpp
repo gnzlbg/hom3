@@ -2,6 +2,7 @@
 #define HOM3_SOLVERS_FV_BOUNDARY_CONDITION_HPP_
 ////////////////////////////////////////////////////////////////////////////////
 /// Includes:
+#include <string>
 #include "globals.hpp"
 #include "grid/boundary.hpp"
 #include "tags.hpp"
@@ -35,19 +36,19 @@ template<SInd nd> struct Interface : grid::boundary::Interface<nd> {
   {}
 
   /// Applies the boundary condition to the lhs of a GhostCellRange
-  void apply(lhs_tag, GhostCellRange ghost_cells) const noexcept {
-    apply_lhs(lhs, ghost_cells);
-  }
+  void apply(lhs_tag, GhostCellRange ghost_cells) const noexcept
+  { apply_lhs(lhs, ghost_cells); }
 
   /// Applies the boundary condition to the rhs of a GhostCellRange
-  void apply(rhs_tag, GhostCellRange ghost_cells) const noexcept {
-    apply_rhs(rhs, ghost_cells);
-  }
+  void apply(rhs_tag, GhostCellRange ghost_cells) const noexcept
+  { apply_rhs(rhs, ghost_cells); }
 
-  Num slope(lhs_tag, const CellIdx cIdx, const SInd v, const SInd dir) const noexcept
+  Num slope(lhs_tag, const CellIdx cIdx, const SInd v,
+            const SInd dir) const noexcept
   { return slope_lhs(cIdx, v, dir); }
 
-  Num slope(rhs_tag, const CellIdx cIdx, const SInd v, const SInd dir) const noexcept
+  Num slope(rhs_tag, const CellIdx cIdx, const SInd v,
+            const SInd dir) const noexcept
   { return slope_rhs(cIdx, v, dir); }
 
  private:
@@ -61,27 +62,28 @@ template<SInd nd> struct Interface : grid::boundary::Interface<nd> {
 template<class BC> struct Condition {
   /// \brief Imposes boundary cell's tangential slope on the boundary surface
   template<class _>
-  Num slope(const CellIdx bndryIdx, const SInd v, const SInd dir) const noexcept
-  { return static_cast<const BC*>(this)->s.template slope<_>(bndryIdx, v, dir); }
+  Num slope(const CellIdx bndryIdx, const SInd v,
+            const SInd dir) const noexcept {
+    return static_cast<const BC*>(this)->s.template slope<_>(bndryIdx, v, dir);
+  }
 
   /// \brief Ghost cell value for dirichlet boundary condition
-  inline Num dirichlet
-  (const Num boundaryCellValue, const Num surfaceValue = 0) const noexcept
+  inline Num dirichlet(const Num boundaryCellValue,
+                       const Num surfaceValue = 0) const noexcept
   { return 2.0 * surfaceValue - boundaryCellValue; }
 
   /// \brief Ghost cell value for dirichlet boundary condition
-  inline Num neumann
-  (const Num boundaryCellValue, const Num surfaceFlux = 0,
-   const Num cell_distance = 0) const noexcept
+  inline Num neumann(const Num boundaryCellValue, const Num surfaceFlux = 0,
+                     const Num cell_distance = 0) const noexcept
   { return boundaryCellValue - cell_distance * surfaceFlux; }
 };
 
-} // namespace bc
+}  // namespace bc
 
 ////////////////////////////////////////////////////////////////////////////////
-} // namespace fv
-} // namespace solver
-} // hom3 namespace
+}  // namespace fv
+}  // namespace solver
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #undef ENABLE_DBG_
 ////////////////////////////////////////////////////////////////////////////////

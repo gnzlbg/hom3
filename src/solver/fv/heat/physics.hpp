@@ -68,7 +68,7 @@ template<SInd nd_, class NumFlux, class Solver> struct Physics {
   template<class U>
   inline NumA<nvars> compute_num_flux
   (const CellIdx lIdx, const CellIdx rIdx, const SInd d, const Num dx,
-   const Num dt) const noexcept
+    const Num dt) const noexcept
   { return compute_num_flux_<U>(lIdx, rIdx, d, dx, dt, NumFlux()); }
 
   /// \brief Computes the source term
@@ -113,7 +113,7 @@ template<SInd nd_, class NumFlux, class Solver> struct Physics {
   ///@{
   template<class _> inline NumA<nvars> compute_num_flux_
   (const CellIdx lIdx, const CellIdx rIdx, const SInd, const Num dx,
-   const Num, flux::three_point) const noexcept {
+    const Num, flux::three_point) const noexcept {
     NumA<nvars> tmp;
     tmp(0) = 1 / dx * (T<_>(lIdx) - T<_>(rIdx));
     return tmp;
@@ -125,12 +125,12 @@ template<SInd nd_, class NumFlux, class Solver> struct Physics {
 
 HOM3_FV_PHYSICS_SOLVER_();
 
-} // namespace heat
+}  // namespace heat
 
 ////////////////////////////////////////////////////////////////////////////////
-} // namespace fv
-} // namespace solver
-} // namespace hom3
+}  // namespace fv
+}  // namespace solver
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #undef ENABLE_DBG_
 ////////////////////////////////////////////////////////////////////////////////

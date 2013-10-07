@@ -145,9 +145,9 @@ template<SInd nd> static inline NumA<Indices<nd>::nvars> pv
 { return euler::pv<nd>(cvars, gamma); }
 
 ////////////////////////////////////////////////////////////////////////////////
-} // namespace cns
-} // namespace fv
-} // namespace solver
-} // namespace hom3
+}  // namespace cns
+}  // namespace fv
+}  // namespace solver
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #endif

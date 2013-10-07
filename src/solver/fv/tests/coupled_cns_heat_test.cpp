@@ -37,9 +37,6 @@ using CNSSolver = cns_physics::Solver<nd_, cns_flux, cns_time_integration>;
 /// CNS Solver Idx:
 static const auto cnsSolverIdx = SolverIdx{0};
 
-/// Boundary/Initial condition: fluid
-static const Num jetTRatio = 1.5;
-
 // Heat Physics:
 namespace heat_physics = solver::fv::heat;
 /// Select the numerical flux:
@@ -63,7 +60,7 @@ const SInd minRefLevel = 8;
 
 /// Root cell covering the domain [0,1] in each spatial dimension
 const auto rootCell = grid::RootCell<nd> {
-  NumA<nd>{-7., -7.}, NumA<nd>{7.,7.}
+  NumA<nd>{-7., -7.}, NumA<nd>{7., 7.}
 };
 
 /// Create a cube grid:
@@ -71,35 +68,12 @@ auto hgrid = grid::Grid<nd> {
   grid::helpers::cube::properties<nd>(rootCell, minRefLevel, 2)
 };
 
-/// \brief Makes a cut-off cube
-template<SInd nd> auto make_cube
-(const NumA<nd> x_center, const NumA<nd> dimensions0, const Num cell_length) {
-  const NumA<nd> dimensions1 = dimensions0.array() + (cell_length);
-  const NumA<nd> dimensions2 = dimensions0.array() - 0.6 * (cell_length);
-
-  auto cube0
-    = geometry::make_geometry<
-        geometry::implicit::Square<nd>
-      >(x_center, dimensions0);
-
-  auto cube1
-    = geometry::make_geometry<
-        geometry::implicit::Square<nd>
-      >(x_center, dimensions1);
-
-  auto cube2
-    = geometry::implicit::adaptors::invert
-      (geometry::make_geometry<
-         geometry::implicit::Square<nd>
-       >(x_center, dimensions2));
-
-  return std::make_tuple(cube0, cube1, cube2);
-}
 
 const Num length = 1.0;
 const Num h = hgrid.cell_length_at_level(minRefLevel);
 const Num x0_cube = -3.0;
-auto cubeD = make_cube<nd>(NumA<nd>{x0_cube, 0.0}, NumA<nd>{length, length}, h);
+auto cubeD = geometry::make_cube<nd>
+             (NumA<nd>{x0_cube, 0.0}, NumA<nd>{length, length}, h);
 
 /// \brief Creates properties for the CNS solver
 template<SInd nd> auto cns_properties() {
@@ -162,7 +136,7 @@ auto heat_properties() {
             << " #nodes/face: "
             << no_nodes_per_face<nd>(minRefLevel) << "\n";
 
-   InitialDomain initialDomain = [&](const NumA<nd> x) {
+  InitialDomain initialDomain = [&](const NumA<nd> x) {
     return (*std::get<0>(cubeD))(x) < 0. ? true : false;
   };
 
@@ -267,13 +241,12 @@ TEST(conjugate_heat_transfer_fv_solver, flow_past_solid_cube) {
 
     write_output(outputInterval, cnsSolver, heatSolver);
 
-    if(solution_diverged(cnsSolver, heatSolver)) {
+    if (solution_diverged(cnsSolver, heatSolver)) {
       write_domains(cnsSolver, heatSolver);
       TERMINATE("Solution diverged!");
     }
   }
   write_domains(cnsSolver, heatSolver);
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////

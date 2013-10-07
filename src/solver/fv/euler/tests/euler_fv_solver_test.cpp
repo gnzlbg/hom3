@@ -94,7 +94,7 @@ TEST(euler_fv_solver, constant_ic) {
   auto constant_ic = [&](const NumA<nd>) {
     NumA<eulerSolver.nvars> pvars = NumA<eulerSolver.nvars>::Zero();
     pvars(V::rho()) = 1.0;
-    for(SInd d = 0; d < nd; ++d) {
+    for (SInd d = 0; d < nd; ++d) {
       pvars(V::u(d)) = 0.5;
     }
     pvars(V::p()) = 1.0;
@@ -193,8 +193,8 @@ TEST(euler_fv_solver, problem123_ic) {
 
   /// Create boundary conditions
   auto nBc = euler_physics::bc::Neumann<EulerSolver<nd>>(eulerSolver);
-   solver::fv::append_bcs(eulerSolver, test_grid.root_cell(),
-                          make_conditions<nd>(nBc));
+  solver::fv::append_bcs(eulerSolver, test_grid.root_cell(),
+                         make_conditions<nd>(nBc));
 
   solver::fv::run_solver(test_grid, eulerSolver, maxNoTimeSteps,
                          outputInterval);
@@ -223,18 +223,20 @@ TEST(euler_fv_solver, explosion_ic) {
     const Num R = radius;
     NumA<nd> xE;
     xE(0) = 0.5; xE(1) = 0.5;
-      if(nd == 3) { xE(2) = 0.5; }
+    if (nd == 3) {
+      xE(2) = 0.5;
+    }
 
     NumA<eulerSolver.nvars> pvars;
-    if((x - xE).norm() < R) { // inside
+    if ((x - xE).norm() < R) {  // inside
       pvars(V::rho()) = 1.0;
-      for(SInd d = 0; d < nd; ++d) {
+      for (SInd d = 0; d < nd; ++d) {
         pvars(V::u(d)) = 0;
       }
       pvars(V::p()) = 1.0;
-      } else { // outside
+      } else {  // outside
       pvars(V::rho()) = 0.125;
-      for(SInd d = 0; d < nd; ++d) {
+      for (SInd d = 0; d < nd; ++d) {
         pvars(V::u(d)) = 0;
       }
       pvars(V::p()) = 0.1;

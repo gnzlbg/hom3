@@ -52,7 +52,7 @@ template<class Solver> struct Neumann : fv::bc::Condition<Neumann<Solver>> {
     for (auto ghostIdx : ghost_cells) {
       const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
       s.T(_(), ghostIdx)
-          = this->neumann(s.T(_(), bndryIdx), g_srfc(bndryIdx),
+          = this->neumann(s.T(_(), bndryIdx), g_srfc(ghostIdx),
                           s.cell_dx(bndryIdx, ghostIdx));
     }
   }
@@ -62,12 +62,12 @@ template<class Solver> struct Neumann : fv::bc::Condition<Neumann<Solver>> {
   Solver& s;
 };
 
-} // namespace bc
+}  // namespace bc
 
 ////////////////////////////////////////////////////////////////////////////////
-} // namespace heat
-} // namespace fv
-} // namespace solver
-} // namespace hom3
+}  // namespace heat
+}  // namespace fv
+}  // namespace solver
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #endif

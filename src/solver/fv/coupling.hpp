@@ -4,6 +4,7 @@
 /// \file \brief This file implements the solver coupling functionality.
 ////////////////////////////////////////////////////////////////////////////////
 /// Includes:
+#include <algorithm>
 #include <type_traits>
 #include "solver/fv/heat/tags.hpp"
 #include "solver/fv/cns/tags.hpp"
@@ -23,13 +24,17 @@ namespace coupling {
 template<class Solver0, class Solver1>
 std::tuple<CellIdx, CellIdx> local_bndry_ids
 (const CellIdx ghostIdx0, const Solver0& s0, const Solver1& s1) {
+  ASSERT(is_valid(ghostIdx0), "invalid ghost cell idx!");
   const auto bndryInfo0 = s0.boundary_info(ghostIdx0);
   const auto bndryIdx0 = bndryInfo0.bndryIdx;
   const auto ghostPos0 = bndryInfo0.ghostPos;
 
   const auto bndryNodeIdx0 = s0.node_idx(bndryIdx0);
-  const auto bndryNodeIdx1 = s0.grid().find_samelvl_neighbor(bndryNodeIdx0, ghostPos0);
+  const auto bndryNodeIdx1 = s0.grid().find_samelvl_neighbor
+                             (bndryNodeIdx0, ghostPos0);
   const auto bndryIdx1 = s0.grid().cell_id(bndryNodeIdx1, s1.solver_idx());
+  ASSERT(is_valid(bndryIdx0), "invalid boundary cell idx!");
+  ASSERT(is_valid(bndryIdx1), "invalid boundary cell idx!");
   return std::make_tuple(bndryIdx0, bndryIdx1);
 }
 
@@ -67,12 +72,12 @@ template<class Solver> inline void apply(Solver& s1, Solver& s2) noexcept {
   s2.dt(dt);
 }
 
-} // namespace coupling
+}  // namespace coupling
 
 ////////////////////////////////////////////////////////////////////////////////
-} // namespace fv
-} // namespace solver
-} // namespace hom3
+}  // namespace fv
+}  // namespace solver
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #undef ENABLE_DBG_
 ////////////////////////////////////////////////////////////////////////////////

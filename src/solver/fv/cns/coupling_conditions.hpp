@@ -21,22 +21,22 @@ namespace coupling {
 template<class CNSSolver, class HeatSolver>
 struct Heat : wall::IsothermalNoSlip<CNSSolver> {
   Heat(CNSSolver& cnsSolver, const HeatSolver& heatSolver)
-    : wall::IsothermalNoSlip<CNSSolver>(cnsSolver, [&](const CellIdx bndryIdx) {
-        return surface_temperature(bndryIdx, cnsSolver, heatSolver);})
+    : wall::IsothermalNoSlip<CNSSolver>(cnsSolver, [&](const CellIdx ghostIdx) {
+        return surface_temperature(ghostIdx, cnsSolver, heatSolver);})
   {}
 
   inline Num surface_temperature
   (const CellIdx cnsGhostIdx, const CNSSolver& cns_,
-   const HeatSolver& hs_) const noexcept {
+    const HeatSolver& hs_) const noexcept {
     CellIdx cnsBndryIdx, heatBndryIdx;
     std::tie(cnsBndryIdx, heatBndryIdx)
       = fv::coupling::local_bndry_ids(cnsGhostIdx, cns_, hs_);
 
-    //const auto T_fluid = cns_.T(rhs, cnsBndryIdx); // T from current RK step
-    const auto T_fluid = cns_.T(lhs, cnsBndryIdx); // T from current RK step
-    const auto T_solid = hs_.T(lhs, heatBndryIdx); // T from last time step
+    // const auto T_fluid = cns_.T(rhs, cnsBndryIdx);  // T from current RK step
+    const auto T_fluid = cns_.T(lhs, cnsBndryIdx);  // T from current RK step
+    const auto T_solid = hs_.T(lhs, heatBndryIdx);  // T from last time step
 
-    const auto T_srfc = 0.5 * (T_fluid + T_solid); // \todo interpolate better!
+    const auto T_srfc = 0.5 * (T_fluid + T_solid);  // \todo interpolate better!
 
     return T_srfc;
   }

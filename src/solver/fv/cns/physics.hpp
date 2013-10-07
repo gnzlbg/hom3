@@ -89,9 +89,9 @@ struct Physics : euler::Physics<nd_, NumFlux, Solver> {
   template<class _>
   Num slope_u(const CellIdx cIdx, const SInd dir,
               const SInd slopeDir) const noexcept {
-    return (b_()->template slope<_>(cIdx, V::rho_u(dir), slopeDir) * rho<_>(cIdx)
-            - b_()->template slope<_>(cIdx, V::rho(), slopeDir) * rho_u<_>(cIdx, dir))
-        / std::pow(rho<_>(cIdx), 2.);
+    return (b_()->template slope<_>(cIdx, V::rho_u(dir), slopeDir)
+            * rho<_>(cIdx) - b_()->template slope<_>(cIdx, V::rho(), slopeDir)
+            * rho_u<_>(cIdx, dir)) / std::pow(rho<_>(cIdx), 2.);
   }
 
   /// \brief Computes the heat flux
@@ -110,9 +110,9 @@ struct Physics : euler::Physics<nd_, NumFlux, Solver> {
   ///             + \frac{2}{3} (\nabla \cdot \mathbf{u}) \mathbf{I})
   template<class S>
   NumAM<nd, nd> shear_stress(const Num mu, S&& slope_u) const noexcept {
-    NumAM<nd, nd> nabla_u; // use binaryExpr instead!
-    for(SInd row_i = 0; row_i < nd; ++row_i) {
-      for(SInd col_j = 0; col_j < nd; ++col_j) {
+    NumAM<nd, nd> nabla_u;  // use binaryExpr instead!
+    for (SInd row_i = 0; row_i < nd; ++row_i) {
+      for (SInd col_j = 0; col_j < nd; ++col_j) {
         nabla_u(row_i, col_j) = slope_u(col_j, row_i);
       }
     }
@@ -155,7 +155,7 @@ struct Physics : euler::Physics<nd_, NumFlux, Solver> {
   template<class _>
   inline NumA<nvars> compute_num_flux
   (const CellIdx lIdx, const CellIdx rIdx, const SInd d, const Num dx,
-   const Num dt) const noexcept {
+    const Num dt) const noexcept {
     return Euler::template
         compute_num_flux_<_>(lIdx, rIdx, d, dx, dt, NumFlux())
         + compute_num_flux_viscous_<_>(lIdx, rIdx, d, dx, dt, NumFlux());
@@ -241,7 +241,7 @@ struct Physics : euler::Physics<nd_, NumFlux, Solver> {
   template<class _>
   inline Num umag2_srfc(const CellIdx lIdx, const CellIdx rIdx) const noexcept {
     Num umag2 = 0;
-    for(SInd d = 0; d < nd; ++d) {
+    for (SInd d = 0; d < nd; ++d) {
       umag2 += std::pow(u_srfc<_>(lIdx, rIdx, d), 2.);
     }
     return umag2;
@@ -285,7 +285,7 @@ struct Physics : euler::Physics<nd_, NumFlux, Solver> {
     const Num rho_srfc_ = rho_srfc<_>(lIdx, rIdx);
     Num grad_rho_umag2 = grad_rho_srfc<_>(lIdx, rIdx, dir)
                          * umag2_srfc<_>(lIdx, rIdx);
-    for(SInd d = 0; d < nd; ++d) {
+    for (SInd d = 0; d < nd; ++d) {
       grad_rho_umag2 += rho_srfc_ * 2. * u_srfc<_>(lIdx, rIdx, d)
                         * grad_u_srfc<_>(lIdx, rIdx, d, dir);
     }
@@ -293,10 +293,9 @@ struct Physics : euler::Physics<nd_, NumFlux, Solver> {
                         - 0.5 * grad_rho_umag2);
   }
 
-  template<class F>
-  auto at_surface(const CellIdx lIdx, const CellIdx rIdx, F&& f) const noexcept {
-    return b_()->at_surface(lIdx, rIdx, std::forward<F>(f));
-  }
+  template<class F> auto at_surface
+  (const CellIdx lIdx, const CellIdx rIdx, F&& f) const noexcept
+  { return b_()->at_surface(lIdx, rIdx, std::forward<F>(f)); }
 
 
   /// \brief Computes the viscous flux using a three/five-point
@@ -306,12 +305,14 @@ struct Physics : euler::Physics<nd_, NumFlux, Solver> {
   /// \mathbf{\tau} \mathbf{u} + \mathbf{q})^T$
   template<class _> inline NumA<nvars> compute_num_flux_viscous_
   (const CellIdx lIdx, const CellIdx rIdx, const SInd dir, const Num, const Num,
-   flux::viscous_::three_point) const noexcept {
+    flux::viscous_::three_point) const noexcept {
     NumA<nvars> f_v = NumA<nvars>::Zero();
 
     /// Compute the viscosity and the heat flux:
-    const Num mu_srfc = mu(temperature(gamma(), at_surface(lIdx, rIdx, [&](CellIdx c){ return p<_>(c); }),
-                                       at_surface(lIdx, rIdx, [&](CellIdx c){ return rho<_>(c); })));
+    const auto p_cell = [&](CellIdx c) { return p<_>(c); };
+    const auto rho_cell = [&](CellIdx c) { return rho<_>(c); };
+    const Num mu_srfc = mu(temperature(gamma(), at_surface(lIdx, rIdx, p_cell),
+                                       at_surface(lIdx, rIdx, rho_cell)));
     const Num gradP_srfc = grad_p_srfc<_>(lIdx, rIdx, dir);
     const Num gradRho_srfc = grad_rho_srfc<_>(lIdx, rIdx, dir);
 

@@ -239,7 +239,7 @@ _STL_HEADERS = frozenset([
     'function.h', 'functional', 'hash_map', 'hash_map.h', 'hash_set',
     'hash_set.h', 'iterator', 'list', 'list.h', 'map', 'memory', 'new',
     'pair.h', 'pthread_alloc', 'queue', 'set', 'set.h', 'sstream', 'stack',
-    'stl_alloc.h', 'stl_relops.h', 'type_traits.h',
+    'stl_alloc.h', 'stl_relops.h', 'type_traits.h', 'type_traits',
     'utility', 'vector', 'vector.h',
     ])
 
@@ -2315,9 +2315,18 @@ def CheckSpacing(filename, clean_lines, linenum, nesting_state, error):
         # ///
         # or they begin with multiple slashes followed by a space:
         # //////// Header comment
+        # or they are a backwards Doxygen comment
+        # ///<
+        # or they span a Doxygen comment block
+        # ///@{
+        # or they end a Doxygen comment block
+        # ///@}
         match = (Search(r'[=/-]{4,}\s*$', line[commentend:]) or
                  Search(r'^/$', line[commentend:]) or
-                 Search(r'^/+ ', line[commentend:]))
+                 Search(r'^/+ ', line[commentend:]) or
+                 Search(r'^/< ', line[commentend:]) or
+                 Search(r'^/@{', line[commentend:]) or
+                 Search(r'^/@}', line[commentend:]))
         if not match:
           error(filename, linenum, 'whitespace/comments', 4,
                 'Should have a space between // and comment')
@@ -2447,7 +2456,7 @@ def CheckSpacing(filename, clean_lines, linenum, nesting_state, error):
   # an initializer list, for instance), you should have spaces before your
   # braces. And since you should never have braces at the beginning of a line,
   # this is an easy test.
-  if Search(r'[^ ({]{', line):
+  if Search(r'\){', line):
     error(filename, linenum, 'whitespace/braces', 5,
           'Missing space before {')
 

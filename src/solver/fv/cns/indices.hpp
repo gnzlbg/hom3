@@ -12,9 +12,9 @@ namespace hom3 { namespace solver { namespace fv { namespace cns {
 template<SInd nd> using Indices = euler::Indices<nd>;
 
 ////////////////////////////////////////////////////////////////////////////////
-} // namespace cns
-} // namespace fv
-} // namespace solver
-} // namespace hom3
+}  // namespace cns
+}  // namespace fv
+}  // namespace solver
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #endif

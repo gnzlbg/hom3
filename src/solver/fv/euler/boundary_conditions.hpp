@@ -32,7 +32,7 @@ template<class Solver> struct Neumann : fv::bc::Condition<Neumann<Solver>> {
       const auto dx = s.cell_dx(bndryIdx, ghostIdx);
       for (SInd v = 0; v < s.nvars; ++v) {
         s.Q(_(), ghostIdx, v)
-          = this->neumann(s.Q(_(), bndryIdx, v), g_srfc(bndryIdx, v), dx);
+          = this->neumann(s.Q(_(), bndryIdx, v), g_srfc(ghostIdx, v), dx);
       }
     }
   }
@@ -54,10 +54,9 @@ template<class Solver> struct Dirichlet : fv::bc::Condition<Dirichlet<Solver>> {
   void operator()(_, Range<CellIdx> ghost_cells) const noexcept {
     for (auto ghostIdx : ghost_cells) {
       const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
-      const auto dx = s.cell_dx(bndryIdx, ghostIdx);
       for (SInd v = 0; v < s.nvars; ++v) {
         s.Q(_(), ghostIdx, v)
-          = this->dirichlet(s.Q(_(), bndryIdx, v), Q_srfc(bndryIdx, v), dx);
+          = this->dirichlet(s.Q(_(), bndryIdx, v), Q_srfc(ghostIdx, v));
       }
     }
   }
@@ -99,9 +98,9 @@ struct IsentropicVortex : fv::bc::Condition<IsentropicVortex<Solver>> {
 }  // namespace bc
 
 ////////////////////////////////////////////////////////////////////////////////
-} // namespace euler
-} // namespace fv
-} // namespace solver
-} // namespace hom3
+}  // namespace euler
+}  // namespace fv
+}  // namespace solver
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #endif

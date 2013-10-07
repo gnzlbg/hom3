@@ -13,24 +13,27 @@ namespace bc {
 /// \brief Coupling conditions
 namespace coupling {
 
-/// \brief Coupling condition with another Euler solver Heat solver
+/// \brief Coupling condition with another Euler solver
 template<class EulerSolver>
-struct Euler : Dirichlet<EulerSolver> {
+struct Euler : fv::bc::Condition<Euler<EulerSolver>> {
   Euler(EulerSolver& thisSolver, const EulerSolver& otherSolver)
-      : Dirichlet<EulerSolver>(thisSolver, [&](const CellIdx bndryIdx,
-                                               const SInd v) {
-          return surface_variables(bndryIdx, v, thisSolver, otherSolver);})
-  {}
+      : s(thisSolver), os_(otherSolver) {}
 
-  inline Num surface_variables
-  (const CellIdx thisGhostIdx, const SInd v, const EulerSolver& ts_,
-   const EulerSolver& os_) const noexcept {
-    CellIdx thisBndryIdx, otherBndryIdx;
-    std::tie(thisBndryIdx, otherBndryIdx)
-      = fv::coupling::local_bndry_ids(thisGhostIdx, ts_, os_);
-
-    return os_.Q(lhs, otherBndryIdx, v);
+  /// \brief Applies the boundary condition to a range of ghost cells
+  template<class _>
+  void operator()(_, Range<CellIdx> ghost_cells) const noexcept {
+    for (auto thisGhostIdx : ghost_cells) {
+      CellIdx thisBndryIdx, otherBndryIdx;
+      std::tie(thisBndryIdx, otherBndryIdx)
+        = fv::coupling::local_bndry_ids(thisGhostIdx, s, os_);
+      for (SInd v = 0; v < s.nvars; ++v) {
+        s.Q(_(), thisGhostIdx, v) = os_.Q(_(), otherBndryIdx, v);
+      }
+    }
   }
+
+  EulerSolver& s;
+  EulerSolver const& os_;
 };
 
 }  // namespace coupling

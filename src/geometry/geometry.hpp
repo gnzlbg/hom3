@@ -1,8 +1,8 @@
 #ifndef HOM3_GEOMETRY_GEOMETRY_HPP
 #define HOM3_GEOMETRY_GEOMETRY_HPP
 ////////////////////////////////////////////////////////////////////////////////
-#include "../globals.hpp"
-#include "implicit.hpp"
-#include "algorithms.hpp"
+#include "globals.hpp"
+#include "geometry/implicit.hpp"
+#include "geometry/algorithms.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 #endif
