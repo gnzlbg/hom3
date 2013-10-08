@@ -102,7 +102,7 @@ TEST(fixed_container_test, iterators_DeathTest) {
   boost::for_each(cells, [](TestContainer2D::reference c){ check_vars(c); });
 
   for( auto i : cells ) {
-    static_assert(std::is_same<decltype(i),TestContainer2D::reference>::value, "value type test"); 
+    static_assert(std::is_same<decltype(i), TestContainer2D::reference>::value, "value type test"); 
   }
 
   /// Modify with random access:

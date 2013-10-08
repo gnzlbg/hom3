@@ -83,13 +83,9 @@ template<SInd nd, class edg> NumA<nd> normal(edg) {
 }
 
 template<SInd nd, class edg> auto make_edge(edg, Num d, Num off)
-->decltype(geometry::make_geometry<
-           geometry::implicit::Edge<nd>
-           >(center<nd>(edg(),d,off), normal<nd>(edg()))) {
-  return geometry::make_geometry<
-    geometry::implicit::Edge<nd>
-    >(center<nd>(edg(),d,off), normal<nd>(edg()));
-}
+RETURNS(geometry::make_geometry<
+          geometry::implicit::Edge<nd>
+        >(center<nd>(edg(),d,off), normal<nd>(edg())));
 
 } // edge namespace
 

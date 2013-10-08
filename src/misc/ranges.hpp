@@ -20,6 +20,7 @@
 #include <boost/range/adaptors.hpp>
 #include <boost/range/any_range.hpp>
 #include <boost/range/join.hpp>
+#include "misc/returns.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 namespace hom3 {
 ////////////////////////////////////////////////////////////////////////////////
@@ -99,9 +100,7 @@ namespace boost { namespace range_detail {  // (Note: adding stuff to
                                             // range_detail is pretty ugly)
 /// Negates range filters:
 template <typename T> auto operator!(filter_holder<T> const& f)
--> decltype(adaptors::filtered(std::not1(f.val))) {
-  return adaptors::filtered(std::not1(f.val));
-}
+RETURNS(adaptors::filtered(std::not1(f.val)));
 
 }  // namespace range_detail
 

@@ -149,9 +149,7 @@ template<SInd nd> struct StreamableDomain {
   const std::function<AnyRange<Ind>(void)> cells;
   const std::function<typename grid::CartesianHSP<nd>::CellVertices(Ind)> cell_vertices;
 
-  inline auto dimensions() const -> decltype(Range<SInd>(SInd{0},nd)) {
-    return Range<SInd>(SInd{0},nd);
-  }
+  inline auto dimensions() const RETURNS(Range<SInd>{SInd{0}, nd});
   static constexpr SInd no_dimensions() { return nd; }
 };
 ////////////////////////////////////////////////////////////////////////////////
@@ -362,7 +360,7 @@ template<SInd nd, class Format = io::format::ascii> struct Vtk {
   template<class T> int interpret_id(T&& t) { return is_valid<Ind>(t) ? static_cast<int>(t) : -1; }
   template<class T> float interpret_num(T&& t) { return static_cast<float>(t); }
   template<class T> inline void write_formated_scalar(T&& t) {
-    using type = typename std::remove_reference<T>::type;
+    using type = std::remove_reference_t<T>;
     static_assert( std::is_integral<type>::value || std::is_floating_point<type>::value,
                    "t is either an integral or a floating point value!");
     if(std::is_integral<type>::value) {

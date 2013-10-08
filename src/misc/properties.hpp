@@ -32,14 +32,12 @@ Property make_property(std::string name, boost::any value)
 /// Note: std::remove_reference is used as an identity metafunction to prevent
 /// template argument deduction.
 template<class T> void insert_property(Properties& properties, std::string name,
-typename std::remove_reference<T>::type value
-= typename std::remove_reference<T>::type()) {
+std::remove_reference_t<T> value = std::remove_reference_t<T>{}) {
   properties.insert(make_property(name, std::move(value)));
 }
 
 template<class T> void insert(Properties& properties, std::string name,
-typename std::remove_reference<T>::type value
-= typename std::remove_reference<T>::type()) {
+std::remove_reference_t<T> value = std::remove_reference_t<T>{}) {
   properties.insert(make_property(name, std::move(value)));
 }
 

@@ -13,10 +13,10 @@ namespace detail { enum class enabler {}; }
 constexpr detail::enabler dummy = {};
 
 template<class C, class T = detail::enabler>
-using EnableIf = typename std::enable_if<C::value, T>::type;
+using EnableIf = std::enable_if_t<C::value, T>;
 
 template<class C, class T = detail::enabler>
-using DisableIf = typename std::enable_if<!(C::value), T>::type;
+using DisableIf = std::enable_if_t<!(C::value), T>;
 
 template<class T, T a, T b, class C = T>
 struct equal : std::integral_constant<bool, a == b> {};

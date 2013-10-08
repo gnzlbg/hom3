@@ -58,12 +58,12 @@ auto integrate(Functor&& f, Vector&& xc, const Num dx)
   constexpr auto no_edge_vertices = grid::Grid<nd>::no_edge_vertices();
   auto x_gps = gauss_points_x<nd>(std::forward<Vector>(xc), dx);
   /// \todo stop hating c++ and use something better
-  typename std::remove_reference<decltype(f(xc))>::type v_gp;
+  std::remove_reference_t<decltype(f(xc))> v_gp;
   std::array<decltype(v_gp), no_edge_vertices> v_gps;
   for (SInd gp_i = 0; gp_i < no_edge_vertices; ++gp_i) {
     v_gps[gp_i] = f(x_gps[gp_i]);
   }
-  typename std::remove_reference<decltype(f(xc))>::type result
+  std::remove_reference_t<decltype(f(xc))> result
     = math::zero(decltype(f(xc))());
   for (SInd gp_i = 0; gp_i < no_edge_vertices; ++gp_i) {
     result = result + v_gps[gp_i];

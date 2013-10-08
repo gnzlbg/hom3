@@ -19,7 +19,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 /// File macros:
 #define assert_variable_node_container()                                \
-  static_assert(std::is_same<container_type,tag::variable_nodes>::value, \
+  static_assert(std::is_same<container_type, tag::variable_nodes>::value, \
                 "Function defined only for variable_node_size containers!")
 
 #define assert_in_cell_range(cIdx)                                      \
@@ -72,7 +72,7 @@ template<class Cells> struct Implementation {
   using cell_size_type = Ind;
   using node_size_type = Ind;
   using CIdx           = typename traits<Cells>::cell_index_type;
-  using NIdx           = decltype(tti::node_index_type<traits<Cells>,Ind>());
+  using NIdx           = decltype(tti::node_index_type<traits<Cells>, Ind>());
 
 
   /// \name Constructors
@@ -89,7 +89,7 @@ template<class Cells> struct Implementation {
       TERMINATE("Empty container!");
     }
 
-    if (std::is_same<container_type,tag::variable_nodes>::value
+    if (std::is_same<container_type, tag::variable_nodes>::value
         && node_capacity() < capacity()) {
       TERMINATE("Less nodes than cells!");
     }

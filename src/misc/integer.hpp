@@ -166,10 +166,7 @@ template<class T, class U> struct is_integer_<Integer<T, U>>
 
 template<class T> struct is_integer
 { static const bool value = is_integer_<
-  typename std::remove_reference<
-    typename std::remove_cv<T>::type
-    >::type
-  >::value;
+  std::remove_reference_t<std::remove_cv_t<T>>>::value;
 };
 
 
