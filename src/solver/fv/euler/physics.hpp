@@ -100,7 +100,7 @@ template<SInd nd_, class NumFlux, class Solver> struct Physics {
 
     f(V::rho()) = rho_u<_>(cIdx, d);  // f(rho)= rho u_d
 
-    for (SInd i = 0; i < nd; ++i) {  // rho u_i u_d + kd_di * p
+    for (auto i : b_()->grid().dimensions()) {  // rho u_i u_d + kd_di * p
       f(V::rho_u(i)) = rho_u<_>(cIdx, i) * u<_>(cIdx, d);
     }
     f(V::rho_u(d)) += p<_>(cIdx);
@@ -315,7 +315,7 @@ template<SInd nd_, class NumFlux, class Solver> struct Physics {
   inline NumA<nvars> theta_(const CellIdx cIdx) const noexcept {
     NumA<nvars> f = NumA<nvars>::Zero();
     f(V::rho()) = rho<_>(cIdx);
-    for (SInd i = 0; i < nd; ++i) {
+    for (auto i : b_()->grid().dimensions()) {
       f(V::rho_u(i)) = rho_u<_>(cIdx, i);
     }
     f(V::rho_E()) = rho_E<_>(cIdx) + p<_>(cIdx);

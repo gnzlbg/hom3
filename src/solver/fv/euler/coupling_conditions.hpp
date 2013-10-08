@@ -26,9 +26,7 @@ struct Euler : fv::bc::Condition<Euler<EulerSolver>> {
       CellIdx thisBndryIdx, otherBndryIdx;
       std::tie(thisBndryIdx, otherBndryIdx)
         = fv::coupling::local_bndry_ids(thisGhostIdx, s, os_);
-      for (SInd v = 0; v < s.nvars; ++v) {
-        s.Q(_(), thisGhostIdx, v) = os_.Q(_(), otherBndryIdx, v);
-      }
+      s.Q(_(), thisGhostIdx) = os_.Q(_(), otherBndryIdx);
     }
   }
 

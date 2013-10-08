@@ -3,11 +3,11 @@
 #include <algorithm>
 #include <vector>
 /// External Includes:
-#include "../globals.hpp"
+#include "globals.hpp"
 //#include "../cell/testgridcell.hpp"
-#include "../containers/sequential.hpp"
-#include "../grid/grid.hpp"
-#include "implicit.hpp"
+#include "containers/sequential.hpp"
+#include "grid/grid.hpp"
+#include "geometry/implicit.hpp"
 
 template<class Grid>
 void write_grid_with_boundary(const std::string fName,Grid* grid) {

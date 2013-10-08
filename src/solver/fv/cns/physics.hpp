@@ -111,8 +111,8 @@ struct Physics : euler::Physics<nd_, NumFlux, Solver> {
   template<class S>
   NumAM<nd, nd> shear_stress(const Num mu, S&& slope_u) const noexcept {
     NumAM<nd, nd> nabla_u;  // use binaryExpr instead!
-    for (SInd row_i = 0; row_i < nd; ++row_i) {
-      for (SInd col_j = 0; col_j < nd; ++col_j) {
+    for (auto row_i : b_()->grid().dimensions()) {
+      for (auto col_j : b_()->grid().dimensions()) {
         nabla_u(row_i, col_j) = slope_u(col_j, row_i);
       }
     }
@@ -241,7 +241,7 @@ struct Physics : euler::Physics<nd_, NumFlux, Solver> {
   template<class _>
   inline Num umag2_srfc(const CellIdx lIdx, const CellIdx rIdx) const noexcept {
     Num umag2 = 0;
-    for (SInd d = 0; d < nd; ++d) {
+    for (auto d : b_()->grid().dimensions()) {
       umag2 += std::pow(u_srfc<_>(lIdx, rIdx, d), 2.);
     }
     return umag2;
@@ -285,7 +285,7 @@ struct Physics : euler::Physics<nd_, NumFlux, Solver> {
     const Num rho_srfc_ = rho_srfc<_>(lIdx, rIdx);
     Num grad_rho_umag2 = grad_rho_srfc<_>(lIdx, rIdx, dir)
                          * umag2_srfc<_>(lIdx, rIdx);
-    for (SInd d = 0; d < nd; ++d) {
+    for (auto d : b_()->grid().dimensions()) {
       grad_rho_umag2 += rho_srfc_ * 2. * u_srfc<_>(lIdx, rIdx, d)
                         * grad_u_srfc<_>(lIdx, rIdx, d, dir);
     }
@@ -327,7 +327,7 @@ struct Physics : euler::Physics<nd_, NumFlux, Solver> {
     NumA<nd> tau_surface = tau.col(dir);
 
     /// Viscous flux:
-    for (SInd d = 0; d < nd; ++d) {
+    for (auto d : b_()->grid().dimensions()) {
       f_v(V::rho_u(d)) = 1. / quantities.Re0() * tau_surface(d);
       f_v(V::rho_E()) += u_srfc<_>(lIdx, rIdx, d) * tau_surface(d);
     }

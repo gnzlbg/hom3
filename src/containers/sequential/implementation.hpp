@@ -9,13 +9,13 @@
 #include <string>
 #include <algorithm>
 ////////////////////////////////////////////////////////////////////////////////
-#include "traits.hpp"
-#include "iterator.hpp"
-#include "algorithm.hpp"
+#include "containers/sequential/traits.hpp"
+#include "containers/sequential/iterator.hpp"
+#include "containers/sequential/algorithm.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 /// Options:
 #define ENABLE_DBG_ 0
-#include "../../misc/dbg.hpp"
+#include "misc/dbg.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 /// File macros:
 #define assert_variable_node_container()                                \

@@ -1,7 +1,7 @@
 #ifndef HOM3_GEOMETRY_CELL_CARTESIAN_HPP_
 #define HOM3_GEOMETRY_CELL_CARTESIAN_HPP_
 ////////////////////////////////////////////////////////////////////////////////
-#include "../globals.hpp"
+#include "globals.hpp"
 //////////////////////////////////////////////////////////////////////////
 
 namespace hom3 { namespace geometry { namespace cell { namespace cartesian {

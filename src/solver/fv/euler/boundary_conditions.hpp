@@ -30,7 +30,7 @@ template<class Solver> struct Neumann : fv::bc::Condition<Neumann<Solver>> {
     for (auto ghostIdx : ghost_cells) {
       const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
       const auto dx = s.cell_dx(bndryIdx, ghostIdx);
-      for (SInd v = 0; v < s.nvars; ++v) {
+      for (auto v : s.variables()) {
         s.Q(_(), ghostIdx, v)
           = this->neumann(s.Q(_(), bndryIdx, v), g_srfc(ghostIdx, v), dx);
       }
@@ -54,7 +54,7 @@ template<class Solver> struct Dirichlet : fv::bc::Condition<Dirichlet<Solver>> {
   void operator()(_, Range<CellIdx> ghost_cells) const noexcept {
     for (auto ghostIdx : ghost_cells) {
       const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
-      for (SInd v = 0; v < s.nvars; ++v) {
+      for (auto v : s.variables()) {
         s.Q(_(), ghostIdx, v)
           = this->dirichlet(s.Q(_(), bndryIdx, v), Q_srfc(ghostIdx, v));
       }
@@ -84,11 +84,8 @@ struct IsentropicVortex : fv::bc::Condition<IsentropicVortex<Solver>> {
       const NumA<nd>    x_gc = s.cells().x_center.row(ghostIdx);
       const NumA<nvars> gcVars = ic::isentropic_vortex<nd>(x_gc, s.time());
       const NumA<nvars> bcVars = ic::isentropic_vortex<nd>(x_bc, s.time());
-      /// \todo vars = vars
-      for (SInd v = 0; v < nvars; ++v) {
-        s.Q(_(), ghostIdx, v) = gcVars(v);
-        s.Q(_(), bndryIdx, v) = bcVars(v);
-      }
+      s.Q(_(), ghostIdx) = gcVars;
+      s.Q(_(), bndryIdx) = bcVars;
     }
   }
 

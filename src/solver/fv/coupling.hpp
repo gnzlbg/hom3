@@ -32,7 +32,7 @@ std::tuple<CellIdx, CellIdx> local_bndry_ids
   const auto bndryNodeIdx0 = s0.node_idx(bndryIdx0);
   const auto bndryNodeIdx1 = s0.grid().find_samelvl_neighbor
                              (bndryNodeIdx0, ghostPos0);
-  const auto bndryIdx1 = s0.grid().cell_id(bndryNodeIdx1, s1.solver_idx());
+  const auto bndryIdx1 = s0.grid().cell_idx(bndryNodeIdx1, s1.solver_idx());
   ASSERT(is_valid(bndryIdx0), "invalid boundary cell idx!");
   ASSERT(is_valid(bndryIdx1), "invalid boundary cell idx!");
   return std::make_tuple(bndryIdx0, bndryIdx1);

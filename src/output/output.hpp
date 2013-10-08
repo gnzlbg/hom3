@@ -1,5 +1,5 @@
-#ifndef HOM3_OUTPUT_
-#define HOM3_OUTPUT_
+#ifndef HOM3_OUTPUT_OUTPUT_HPP_
+#define HOM3_OUTPUT_OUTPUT_HPP_
 ////////////////////////////////////////////////////////////////////////////////
 #include <iostream>
 #include <fstream>

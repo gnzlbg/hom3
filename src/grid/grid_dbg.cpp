@@ -3,11 +3,11 @@
 #include <algorithm>
 #include <vector>
 /// External Includes:
-#include "../globals.hpp"
+#include "globals.hpp"
 //#include "../cell/testgridcell.hpp"
-#include "../containers/hierarchical.hpp"
+#include "containers/hierarchical.hpp"
 #include "grid.hpp"
-#include "../geometry/implicit.hpp"
+#include "geometry/implicit.hpp"
 
 // EXPECT_DEATH(cells[-1].myNum() = -2.0, "[\\S\\s]+");
 

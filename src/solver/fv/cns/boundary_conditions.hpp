@@ -43,12 +43,12 @@ template<class Solver> struct Inflow : fv::bc::Condition<Inflow<Solver>> {
       /// Surface primitive variables
       const Num rhoD = condition(bndryIdx, V::rho());
       NumA<nd> uD;
-      for (SInd d = 0; d < nd; ++d) {
+      for (auto d : s.grid().dimensions()) {
         uD(d) = condition(bndryIdx, V::u(d));
       }
 
       NumA<nvars> gCellVars;  /// PV of ghost cell:
-      for (SInd d = 0; d < nd; ++d) {  /// velocity_surface = uD
+      for (auto d : s.grid().dimensions()) {  /// velocity_surface = uD
         gCellVars(V::u(d)) = this->dirichlet(bndryPVars(V::u(d)), uD(d));
       }
       /// density_surface = rhoD
@@ -88,7 +88,7 @@ template<class Solver> struct Outflow : fv::bc::Condition<Outflow<Solver>>  {
 
       NumA<nvars> gCellVars;  /// PV of ghost cell:
 
-      for (SInd d = 0; d < nd; ++d) {  // normal velocity gradient = 0
+      for (auto d : s.grid().dimensions()) {  // normal velocity gradient = 0
         gCellVars(V::u(d)) = this->neumann(bndryPVars(V::u(d)));
       }
       /// normal density gradient = 0
@@ -128,7 +128,7 @@ struct AdiabaticNoSlip : fv::bc::Condition<AdiabaticNoSlip<Solver>>  {
       const auto bndryPVars = s.pv(_(), bndryIdx);  /// PV of boundary cell
 
       NumA<nvars> gCellVars;  /// PV of ghost cell:
-      for (SInd d = 0; d < nd; ++d) {  /// velocity_srfc = 0
+      for (auto d : s.grid().dimensions()) {  /// velocity_srfc = 0
         gCellVars(V::u(d)) = this->dirichlet(bndryPVars(V::u(d)));
       }
       /// density gradient normal to surface = 0
@@ -175,7 +175,7 @@ struct AdiabaticSlip  : fv::bc::Condition<AdiabaticSlip<Solver>> {
       NumA<nvars> gCellVars;  /// PV of ghost cell:
 
       // Neumann BC: velocity
-      for (SInd d = 0; d < nd; ++d) {  /// normal velocity gradient = 0
+      for (auto d : s.grid().dimensions()) {  /// normal velocity gradient = 0
         gCellVars(d) = this->neumann(bndryPVars(d));
       }
       /// Except for the normal component: normal velocity_srfc = 0
@@ -213,7 +213,7 @@ struct IsothermalNoSlip : fv::bc::Condition<IsothermalNoSlip<Solver>> {
       const auto bndryPVars = s.pv(_(), bndryIdx);  /// PV of boundary cell
 
       NumA<nvars> gCellVars;  /// PV of ghost cell:
-      for (SInd d = 0; d < nd; ++d) {  /// velocity surface = 0
+      for (auto d : s.grid().dimensions()) {  /// velocity surface = 0
         gCellVars(d) = this->dirichlet(bndryPVars(d));
       }
       /// density surface = gamma * p_srfc / T_srfc

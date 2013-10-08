@@ -1,10 +1,10 @@
 /// Includes:
-#include "grid.hpp"
+#include "grid/grid.hpp"
 /// External Includes:
 #include "gtest/gtest.h"
 /// Options:
 #define ENABLE_DBG_ 0
-#include "../misc/dbg.hpp"
+#include "misc/dbg.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
 typedef Grid<2> Test2DGrid;

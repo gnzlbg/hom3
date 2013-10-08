@@ -174,6 +174,10 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
   inline       CellContainer& cells()       noexcept { return cells_; }
   inline const CellContainer& cells() const noexcept { return cells_; }
 
+  /// \brief Range over all variables
+  inline Range<SInd> variables() const noexcept
+  { return {SInd{0}, SInd{nvars}}; }
+
   /// \brief Conservative variables
   template<class T>
   inline NumA<nvars> Q(const CellIdx cIdx) const noexcept
@@ -432,7 +436,7 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
     DBGV((cIdx));
     NumA<nvars> result = NumA<nvars>::Zero();
     const auto dx = cells().length(cIdx);
-    for (SInd d = 0; d < nd; ++d) {
+    for (auto d : grid().dimensions()) {
       const SInd nghbrM = d * 2;
       const SInd nghbrP = nghbrM + 1;
       const auto nghbrMId = cells().neighbors(cIdx, nghbrM);
@@ -694,7 +698,7 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
       // is there a global neighbor there belonging to the same domain?
       if (is_valid(nodeNghbrIdx)
          && grid().has_solver(nodeNghbrIdx, solver_idx())) {
-        const auto cellNghbrIdx = grid().cell_id(nodeNghbrIdx, solver_idx());
+        const auto cellNghbrIdx = grid().cell_idx(nodeNghbrIdx, solver_idx());
         ASSERT(cells().neighbors(cIdx, nghbrPos) == cellNghbrIdx,
                "cell: cIdx = " << cIdx << " (nodeIdx = " << node_idx(cIdx)
                <<  ") has a wrong nghbr in pos " << nghbrPos
@@ -718,7 +722,7 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
     const auto nodeIdx = node_idx(cIdx);
     ASSERT(is_valid(nodeIdx),
            "you can only check cells that have valid global ids!");
-    ASSERT(grid().cell_id(nodeIdx, solver_idx()) == cIdx,
+    ASSERT(grid().cell_idx(nodeIdx, solver_idx()) == cIdx,
            "grid node has wrong cellIdx!");
   }
 
@@ -875,7 +879,7 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
         if (!initialDomain(xc)) { continue; }
         auto cIdx = cells().push_cell();
         cells().node_idx(cIdx) = nIdx;
-        grid().cell_id(nIdx, solver_idx()) = cIdx;
+        grid().cell_idx(nIdx, solver_idx()) = cIdx;
         cells().x_center.row(cIdx) = xc;
         cells().length(cIdx) = grid().cell_length(nIdx);
       }
@@ -891,7 +895,7 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
       for (auto nghbrPos : grid().neighbor_positions()) {
         auto nghbrIdx = nodeNghbrIds(nghbrPos);
         cells().neighbors(cIdx, nghbrPos)
-            = is_valid(nghbrIdx) ? grid().cell_id(nghbrIdx, solver_idx())
+            = is_valid(nghbrIdx) ? grid().cell_idx(nghbrIdx, solver_idx())
                                  : invalid<CellIdx>();
       }
     }
@@ -928,7 +932,7 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
     for (auto boundary : boundary_conditions()) {
       for (auto bndryNodeIdx : node_ids() | grid().cut_by_boundary(boundary)) {
         const auto bndryCellIdx
-          = grid().cell_id(bndryNodeIdx, solver_idx());
+          = grid().cell_idx(bndryNodeIdx, solver_idx());
         ASSERT(is_valid(bndryCellIdx), "invalid bndryCellIdx!");
         ASSERT(node_idx(bndryCellIdx) == bndryNodeIdx,
                "solver and grid are not synchronized");

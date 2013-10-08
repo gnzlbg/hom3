@@ -185,15 +185,15 @@ template<SInd nd_> struct Implementation {
   /// \name Node-to-solver-cell mapping
   ///@{
 
-  /// \brief Cell id of node \p nodeIdx within \p solverIdx grid
-  inline CellIdx cell_id
+  /// \brief Cell idx of node \p nodeIdx within \p solverIdx grid
+  inline CellIdx cell_idx
   (const NodeIdx nodeIdx, const SolverIdx solverIdx) const noexcept {
     assert_valid(nodeIdx); assert_active(nodeIdx);
     return node2cells_(nodeIdx(), solverIdx());
   }
-  /// \brief Reference to the cell id of node \p nodeIdx within \p solverIdx
+  /// \brief Reference to the cell idx of node \p nodeIdx within \p solverIdx
   /// grid
-  inline CellIdx& cell_id
+  inline CellIdx& cell_idx
   (const NodeIdx nodeIdx, const SolverIdx solverIdx)      noexcept {
     assert_valid(nodeIdx); assert_active(nodeIdx);
     return node2cells_(nodeIdx(), solverIdx());
@@ -202,7 +202,7 @@ template<SInd nd_> struct Implementation {
   inline bool has_solver
   (const NodeIdx nodeIdx, const SolverIdx solverIdx) const noexcept {
     assert_valid(nodeIdx); assert_active(nodeIdx);
-    return is_valid(cell_id(nodeIdx, solverIdx));
+    return is_valid(cell_idx(nodeIdx, solverIdx));
   }
   /// \brief \f$\#\f$ of solver grids that the container can hold
   inline SInd solver_capacity() const noexcept { return node2cells_.cols(); }
@@ -694,7 +694,7 @@ template<SInd nd_> struct Implementation {
   inline auto solver_position_to_cell(const NodeIdx nIdx) const noexcept
   -> RangeTransformer<SolverIdx, CellIdx> {
     return {[&, nIdx](const SolverIdx solverIdx) {
-              return cell_id(nIdx, solverIdx); }};
+              return cell_idx(nIdx, solverIdx); }};
   }
 
   /// \brief Transforms a range of nodes into a range of cell ids belonging to
@@ -702,7 +702,7 @@ template<SInd nd_> struct Implementation {
   inline auto node_to_cell(const SolverIdx solverIdx) const noexcept
   -> RangeTransformer<NodeIdx, CellIdx> {
     return {[&, solverIdx](const NodeIdx nIdx) {
-              return cell_id(nIdx, solverIdx); }};
+              return cell_idx(nIdx, solverIdx); }};
   }
 
   /// \brief Returns range of _all_ solver ids.
@@ -853,7 +853,7 @@ template<SInd nd_> struct Implementation {
     parent_(nIdx) = invalid<NodeIdx>();
     child_(nIdx) = invalid<NodeIdx>();
     for (const auto& pos : solver_ids()) {
-      cell_id(nIdx, pos) = invalid<CellIdx>();
+      cell_idx(nIdx, pos) = invalid<CellIdx>();
     }
     isFree_(nIdx()) = true;
     TRACE_OUT();

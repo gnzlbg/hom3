@@ -6,11 +6,11 @@
 /// External Includes:
 #include "gtest/gtest.h"
 /// Includes:
-#include "fixedcell.hpp"
-#include "nodalcell.hpp"
+#include "containers/sequential/tests/fixedcell.hpp"
+#include "containers/sequential/tests/nodalcell.hpp"
 /// Options:
 #define ENABLE_DBG_ 0
-#include "../../../misc/dbg.hpp"
+#include "misc/dbg.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
 using namespace hom3;

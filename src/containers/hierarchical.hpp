@@ -3,9 +3,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 /// \file \brief Includes the hierarchical container class.
 ////////////////////////////////////////////////////////////////////////////////
-#include "../globals.hpp"
-#include "bool_matrix.hpp"
-#include "matrix.hpp"
-#include "hierarchical/implementation.hpp"
+#include "globals.hpp"
+#include "containers/bool_matrix.hpp"
+#include "containers/matrix.hpp"
+#include "containers/hierarchical/implementation.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 #endif

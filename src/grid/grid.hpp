@@ -225,7 +225,7 @@ template <SInd nd_> struct CartesianHSP : container::Hierarchical<nd_> {
   ///@{
 
   /// \brief Range over space dimensions
-  inline auto dimensions() const -> Range<SInd> { return {SInd(0), nd}; }
+  inline auto dimensions() const -> Range<SInd> { return {SInd{0}, nd}; }
   ///@}
 
   /// \name Spatial information
@@ -381,7 +381,7 @@ template <SInd nd_> struct CartesianHSP : container::Hierarchical<nd_> {
     const auto length = cell_length(nIdx);
 
     NumA<nd> x_nghbr;
-    for(auto d : dimensions()) {
+    for (auto d : dimensions()) {
       x_nghbr(d) = x_node(d) + nghbr_rel_pos(nghbrPos,d) * length;
     }
     TRACE_OUT();
@@ -397,10 +397,10 @@ template <SInd nd_> struct CartesianHSP : container::Hierarchical<nd_> {
     using Vertex = NumA<nd>;
     using Vertices = std::array<Vertex,no_vertices()>;
 
-    Ind cell_id() const { return cellId_; }
+    Ind cell_idx() const { return cellIdx_; }
     Vertices operator()() const { return vertices_; }
 
-    Ind cellId_;
+    Ind cellIdx_;
     Vertices vertices_;
   };
 
@@ -518,12 +518,12 @@ template <SInd nd_> struct CartesianHSP : container::Hierarchical<nd_> {
   BoundaryCells boundary_cells(const SolverIdx solverIdx) {
     BoundaryCells boundaryCells;
 
-    for(auto nIdx : nodes(solverIdx)) {
+    for (auto nIdx : nodes(solverIdx)) {
       auto allCellBoundaryIds = is_cut_by_boundaries(nIdx);
       if( allCellBoundaryIds.empty() ) { continue; } // not a boundary cell
       // is a boundary cell, but maybe not from solver
       std::vector<SInd> boundaryIds; // cell might be cut by n-boundaries!
-      for(auto bndryId : allCellBoundaryIds) {
+      for (auto bndryId : allCellBoundaryIds) {
         if(boundaries()[bndryId].solver_idx() == solverIdx) {
           boundaryIds.push_back(bndryId);
         }
