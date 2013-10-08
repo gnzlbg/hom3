@@ -7,15 +7,13 @@
 #include <iostream>
 #include <string>
 #include <stdexcept>
-#include "functions.hpp"
+#include "misc/functions.hpp"
 ////////////////////////////////////////////////////////////////////////////////
-
 namespace hom3 {
-
 ////////////////////////////////////////////////////////////////////////////////
+
 /// \brief Contains error-handling functions
 namespace error {
-////////////////////////////////////////////////////////////////////////////////
 
 /// \brief Throws a runtime error exception with the description given
 /// in \p error_string.
@@ -27,20 +25,20 @@ std::runtime_error exception(std::string error_string) {
 /// \brief Terminates the program in case of error
 ///
 /// \warning this function never returns
-[[noreturn,noinline,cold]] void terminate
-(const std::string error_string,const std::string at) {
-  std::cerr << "FATAL ERROR \"" << error_string << "\" (" << at << ")." << std::endl;
+[[noreturn, noinline, cold]] void terminate
+(const std::string error_string, const std::string at) {
+  std::cerr << "FATAL ERROR \"" << error_string << "\" (" << at << ")."
+            << std::endl;
   exit(1);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-} // error namespace
+}  // namespace error
 
 /// \brief Terminates the program
-#define TERMINATE(error_string)                \
-  hom3::error::terminate(error_string,AT_)     \
+#define TERMINATE(error_string)                 \
+  hom3::error::terminate(error_string, AT_)     \
 
 ////////////////////////////////////////////////////////////////////////////////
-} // hom3 namespace
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #endif

@@ -1,5 +1,5 @@
-#ifndef HOM3_MEMORY_STACK_HPP_
-#define HOM3_MEMORY_STACK_HPP_
+#ifndef HOM3_MISC_STACK_MEMORY_HPP_
+#define HOM3_MISC_STACK_MEMORY_HPP_
 ////////////////////////////////////////////////////////////////////////////////
 /// \file \brief Classes and helpers to manage memory on the stack
 ///
@@ -25,19 +25,22 @@
 /// - terminate if runs out of stack memory
 ////////////////////////////////////////////////////////////////////////////////
 #include <memory>
+#include <string>
 ////////////////////////////////////////////////////////////////////////////////
 namespace hom3 {
 ////////////////////////////////////////////////////////////////////////////////
+
+/// \brief Memory allocation utilities
 namespace memory {
-////////////////////////////////////////////////////////////////////////////////
+
+/// \brief Stack allocators
 namespace stack {
-////////////////////////////////////////////////////////////////////////////////
 
 template <class T, std::size_t M>
 struct arena {
   static const std::size_t N = sizeof(T) * M;
   arena() noexcept : ptr_(buf_) {}
-  ~arena() {ptr_ = nullptr;}
+  ~arena() { ptr_ = nullptr; }
   arena(const arena&) = delete;
   arena& operator=(const arena&) = delete;
 
@@ -61,7 +64,7 @@ struct arena {
 };
 
 template <class T, std::size_t M>
-char* arena<T,M>::allocate(std::size_t n) {
+char* arena<T, M>::allocate(std::size_t n) {
   ASSERT(pointer_in_buffer(ptr_), "allocator has outlived arena");
   n = align_up(n);
   if (buf_ + N - ptr_ >= static_cast<std::ptrdiff_t>(n)) {
@@ -75,11 +78,10 @@ char* arena<T,M>::allocate(std::size_t n) {
     + "available: "  + std::to_string((buf_ + N - ptr_) / sizeof(T)) + " Ts | "
     + "requested: " + std::to_string(n / sizeof(T)) + " Ts | "
     + AT_);
-  //return static_cast<char*>(::operator new(n));
 }
 
 template <class T, std::size_t M>
-void arena<T,M>::deallocate(char* p, std::size_t n) noexcept {
+void arena<T, M>::deallocate(char* p, std::size_t n) noexcept {
   ASSERT(pointer_in_buffer(ptr_), "allocator has outlived arena");
   if (pointer_in_buffer(p)) {
     n = align_up(n);
@@ -88,27 +90,26 @@ void arena<T,M>::deallocate(char* p, std::size_t n) noexcept {
     }
   } else {
     TERMINATE("should never happen");
-    //::operator delete(p);
   }
 }
 
 template <class T, std::size_t N>
 struct allocator {
-  typedef T value_type;
+  using value_type = T;
 
   template <class _Up>
-  struct rebind {typedef allocator<_Up, N> other;};
+  struct rebind { using other = allocator<_Up, N>; };
 
-  allocator(arena<T,N>& a) noexcept : a_(a) {}
+  allocator(arena<T, N>& a) noexcept : a_(a) {}
   template <class U>
   allocator(const allocator<U, N>& a) noexcept : a_(a.a_) {}
   allocator(const allocator&) = default;
   allocator& operator=(const allocator&) = delete;
 
   T* allocate(std::size_t n)
-  { return reinterpret_cast<T*>(a_.allocate(n*sizeof(T))); }
+  { return reinterpret_cast<T*>(a_.allocate(n * sizeof(T))); }
   void deallocate(T* p, std::size_t n) noexcept
-  { a_.deallocate(reinterpret_cast<char*>(p), n*sizeof(T)); }
+  { a_.deallocate(reinterpret_cast<char*>(p), n * sizeof(T)); }
 
   template <class T1, std::size_t N1, class U, std::size_t M>
   friend
@@ -118,7 +119,7 @@ struct allocator {
   template <class U, std::size_t M> friend struct allocator;
 
  private:
-  arena<T,N>& a_;
+  arena<T, N>& a_;
 };
 
 template <class T, std::size_t N, class U, std::size_t M>
@@ -131,30 +132,30 @@ inline
 bool operator!=(const allocator<T, N>& x, const allocator<U, M>& y) noexcept
 { return !(x == y); }
 
-template<template<class,class> class C, class T, std::size_t N>
-using Container = C<T,allocator<T,N>>;
+template<template<class, class> class C, class T, std::size_t N>
+using Container = C<T, allocator<T, N>>;
 
 /// \brief Makes a container that uses an \p arena_ without
 /// reserving container memory.
-template<template<class,class> class C, class T, std::size_t N>
-Container<C,T,N> unsafe_make(arena<T,N>& arena_) {
-  return Container<C,T,N>{allocator<T,N>{arena_}};
+template<template<class, class> class C, class T, std::size_t N>
+Container<C, T, N> unsafe_make(arena<T, N>& arena_) {
+  return Container<C, T, N>{allocator<T, N>{arena_}};
 }
 
 /// \brief Makes a container with reserved memory equal to the maximum amount of
 /// memory in the \p arena_
-template<template<class,class> class C, class T, std::size_t N>
-Container<C,T,N> make(arena<T,N>& arena_) {
-  auto container = Container<C,T,N>{allocator<T,N>{arena_}};
+template<template<class, class> class C, class T, std::size_t N>
+Container<C, T, N> make(arena<T, N>& arena_) {
+  auto container = Container<C, T, N>{allocator<T, N>{arena_}};
   container.reserve(N);
   return container;
 }
 
+}  // namespace stack
+
+}  // namespace memory
+
 ////////////////////////////////////////////////////////////////////////////////
-} // namespace stack
-////////////////////////////////////////////////////////////////////////////////
-} // namespace memory
-////////////////////////////////////////////////////////////////////////////////
-} // namespace hom3
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #endif

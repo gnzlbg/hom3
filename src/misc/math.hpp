@@ -73,7 +73,7 @@ namespace math {
 template <size_t size> struct TypeWithSize {
   /// This prevents the user from using TypeWithSize<N> with incorrect
   /// values of N.
-  typedef void UInt;
+  using UInt = void;
 };
 
 /// The specialization for size 4.
@@ -82,14 +82,14 @@ template <> struct TypeWithSize<4> {
   ///
   /// As base/basictypes.h doesn't compile on Windows, we cannot use
   /// uint32, uint64, and etc here.
-  typedef int Int;
-  typedef unsigned int UInt;
+  using Int = int;
+  using UInt = unsigned int;
 };
 
 /// The specialization for size 8.
 template <> struct TypeWithSize<8> {
-  typedef long long Int;  // NOLINT
-  typedef unsigned long long UInt;  // NOLINT
+  using Int = long long;
+  using UInt = unsigned long long;
 };
 
 
@@ -317,7 +317,7 @@ template<class T> struct is_long_int : std::false_type {};
 template<> struct is_long_int<Ind> : std::true_type {};
 template<> struct is_long_int<Int> : std::true_type {};
 
-} // namespace traits
+}  // namespace traits
 
 /// \brief Compile-time numeric functions
 namespace ct {
@@ -328,18 +328,18 @@ namespace ct {
 constexpr long ilog(const long b, const long n) {
   return n == 0l ? 0l :
          n == 1l ? 0l :
-        1l + ilog(b,n/b);
+         1l + ilog(b, n / b);
 }
 
 /// \brief Computes b^e for (b,e) integers
 ///
 /// Note: overflows for e >= (64-1) / ilog(b,2);
-constexpr long ipow(const long b, const long e){
+constexpr long ipow(const long b, const long e) {
   return e == 0l ? 1l :
-         b * ipow(b,e-1l);
+         b * ipow(b, e - 1l);
 }
 
-} // namespace ct
+}  // namespace ct
 
 /// \brief Run-time numeric functions
 namespace rt {
@@ -349,8 +349,8 @@ namespace detail_ {
 using math::traits::is_long_int;
 
 template<class Integral1, class Integral2>
-Integral1 ilog(Integral1 b, Integral2 n){
-  return n==0 ? 0 : ( n==1 ? 0 : 1 + ilog(b,n/b) ); // used only in asserts
+Integral1 ilog(Integral1 b, Integral2 n) {  // used only in asserts
+  return n == 0 ? 0 : (n == 1 ? 0 : 1 + ilog(b, n / b));
 }
 
 template<class Integral1, class Integral2>
@@ -366,17 +366,17 @@ bool ipow_overflow_not_long(const Integral1 b, const Integral2 e) {
 template<class Integral1, class Integral2>
 bool ipow_overflow(Integral1 b, Integral2 e) {
   return is_long_int<Integral1>::value
-      ? ipow_overflow_long(b,e)
-      : ipow_overflow_not_long(b,e);
+      ? ipow_overflow_long(b, e)
+      : ipow_overflow_not_long(b, e);
 }
 
-} // detail_ namespace
+}  // namespace detail_
 
 /// Computes integer pow using exponentiation by squaring
 /// Complexiy O(log(e))
 template<class Integral1, class Integral2>
 Integral1 ipow(Integral1 b, Integral2 e) {
-  ASSERT(!detail_::ipow_overflow(b,e),"This expression overflows");
+  ASSERT(!detail_::ipow_overflow(b, e), "This expression overflows");
   Integral1 result = 1;
   while (e) {
     if (e & 1) { result *= b; }
@@ -386,11 +386,11 @@ Integral1 ipow(Integral1 b, Integral2 e) {
   return result;
 }
 
-} // namespace rt
+}  // namespace rt
 
-} // namespace math
+}  // namespace math
 
 ////////////////////////////////////////////////////////////////////////////////
-} // namespace hom3
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #endif

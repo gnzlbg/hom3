@@ -4,13 +4,14 @@
 /// \file \brief Includes numeric constants
 ////////////////////////////////////////////////////////////////////////////////
 /// Includes:
-#include <limits>
 #include <boost/math/constants/constants.hpp>
-#include "types.hpp"
-#include "traits.hpp"
+#include <limits>
+#include "misc/types.hpp"
+#include "misc/traits.hpp"
+#include "misc/returns.hpp"
 ////////////////////////////////////////////////////////////////////////////////
-
 namespace hom3 {
+////////////////////////////////////////////////////////////////////////////////
 
 /// Sometimes you want to represent an empty value,
 /// examples:
@@ -32,51 +33,50 @@ namespace hom3 {
 
 template<class T, class B> struct Integer;
 
-namespace constants { namespace detail {
+/// \brief Contains numeric constants
+namespace constants {
+
+namespace detail {
 
 /// \brief \returns invalid value for identifier of type T
-template<class T> constexpr T invalid_value_(T) {
-  return std::numeric_limits<T>::max();
-}
+template<class T> constexpr auto invalid_value_(T)
+RETURNS(std::numeric_limits<T>::max());
 
-constexpr Num invalid_value_(Num) {
+constexpr Num invalid_value_(Num) noexcept {
   static_assert(std::numeric_limits<Num>::has_quiet_NaN, "no NaN support!");
   return std::numeric_limits<Num>::quiet_NaN();
 }
 
-template<class T,class B> constexpr Integer<T,B> invalid_value_(Integer<T,B>) {
-  return Integer<T,B>{invalid_value_(T())};
-}
+template<class T, class B>
+inline constexpr auto invalid_value_(Integer<T, B>)
+RETURNS(Integer<T, B>{ invalid_value_(T()) });
 
-}} // constants::detail namespace
+}  // namespace detail
 
-template<class T> constexpr T invalid() { return constants::detail::invalid_value_(T()); }
+}  // namespace constants
+
+template<class T> inline constexpr auto invalid()
+RETURNS(constants::detail::invalid_value_(T{}));
 
 /// \brief \returns [bool] Has the identifier "o" a valid value?
-template<class T> static constexpr bool is_valid(const T& o) {
-  return o != invalid<T>();
-}
+template<class T> static inline constexpr auto is_valid(const T& o)
+RETURNS(o != invalid<T>());
 
 namespace math {
-static constexpr Num eps = std::numeric_limits<Num>::epsilon();
-static constexpr Num pi = boost::math::constants::pi<Num>();
+static const constexpr Num eps = std::numeric_limits<Num>::epsilon();
+static const constexpr Num pi = boost::math::constants::pi<Num>();
 
 template<class T, EnableIf<traits::is_eigen_matrix<T>> = traits::dummy>
-constexpr auto zero(T&&) -> decltype(T::Zero()) {
-  return T::Zero();
-}
+inline constexpr auto zero(T&&) RETURNS(T::Zero());
+
 template<class T, DisableIf<traits::is_eigen_matrix<T>> = traits::dummy>
-constexpr auto zero(T&&) -> decltype(T(0)) {
-  return T(0);
-}
+inline constexpr auto zero(T&&) RETURNS(T{0});
 
-template<class T> constexpr auto dimensions(T&& t) -> decltype(t.cols()) {
-  return t.cols();
-}
+template<class T> inline constexpr auto dimensions(T&& t) RETURNS(t.cols());
 
-} // math
+}  // namespace math
 
 ////////////////////////////////////////////////////////////////////////////////
-} // hom3 namespace
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #endif

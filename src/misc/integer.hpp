@@ -1,11 +1,11 @@
 #ifndef HOM3_MISC_INTEGER_HPP_
 #define HOM3_MISC_INTEGER_HPP_
 ////////////////////////////////////////////////////////////////////////////////
+#include <boost/iterator/counting_iterator.hpp>
 #include <type_traits>
 #include <limits>
 #include <string>
 #include <algorithm>
-#include <boost/iterator/counting_iterator.hpp>
 #include "constants.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 namespace hom3 {
@@ -15,7 +15,6 @@ namespace hom3 {
 ///@{
 /// \brief Implements an integer type
 template<class T, class B = void> struct Integer {
-
   using value_type = T;
 
   /// \name Asignment operators
@@ -69,18 +68,14 @@ template<class T, class B = void> struct Integer {
 
   /// \name Arithmetic operators +,-,*,/,unary -
   ///@{
-  constexpr friend inline Integer operator+(Integer a, const Integer& b) noexcept {
-    return a += b;
-  }
-  constexpr friend inline Integer operator-(Integer a, const Integer& b) noexcept {
-    return a -= b;
-  }
-  constexpr friend inline Integer operator*(Integer a, const Integer& b) noexcept {
-    return a *= b;
-  }
-  constexpr friend inline Integer operator/(Integer a, const Integer& b) noexcept {
-    return a /= b;
-  }
+  constexpr friend inline
+  Integer operator+(Integer a, const Integer& b) noexcept { return a += b; }
+  constexpr friend inline
+  Integer operator-(Integer a, const Integer& b) noexcept { return a -= b; }
+  constexpr friend inline
+  Integer operator*(Integer a, const Integer& b) noexcept { return a *= b; }
+  constexpr friend inline
+  Integer operator/(Integer a, const Integer& b) noexcept { return a /= b; }
 
   constexpr inline Integer operator-() noexcept {
     static_assert(std::is_signed<T>::value, "Can't negate an unsigned type!");
@@ -116,30 +111,30 @@ template<class T, class B = void> struct Integer {
 
   /// \name Comparison operators ==, !=, <, >, <=, >=
   ///@{
-  constexpr friend inline bool operator==(const Integer& a, const Integer& b) noexcept {
-    return a.value == b.value;
-  }
-  constexpr friend inline bool operator<=(const Integer& a, const Integer& b) noexcept {
-    return a.value <= b.value;
-  }
-  constexpr friend inline bool operator<(const Integer& a, const Integer& b)  noexcept {
-    return a.value < b.value; // return a <= b && !(a == b) -> slower?
-  }
-  constexpr friend inline bool operator!=(const Integer& a, const Integer& b) noexcept {
-    return !(a == b);
-  }
-  constexpr friend inline bool operator>(const Integer& a, const Integer& b)  noexcept {
-    return !(a <= b);
-  }
-  constexpr friend inline bool operator>=(const Integer& a, const Integer& b) noexcept {
-    return !(a < b);
-  }
+  constexpr friend inline
+  bool operator==(const Integer& a, const Integer& b) noexcept
+  { return a.value == b.value; }
+  constexpr friend inline
+  bool operator<=(const Integer& a, const Integer& b) noexcept
+  { return a.value <= b.value; }
+  constexpr friend inline
+  bool operator<(const Integer& a, const Integer& b)  noexcept
+  { return a.value < b.value; }  // return a <= b && !(a == b) -> slower?
+  constexpr friend inline
+  bool operator!=(const Integer& a, const Integer& b) noexcept
+  { return !(a == b); }
+  constexpr friend inline
+  bool operator>(const Integer& a, const Integer& b)  noexcept
+  { return !(a <= b); }
+  constexpr friend inline
+  bool operator>=(const Integer& a, const Integer& b) noexcept
+  { return !(a < b); }
   ///@}
 
   /// \brief swap
   constexpr friend inline void swap(Integer&& a, Integer&& b) noexcept {
     using std::swap;
-    swap(a.value,b.value);
+    swap(a.value, b.value);
   }
 
   /// \brief to_string
@@ -156,8 +151,8 @@ template<class T, class B = void> struct Integer {
   T value;
 
   template<class C, class CT>
-  friend inline std::basic_ostream<C,CT>& operator<<
-  (std::basic_ostream<C,CT>& o, const Integer<T,B>& i) {
+  friend inline std::basic_ostream<C, CT>& operator<<
+  (std::basic_ostream<C, CT>& o, const Integer<T, B>& i) {
     return o << i();
   }
 };
@@ -165,7 +160,7 @@ template<class T, class B = void> struct Integer {
 
 template<class T> struct is_integer_
 { static const bool value = false; };
-template<class T, class U> struct is_integer_<Integer<T,U>>
+template<class T, class U> struct is_integer_<Integer<T, U>>
 { static const bool value = true; };
 
 
@@ -180,19 +175,19 @@ template<class T> struct is_integer
 
 template<class T, EnableIf<is_integer<T>> = traits::dummy>
 constexpr inline auto&& primitive_cast(T&& t) {
-  static_assert(is_integer<T>::value,"T must be an integer!");
+  static_assert(is_integer<T>::value, "T must be an integer!");
   return t();
 }
 
 template<class T, EnableIf<is_integer<T>> = traits::dummy>
 constexpr inline auto primitive_cast(const T& t) {
-  static_assert(is_integer<T>::value,"T must be an integer!");
+  static_assert(is_integer<T>::value, "T must be an integer!");
   return t();
 }
 
 template<class T, EnableIf<is_integer<T>> = traits::dummy>
 constexpr inline auto& primitive_cast(T& t) {
-  static_assert(is_integer<T>::value,"T must be an integer!");
+  static_assert(is_integer<T>::value, "T must be an integer!");
   return t();
 }
 
@@ -217,17 +212,17 @@ constexpr inline auto& primitive_cast(T& t) {
 
 
 ////////////////////////////////////////////////////////////////////////////////
-} // hom3 namespace
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 
 // this feels wrong:
 namespace std {
 template<class T, class B>
-class numeric_limits<hom3::Integer<T,B>> : public numeric_limits<T> {
-public:
+class numeric_limits<hom3::Integer<T, B>> : public numeric_limits<T> {
+ public:
   static const bool is_specialized = true;
 };
-} // std namespace
+}  // namespace std
 
 ////////////////////////////////////////////////////////////////////////////////
 #endif

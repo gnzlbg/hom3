@@ -33,31 +33,10 @@ template<SInd nd, SInd nvars> struct traits<solver::fv::Container<nd, nvars>> {
 
 namespace solver { namespace fv {
 
-/// \brief Extends container with node id functions
-template<class CellContainer> struct NodeIdsFunctionality {
-  inline const CellContainer* gidf_base() const noexcept {
-    return static_cast<const CellContainer*>(this);
-  }
-
-  bool is_node(const Ind cellId) const noexcept {
-    return is_valid<Ind>(gidf_base()->node_idx(cellId));
-  }
-
-  inline RangeFilter<Ind> is_node() const noexcept {
-    return RangeFilter<Ind>{[&](const Ind nId) { return is_node(nId); }};
-  }
-
-  /// \brief Returns [FilteredRange] of all global cell Ids.
-  inline auto global_cells() const noexcept -> FRange<Ind> {
-    return gidf_base()->all_cells() | is_node();
-  }
-};
-
 template<SInd nd, SInd nvars>
-struct Container : container::Sequential<Container<nd, nvars>>,
-                   NodeIdsFunctionality<Container<nd, nvars>> {
+struct Container : container::Sequential<Container<nd, nvars>> {
   /// Aliases:
-  friend container::Sequential< Container<nd, nvars> >;
+  friend container::Sequential<Container<nd, nvars>>;
   friend struct Reference<nd, nvars>;
   template<template <SInd> class V_, SInd nd_ = 1>
   using M = container::Matrix<Container, container::matrix::tag::Cell,
@@ -103,8 +82,8 @@ struct Container : container::Sequential<Container<nd, nvars>>,
     }
   }
 
-  inline void copy_cell_variables(const CellIdx fromId,
-                                  const CellIdx toId) noexcept {
+  inline void copy_cell_variables
+  (const CellIdx fromId, const CellIdx toId) noexcept {
     bc_idx(toId)   = bc_idx(fromId);
     node_idx(toId) = node_idx(fromId);
     length(toId)   = length(fromId);
@@ -214,7 +193,6 @@ template<SInd nd, SInd nvars> struct Reference
   inline Num&     length()          noexcept
   { return c()->length(index()); }
 };
-
 
 ////////////////////////////////////////////////////////////////////////////////
 }  // namespace fv

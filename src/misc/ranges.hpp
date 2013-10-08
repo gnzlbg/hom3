@@ -37,7 +37,7 @@ template<class T> struct RangeImpl {
 template<class T> struct RangeImpl<T*> {
   using type = boost::iterator_range<T*>;
 };
-} // detail namespace
+}  // namespace detail
 
 /// \brief Range
 template<class T> using Range = typename detail::RangeImpl<T>::type;
@@ -51,8 +51,8 @@ template<class T, class R> const AnyRange<T> anyfy(const R& rng) {
 }
 
 /// \brief Range filter
-template<class T>
-using RangeFilter = decltype(boost::adaptors::filtered(std::function<bool(T)>()));
+template<class T> using RangeFilter
+= decltype(boost::adaptors::filtered(std::function<bool(T)>()));
 
 namespace detail {
 
@@ -60,11 +60,11 @@ namespace detail {
 template<class T> struct FRangeImpl {
   using type = boost::filtered_range<std::function<bool(T)>, const Range<T> >;
 };
-template<class T> struct FRangeImpl<T*> { // removes the pointer!
+template<class T> struct FRangeImpl<T*> {  // removes the pointer!
   using type = boost::filtered_range<std::function<bool(T)>, const Range<T*>>;
 };
 
-} // detail namespace
+}  // namespace detail
 
 /// \brief Filtered range
 template<class T> using FRange  = typename detail::FRangeImpl<T>::type;
@@ -74,36 +74,37 @@ template<class T>
 using F2Range = boost::filtered_range<std::function<bool(T)>, const FRange<T>>;
 
 /// \brief Range transformer
-template<class From, class To>
-using RangeTransformer = decltype(boost::adaptors::transformed(std::function<To(From)>()));
+template<class From, class To> using RangeTransformer
+= decltype(boost::adaptors::transformed(std::function<To(From)>()));
 
 
 // brief Range algorithms (i.e. all Boost.Range algorithms)
 namespace algorithm {
 // makes all Boost.Range algorithms available
- using namespace boost::algorithm;
- using boost::join;
- using namespace boost::adaptors;
-}
+using namespace boost::algorithm;
+using boost::join;
+using namespace boost::adaptors;
+}  // namespace algorithm
 
-} // range
+}  // namespace range
 
-using namespace range; // all range utilities are available in the hom3 namespace
+// all range utilities are available in the hom3 namespace
+using namespace range;
 
-} // namespace hom3
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
-namespace boost { namespace range_detail { // (Note: adding stuff to
-                                           // range_detail is pretty ugly)
+namespace boost { namespace range_detail {  // (Note: adding stuff to
+                                            // range_detail is pretty ugly)
 /// Negates range filters:
 template <typename T> auto operator!(filter_holder<T> const& f)
 -> decltype(adaptors::filtered(std::not1(f.val))) {
   return adaptors::filtered(std::not1(f.val));
 }
 
-} } // boost::range_detail namespace
-////////////////////////////////////////////////////////////////////////////////
+}  // namespace range_detail
 
+}  // namespace boost
 ////////////////////////////////////////////////////////////////////////////////
 #endif

@@ -240,7 +240,7 @@ _STL_HEADERS = frozenset([
     'hash_set.h', 'iterator', 'list', 'list.h', 'map', 'memory', 'new',
     'pair.h', 'pthread_alloc', 'queue', 'set', 'set.h', 'sstream', 'stack',
     'stl_alloc.h', 'stl_relops.h', 'type_traits.h', 'type_traits',
-    'utility', 'vector', 'vector.h',
+    'utility', 'vector', 'vector.h', 'array'
     ])
 
 
@@ -259,7 +259,7 @@ _CPP_HEADERS = frozenset([
     'ropeimpl.h', 'SFile.h', 'slist', 'slist.h', 'stack.h', 'stdexcept',
     'stdiostream.h', 'streambuf', 'streambuf.h', 'stream.h', 'strfile.h',
     'string', 'strstream', 'strstream.h', 'tempbuf.h', 'tree.h', 'typeinfo',
-    'valarray',
+    'valarray', 'unordered_map',
     ])
 
 

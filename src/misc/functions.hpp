@@ -11,11 +11,9 @@ namespace hom3 {
 
 /// \brief Performs a cold computation preventing inlining and branch prediction
 template<class F>
-[[noinline,cold]] auto cold_do(F&& f) {
-  return f();
-}
+[[noinline, cold]] constexpr auto cold_do(F&& f) RETURNS(f());
 
 ////////////////////////////////////////////////////////////////////////////////
-} // hom3 namespace
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #endif

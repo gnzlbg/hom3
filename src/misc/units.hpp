@@ -4,13 +4,13 @@
 /// \file \brief Includes unit/quantity types
 ////////////////////////////////////////////////////////////////////////////////
 /// Includes:
-#include "types.hpp"
 #include <boost/units/systems/si.hpp>
 #include <boost/units/cmath.hpp>
 #include <boost/units/systems/temperature/celsius.hpp>
 #include <boost/units/absolute.hpp>
 #include <boost/units/detail/utility.hpp>
 #include <boost/units/systems/si/io.hpp>
+#include "types.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace boost {
@@ -62,11 +62,11 @@ BOOST_UNITS_STATIC_CONSTANT(meter_squared_per_second, thermal_diffusivity);
 using specific_gas_constant = unit<specific_gas_constant_dimension, si::system>;
 BOOST_UNITS_STATIC_CONSTANT(joule_per_kilogram_kelvin, specific_gas_constant);
 
-} // namespace si
+}  // namespace si
 
-} // namespace units
+}  // namespace units
 
-} // namespace boos
+}  // namespace boost
 
 namespace hom3 {
 
@@ -82,10 +82,10 @@ using Length         = NumQ<boost::units::si::length>;           ///< [m]
 using Time           = NumQ<boost::units::si::time>;             ///< [s]
 using Mass           = NumQ<boost::units::si::mass>;             ///< [kg]
 using Temperature    = NumQ<boost::units::si::temperature>;      ///< [K]
-using Density        = NumQ<boost::units::si::mass_density>;     ///< [kg/m^3]
+using Density        = NumQ<boost::units::si::mass_density>;     ///< [kg/m3]
 using Velocity       = NumQ<boost::units::si::velocity>;         ///< [m/s]
-using Pressure       = NumQ<boost::units::si::pressure>;         ///< [kg/(ms^2)]
-using EnergyDensity  = NumQ<boost::units::si::energy_density>;   ///< [J/m^3]
+using Pressure       = NumQ<boost::units::si::pressure>;         ///< [kg/(ms2)]
+using EnergyDensity  = NumQ<boost::units::si::energy_density>;   ///< [J/m3]
 using SpecificEnergy = NumQ<boost::units::si::specific_energy>;  ///< [J/kg]
 
 using DynamicViscosity
@@ -97,7 +97,7 @@ using ThermalDiffusivity
 using SpecificGasConstant
   = NumQ<boost::units::si::specific_gas_constant>;  ///< [J/(kg K)]
 
-} // namespace quantity
+}  // namespace quantity
 
 /// \brief Unit types
 namespace unit {
@@ -105,9 +105,9 @@ namespace unit {
 using namespace boost::units;
 using namespace boost::units::si;
 
-} // namespace unit
+}  // namespace unit
 
 ////////////////////////////////////////////////////////////////////////////////
-} // namespace hom3
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #endif

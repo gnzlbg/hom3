@@ -1,9 +1,9 @@
-#!/bin/bash 
+#!/bin/bash
 EXTENSIONS="h cpp hpp"
 
 echo "Checking coding-style..." # using cpplint
 
-find -E ./ -regex '.*\.(hpp|h|cpp)$' -print0 | xargs -0 tools/cpplint.py \
+find -E ./src -regex '.*\.(hpp|h|cpp)$' -print0 | xargs -0 tools/cpplint.py \
     --counting=detailed \
     --filter=-,\
 +readability/namespace,+build/include_what_you_use,+runtime/explicit,\

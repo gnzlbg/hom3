@@ -5,16 +5,15 @@
 using namespace hom3;
 
 TEST(types_test, integer_conversions) {
-
   /// Should be constructible from its underlying type
   auto a = Integer<Ind>{2};
 
   /// Should be explicitly convertible to its underlying type
   Ind b = a();
   Ind c = 2;
-  EXPECT_EQ(b,c);
+  EXPECT_EQ(b, c);
   auto lambda = [](Ind i) { return i; };
-  EXPECT_EQ(lambda(a()),c);
+  EXPECT_EQ(lambda(a()), c);
 
   /// Should not be implicitly convertible to its underlying type
   // Ind d = a; // does not compile :)
@@ -22,36 +21,36 @@ TEST(types_test, integer_conversions) {
 
   /// Should not implicitly convert to integer types of different families
   struct class1 {}; struct class2 {};
-  auto e = Integer<Ind,class1>{2};
-  auto f = Integer<Ind,class2>{3};
+  auto e = Integer<Ind, class1>{2};
+  auto f = Integer<Ind, class2>{3};
   // e = f; // does not compile :)
   e = f();
 }
 
 TEST(types_test, integer_primitive_cast) {
   struct class1 {};
-  using T1 = Integer<Ind,class1>;
+  using T1 = Integer<Ind, class1>;
   struct class2 {};
-  using T2 = Integer<Ind,class2>;
+  using T2 = Integer<Ind, class2>;
 
   auto a = T1{2};
   auto b = T2{3};
 
   primitive_cast(a) = primitive_cast(b);
-  EXPECT_EQ(a,T1{3});
+  EXPECT_EQ(a, T1{3});
 }
 
 template<class T> void test_integer_compound_assignment() {
   auto i1 = T{1};
   auto i2 = T{2};
   i1 += i1;
-  EXPECT_EQ(i1,i2);
+  EXPECT_EQ(i1, i2);
   i2 -= i2;
-  EXPECT_EQ(i2,T{0});
+  EXPECT_EQ(i2, T{0});
   i1 *= T{2};
-  EXPECT_EQ(i1,T{4});
+  EXPECT_EQ(i1, T{4});
   i1 /= T{2};
-  EXPECT_EQ(i1,T{2});
+  EXPECT_EQ(i1, T{2});
 }
 
 TEST(types_test, integer_compound_assignment) {
@@ -63,10 +62,10 @@ template<class T> void test_unsigned_integer_arithmetic() {
   auto i1 = T{1};
   auto i2 = i1 + i1 + i1;
   auto i3 = i1 * T{3};
-  EXPECT_EQ(i2,i3);
+  EXPECT_EQ(i2, i3);
   EXPECT_EQ(i3 / i2, T{1});
   auto i4 = i3 - T{2} * i1;
-  EXPECT_EQ(i4,i1);
+  EXPECT_EQ(i4, i1);
 }
 
 TEST(types_test, integer_arithmetic) {
@@ -84,14 +83,14 @@ template<class T> void test_unsigned_integer_increment_operators() {
   auto i1 = T{1};
   auto i2 = T{2};
   ++i1;
-  EXPECT_EQ(i1,i2);
+  EXPECT_EQ(i1, i2);
   auto i3 = i2;
-  EXPECT_EQ(i3,i2++);
-  EXPECT_EQ(i2,T{3});
+  EXPECT_EQ(i3, i2++);
+  EXPECT_EQ(i2, T{3});
   --i2;
-  EXPECT_EQ(i2,i1);
+  EXPECT_EQ(i2, i1);
   auto i4 = i1;
-  EXPECT_EQ(i4,i1--);
+  EXPECT_EQ(i4, i1--);
 }
 
 TEST(types_test, integer_increment_operators) {
