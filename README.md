@@ -7,7 +7,7 @@ A laboratory for High-Order Multiphysics Multiscale Methods
 
 - Hierarchical Cartesian Grids
 - Low-order finite volume methods
-- Solver coupling
+- Solver coupling (e.g. compressible fluid with heat conducting solid)
 - VTK output
 
 ## Current solvers
@@ -28,3 +28,9 @@ Solving the shock-tube problem using two finite-volume solvers on two different 
 - boundary and volume coupling between different solvers
 - parallelization of the grid generatior
 - parallel I/O
+
+## Acknowledgements
+
+The financial support of the research cluster [Fuel production with renewable
+raw materials](http://www.brenaro.rwth-aachen.de/pages/pageHomeDE.html)
+(BrenaRo) at RWTH Aachen University is gratefully acknowledged.
