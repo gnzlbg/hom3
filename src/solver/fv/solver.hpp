@@ -19,7 +19,11 @@
 namespace hom3 {
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace solver { namespace fv {
+/// \brief Hom3 solvers
+namespace solver {
+
+/// \brief Hom3 Finite Volume Solver
+namespace fv {
 
 /// \brief Checks that \p lIdx_ and \p rIdx_ are neighbors located at opposite
 /// positions of each other.
@@ -47,9 +51,13 @@ namespace solver { namespace fv {
 ///
 /// Requirements on Physics component
 /// - template<class T> auto physics_output(T& output_stream) const;
-/// - template<class T> NumA<nvars> compute_num_flux(Ind cell_i, Ind cell_i+1,
-///                                                  SInd d, Num dx = opt,
-///                                                  Num dt = opt) const;
+/// - template<class _> NumA<nvars> compute_num_flux
+///   (CellIdx lIdx, CellIdx rIdx, SInd d, Num dx = opt, Num dt = opt) const;
+/// - template<class _> NumA<nvars> compute_source_term(CellIdx cIdx) const;
+/// - template<class _> Num compute_dt(CellIdx cIdx) const;
+///
+/// Optional requirements on physics component:
+/// - template<class _> bool check_variables(CellIdx cIdx) const;
 template<template <class> class PhysicsTT, class TimeIntegration>
 struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
   /// \name Type traits

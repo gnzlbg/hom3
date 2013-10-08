@@ -11,7 +11,7 @@ namespace hom3 { namespace solver { namespace fv { namespace heat {
 namespace bc {
 ////////////////////////////////////////////////////////////////////////////////
 
-/// \brief Coupling conditions
+/// \brief Heat equation coupling conditions
 namespace coupling {
 
 /// \brief Coupling condition with a CNS solver

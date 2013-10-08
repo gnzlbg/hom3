@@ -17,8 +17,10 @@ struct variable_nodes {};
 struct fixed_nodes {};
 }
 
+/// \brief Type-Trait Introspection
 namespace tti {
 
+/// \brief Has \p T a node index type?
 struct has_node_index_type {
   template<class T>
   static auto test() -> decltype(T::node_index_type(), std::true_type());
@@ -31,12 +33,17 @@ template<class T, class D> constexpr auto get_node_idx_type(std::true_type)
 template<class T, class D> constexpr auto get_node_idx_type(std::false_type)
 { return D(); }
 
-template<class Trait, class Default = SInd> constexpr auto node_index_type()
-{ return get_node_idx_type<Trait,Default>(has_node_index_type::test<Trait>()); }
+/// \brief Returns the node index type from \p Trait or \p Default if
+/// \p Trait has no node index type.
+template<class Trait, class Default = SInd> constexpr auto node_index_type() {
+  return get_node_idx_type<Trait, Default>(has_node_index_type::test<Trait>());
+}
 
-} // tti namespace
+}  // namespace tti
 
 ////////////////////////////////////////////////////////////////////////////////
-}}} // hom3::container::sequential namespace
+}  // namespace sequential
+}  // namespace container
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #endif

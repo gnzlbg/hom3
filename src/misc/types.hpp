@@ -13,19 +13,23 @@
 #include <array>
 #include <vector>
 #include <algorithm>
+#include <string>
 #include "misc/assert.hpp"
 #include "misc/returns.hpp"
 ////////////////////////////////////////////////////////////////////////////////
+
+/// \brief Contains hom3's code
 namespace hom3 {
-////////////////////////////////////////////////////////////////////////////////
+
 
 /// \name Basic Types
 ///@{
-using Ind  = unsigned long long;
-using SInd = unsigned int;
-using Num  = double;
-using Int  = long long;
-using SInt = int;
+using Ind    = int64_t;
+using SInd   = int32_t;
+using Num    = double;
+using Int    = int64_t;
+using SInt   = int32_t;
+using String = std::string;
 ///@}
 
 /// \name Eigen aliases
@@ -85,9 +89,7 @@ template<SInd nRows, SInd nCols>
 using NumAM = EigenStaticColMajor<Num, nRows, nCols>;
 ///@}
 
-////////////////////////////////////////////////////////////////////////////////
 }  // namespace hom3
-////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 namespace Eigen {

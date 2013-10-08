@@ -32,14 +32,19 @@ namespace io {
 /// and stream everything to disk when the destructor is called.
 
 
-/// VTK IO Class, this should be abstracted to a general IO class.
+/// \name IO tags
+///@{
 
-////////////////////////////////////////////////////////////////////////////////
-/// IO Tags: output format, precision, output field types...
+/// \brief Output format tags
 namespace format     { struct binary   {}; struct ascii  {}; }
+
+/// \brief Output precision tags
 namespace precision  { struct standard {}; struct low    {}; }
+
+/// \brief Output data-type tags
 namespace data_types { struct scalar   {}; struct vector {}; }
-////////////////////////////////////////////////////////////////////////////////
+
+///@}
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Streamable Variable Interface:
@@ -160,8 +165,7 @@ StreamableDomain<nd> stream_grid(const Grid<nd>& g) {
 }
 
 
-////////////////////////////////////////////////////////////////////////////////
-/// VTK Output class:
+/// \brief VTK IO Class
 template<SInd nd, class Format = io::format::ascii> struct Vtk {
 
   /// The constructor configures the output and prepares the header information

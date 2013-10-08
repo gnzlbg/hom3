@@ -10,7 +10,7 @@ namespace hom3 { namespace solver { namespace fv { namespace euler {
 namespace bc {
 ////////////////////////////////////////////////////////////////////////////////
 
-/// \brief Coupling conditions
+/// \brief Euler-equations coupling conditions
 namespace coupling {
 
 /// \brief Coupling condition with another Euler solver

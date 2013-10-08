@@ -49,7 +49,7 @@
 
 namespace hom3 { namespace container {
 
-/// \brief Sequiential container
+/// \brief Sequential container
 namespace sequential {
 
 

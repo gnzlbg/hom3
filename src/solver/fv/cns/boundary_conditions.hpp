@@ -10,7 +10,7 @@
 namespace hom3 { namespace solver { namespace fv { namespace cns {
 ////////////////////////////////////////////////////////////////////////////////
 
-/// \brief Navier-Stokes equations boundary conditions
+/// \brief Navier-Stokes boundary conditions
 namespace bc {
 
 /// \brief Neumann boundary condition (all gradients)
@@ -18,7 +18,7 @@ template<class Solver> struct Neumann : euler::bc::Neumann<Solver> {
   using euler::bc::Neumann<Solver>::template Neumann;
 };
 
-/// \brief Boundary conditions for external flows
+/// \brief Navier Stokes boundary conditions for external flows
 namespace external {
 
 /// \brief Inflow boundary condition
@@ -106,7 +106,7 @@ template<class Solver> struct Outflow : fv::bc::Condition<Outflow<Solver>>  {
 
 }  // namespace external
 
-/// \brief Wall boundary conditions
+/// \brief Navier Stokes wall boundary conditions
 namespace wall {
 
 /// \brief Adiabatic no-slip wall

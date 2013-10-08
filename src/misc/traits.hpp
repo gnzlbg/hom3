@@ -24,10 +24,8 @@ struct equal : std::integral_constant<bool, a == b> {};
 struct lazy {};
 struct strict {};
 
-/// \brief Detects if T is an Eigen::Matrix type, in general it is not:
+/// \brief Detects if T is an Eigen::Matrix type
 template<class T> struct is_eigen_matrix { static const bool value = false; };
-
-/// \brief Detects if T is an Eigen::Matrix type, sometimes it is:
 template
 <class _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols>
 struct is_eigen_matrix<

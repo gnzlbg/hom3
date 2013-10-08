@@ -54,7 +54,7 @@ struct Physics : euler::Physics<nd_, NumFlux, Solver> {
   { return Euler::template p<_>(cIdx); }
   ///@}
 
-  /// Constructor: requires property gamma
+  /// Constructor: requires property CFL_viscous
   explicit Physics(io::Properties properties) noexcept
       : euler::Physics<nd_, NumFlux, Solver>(properties)
       , quantities(properties)

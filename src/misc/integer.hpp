@@ -152,9 +152,8 @@ template<class T, class B = void> struct Integer {
 
   template<class C, class CT>
   friend inline std::basic_ostream<C, CT>& operator<<
-  (std::basic_ostream<C, CT>& o, const Integer<T, B>& i) {
-    return o << i();
-  }
+  (std::basic_ostream<C, CT>& o, const Integer<T, B>& i)
+  { return o << i(); }
 };
 ///@}
 

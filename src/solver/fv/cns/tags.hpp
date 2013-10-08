@@ -8,11 +8,17 @@
 namespace hom3 { namespace solver { namespace fv { namespace cns {
 ////////////////////////////////////////////////////////////////////////////////
 
+/// \brief Navier-Stokes physic's tag
 struct type_tag {};
 
+/// \brief Navier Stokes numerical-flux tags
 namespace flux {
+/// \brief Navier Stokes inviscid flux tags
 namespace inviscid_ { using namespace euler::flux; }
+/// \brief Navier Stokes viscous flux tags
 namespace viscous_ { struct three_point {}; }
+
+/// \brief Standard numerical flux for the Navier-Stokes physics
 struct standard : inviscid_::ausm, viscous_::three_point {};
 }  // namespace flux
 

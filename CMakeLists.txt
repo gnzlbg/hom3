@@ -105,10 +105,30 @@ include_directories(SYSTEM ${EIGEN3_INCLUDE_DIR})
 # gTest (and enables unit testing)
 add_subdirectory(${EXT_PROJECTS_DIR}/gtest)
 include_directories(${GTEST_INCLUDE_DIRS} ${COMMON_INCLUDES})
+set(GTEST_LIBS ${GTEST_LIBS_DIR}/libgtest.a ${GTEST_LIBS_DIR}/libgtest_main.a)
 enable_testing(true)
 
-set(HOM3_BASE_LIBS ${Boost_LIBRARIES} ${MPI_LIBRARIES} ${PNETCDF_LIBRARY})
-set(HOM3_TESTING_LIBS ${GTEST_LIBS_DIR}/libgtest.a ${GTEST_LIBS_DIR}/libgtest_main.a)
+# MPI
+find_package(MPI REQUIRED)
+set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
+set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
+include_directories(MPI_INCLUDE_PATH)
+
+# HDF5
+find_package(HDF5 REQUIRED)
+set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${HDF5_COMPILE_FLAGS})
+set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${HDF5_LINK_FLAGS})
+include_directories(HDF5_INCLUDE_PATH)
+
+# boost
+set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME ON)
+find_package(Boost 1.53 COMPONENTS mpi serialization filesystem system REQUIRED)
+include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
+
+set(HOM3_BASE_LIBS ${Boost_LIBRARIES} ${MPI_LIBRARIES} ${HDF5_LIBRARY})
+set(HOM3_TESTING_LIBS ${HOM3_BASE_LIBS} ${GTEST_LIBS})
 set(HOM3_TESTING_INCLUDES ${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 function(add_hom3_test name)
   include_directories(${HOM3_TESTING_INCLUDES})
@@ -117,19 +137,6 @@ function(add_hom3_test name)
   target_link_libraries(${name} ${HOM3_TESTING_LIBS})
   add_test(${name} ${name})
 endfunction(add_hom3_test)
-
-# MPI
-find_package(MPI REQUIRED)
-set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
-set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
-include_directories(MPI_INCLUDE_PATH)
-
-# boost
-set(Boost_USE_STATIC_LIBS OFF)
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME ON)
-find_package(Boost 1.53 COMPONENTS mpi serialization filesystem system REQUIRED)
-include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
 # Doxygen (optional) - Enables "make docs"
 option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML documentation" ON)

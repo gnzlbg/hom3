@@ -6,9 +6,10 @@
 namespace hom3 { namespace solver { namespace fv { namespace heat {
 ////////////////////////////////////////////////////////////////////////////////
 
+/// \brief Heat-equation physic's tag
 struct type_tag {};
 
-/// \brief Numerical-flux tag dispatching
+/// \brief Heat-equation numerical-flux tags
 namespace flux {
 struct three_point {};
 }  // namespace flux

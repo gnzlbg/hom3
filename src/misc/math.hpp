@@ -315,7 +315,6 @@ namespace traits {
 
 template<class T> struct is_long_int : std::false_type {};
 template<> struct is_long_int<Ind> : std::true_type {};
-template<> struct is_long_int<Int> : std::true_type {};
 
 }  // namespace traits
 

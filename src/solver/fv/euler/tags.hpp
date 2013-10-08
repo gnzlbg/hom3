@@ -6,9 +6,10 @@
 namespace hom3 { namespace solver { namespace fv { namespace euler {
 ////////////////////////////////////////////////////////////////////////////////
 
+/// \brief Euler physic's tag
 struct type_tag {};
 
-/// \brief Numerical-flux tag dispatching
+/// \brief Euler-equations numerical-flux tags
 namespace flux {
 struct ausm {};
 struct lax_friedrichs {};

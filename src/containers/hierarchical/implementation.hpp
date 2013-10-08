@@ -779,8 +779,7 @@ template<SInd nd_> struct Implementation {
   inline NodeIdx free_spot_() const noexcept {
     const auto spot
       = boost::find_if(Range<NodeIdx>(lowerFreeNodeBound_, node_end()),
-                       [&](const NodeIdx i) { return isFree_(i()); })
-        - std::begin(all_nodes());
+                       [&](const NodeIdx i) { return isFree_(i()); }) - std::begin(all_nodes());
     return NodeIdx{spot};
   }
 
