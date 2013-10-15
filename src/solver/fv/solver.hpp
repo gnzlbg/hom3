@@ -3,7 +3,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 /// Includes:
 #include <limits>
-#include <string>
 #include <vector>
 #include <algorithm>
 #include "grid/grid.hpp"
@@ -128,7 +127,7 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
   /// \warning for I\O only!
   /// For boolean operations please use solver_type() (unimplemented?)
   /// \complexity O(1)
-  static inline std::string solver_type_name() noexcept { return "Fv"; }
+  static inline String solver_type_name() noexcept { return "Fv"; }
 
   /// \brief Initializes the solver
   void initialize() {
@@ -320,7 +319,7 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
   ///@{
 
   /// \brief Returns the domain name
-  inline std::string domain_name() const noexcept {
+  inline String domain_name() const noexcept {
     return solver_type_name() + "_"
         + this->physics_name() + "_"
         + "Id" + to_string(solver_idx());
@@ -329,14 +328,13 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
   /// \brief Writes solver domain to VTK
   friend void write_domain(Solver& solver) noexcept {
     using std::to_string;
-    std::string fName = solver.domain_name() + "_" + to_string(solver.step());
+    String fName = solver.domain_name() + "_" + to_string(solver.step());
     solver.apply_bcs(lhs);
     write_domain(fName, solver);
   }
 
   /// \brief Writes solver domain to VTK
-  friend void write_domain(const std::string fName,
-                           const Solver& solver) noexcept {
+  friend void write_domain(const String fName, const Solver& solver) noexcept {
     std::cerr << "Writing domain: " << solver.domain_name() << " "
               << "| Step: " << solver.step() << " "
               << "| Time: " << solver.time() << "\n";

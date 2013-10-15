@@ -2,7 +2,6 @@
 #define HOM3_GEOMETRY_IMPLICIT_HPP_
 ////////////////////////////////////////////////////////////////////////////////
 #include <type_traits>
-#include <string>
 #include <algorithm>
 /// \file \brief Contains functions for describing implicit geometries
 ///
@@ -29,7 +28,7 @@ template<SInd nd> struct Interface {
 
 /// \brief Explicit signed-distance from STL
 template<SInd nd, class Grid> struct STL {
-  STL(std::string /*fileName*/, Grid* g) : grid_(g) {
+  STL(String /*fileName*/, Grid* g) : grid_(g) {
     // read stl file to memory
     // check if the stl file is clean, terminate if isnt
     // find set of intersected leaf cells between stl and grid g

@@ -120,6 +120,12 @@ set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${HDF5_COMPILE_FLAGS})
 set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${HDF5_LINK_FLAGS})
 include_directories(HDF5_INCLUDE_PATH)
 
+# HDF5-Lite
+find_package(HDF5LITE REQUIRED)
+set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${HDF5LITE_COMPILE_FLAGS})
+set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${HDF5LITE_LINK_FLAGS})
+include_directories(HDF5LITE_INCLUDE_PATH)
+
 # boost
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
@@ -127,7 +133,7 @@ set(Boost_USE_STATIC_RUNTIME ON)
 find_package(Boost 1.53 COMPONENTS mpi serialization filesystem system REQUIRED)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
-set(HOM3_BASE_LIBS ${Boost_LIBRARIES} ${MPI_LIBRARIES} ${HDF5_LIBRARY})
+set(HOM3_BASE_LIBS ${Boost_LIBRARIES} ${MPI_LIBRARIES} ${HDF5_LIBRARY} ${HDF5LITE_LIBRARY})
 set(HOM3_TESTING_LIBS ${HOM3_BASE_LIBS} ${GTEST_LIBS})
 set(HOM3_TESTING_INCLUDES ${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 function(add_hom3_test name)
@@ -137,6 +143,15 @@ function(add_hom3_test name)
   target_link_libraries(${name} ${HOM3_TESTING_LIBS})
   add_test(${name} ${name})
 endfunction(add_hom3_test)
+
+function(add_hom3_mpi_test name no_mpi_proc)
+  include_directories(${HOM3_TESTING_INCLUDES})
+  add_executable(${name} ${name}_test.cpp)
+  add_dependencies(${name} googletest)
+  target_link_libraries(${name} ${HOM3_TESTING_LIBS})
+  set(test_parameters -np ${no_mpi_proc} "./${name}")
+  add_test(NAME ${name} COMMAND "mpirun" ${test_parameters})
+endfunction(add_hom3_mpi_test)
 
 # Doxygen (optional) - Enables "make docs"
 option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML documentation" ON)

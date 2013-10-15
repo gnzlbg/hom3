@@ -10,7 +10,7 @@
 #include "geometry/implicit.hpp"
 
 template<class Grid>
-void write_grid_with_boundary(const std::string fName,Grid* grid) {
+void write_grid_with_boundary(const String fName, Grid* grid) {
   static const SInd nd = Grid::no_dimensions();
 
   io::Vtk out(grid, fName + "_" + std::to_string(nd), io::format::ascii(), io::precision::standard());

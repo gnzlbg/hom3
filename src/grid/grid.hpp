@@ -7,12 +7,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 /// Includes:
 #include <limits>
-#include <string>
 #include <algorithm>
 #include <vector>
+#include "globals.hpp"
 #include "containers/hierarchical.hpp"
 #include "generation.hpp"
 #include "boundary.hpp"
+#include "io/output.hpp"
 /// Options:
 #define ENABLE_DBG_ 0
 #include "misc/dbg.hpp"
@@ -664,7 +665,7 @@ template <SInd nd_> struct CartesianHSP : container::Hierarchical<nd_> {
 
   /// \todo take grid by const reference instead of pointer (requires changes to
   /// io::Vtk!)
-  friend void write_domain(const std::string fName, const This& grid) {
+  friend void write_domain(const String fName, const This& grid) {
     io::Vtk<nd, io::format::ascii> out(&grid, fName, io::precision::standard());
 
     out << io::stream("nodeIds", 1, [](const Ind nIdx, const SInd) {

@@ -1,4 +1,4 @@
-# - Try to find pnetcdf
+# - Try to find hdf5
 # Once done this will define
 #  HDF5_FOUND - System has LibXml2
 

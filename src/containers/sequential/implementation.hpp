@@ -6,7 +6,6 @@
 /// Includes:
 #include <type_traits>
 #include <limits>
-#include <string>
 #include <algorithm>
 ////////////////////////////////////////////////////////////////////////////////
 #include "containers/sequential/traits.hpp"
@@ -77,10 +76,10 @@ template<class Cells> struct Implementation {
 
   /// \name Constructors
   ///@{
-  Implementation(const cell_size_type n,  const std::string name)
+  Implementation(const cell_size_type n,  const String name)
     : Implementation(n, 0, name) {}
   Implementation(const cell_size_type ne, const node_size_type nn,
-                 const std::string name)
+                 const String name)
       : maxCellSize_(ne), maxNodeSize_(nn), cellSize_(0)
       , nodeSize_(0), nodes_(c(),"nodes"), name_(name) {
     TRACE_IN((ne)(nn));
@@ -331,7 +330,7 @@ template<class Cells> struct Implementation {
   }
   ///@}
 
-  std::string name() const { return name_; }
+  String name() const { return name_; }
 
  private:
 
@@ -346,7 +345,7 @@ template<class Cells> struct Implementation {
   /// Container of node indicies
   NodeIndices<Cells,CIdx> nodes_;
 
-  const std::string name_;
+  const String name_;
 
   /// \brief Returns a pointer to the underlying container (CRTP)
   inline Cells* c() { return static_cast<Cells*>(this); }

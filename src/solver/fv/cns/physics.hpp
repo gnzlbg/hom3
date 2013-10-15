@@ -5,7 +5,6 @@
 /// for ideal compressible flow.
 ////////////////////////////////////////////////////////////////////////////////
 #include <limits>
-#include <string>
 #include <algorithm>
 #include "solver/fv/solver.hpp"
 #include "solver/fv/euler/physics.hpp"
@@ -30,7 +29,7 @@ struct Physics : euler::Physics<nd_, NumFlux, Solver> {
   ///@{
   using physics_type = type_tag;
   static const constexpr SInd nd = nd_;
-  static std::string physics_name() noexcept {
+  static String physics_name() noexcept {
     return "CNS" + std::to_string(nd) + "D";
   }
   ///@}

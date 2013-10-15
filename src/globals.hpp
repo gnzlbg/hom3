@@ -1,5 +1,5 @@
-#ifndef GLOBALS_HPP_
-#define GLOBALS_HPP_
+#ifndef HOM3_GLOBALS_HPP_
+#define HOM3_GLOBALS_HPP_
 //////////////////////////////////////////////////////////////////////
 /// Includes those files that need to be included by every other file.
 //////////////////////////////////////////////////////////////////////
@@ -17,9 +17,10 @@
 #include "misc/math.hpp"
 #include "misc/mpi.hpp"
 #include "misc/stack_memory.hpp"
+#include "misc/heap_buffer.hpp"
 #include "misc/functions.hpp"
 #include "misc/ranges.hpp"
 #include "misc/traits.hpp"
-#include "output/output.hpp"
+#include "misc/filesystem.hpp"
 //////////////////////////////////////////////////////////////////////
 #endif

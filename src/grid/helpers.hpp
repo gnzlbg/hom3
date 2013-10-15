@@ -94,7 +94,7 @@ using edge::make_edge;
 /// \brief Makes a single boundary condition
 template<SInd nd, class Solver, class position, class BC>
 typename Solver::Boundary make_boundary
-(position, Num d, Num off, std::string name, Solver& solver, BC&& bc) {
+(position, Num d, Num off, String name, Solver& solver, BC&& bc) {
   return {name, make_edge<nd>(position(), d, off), solver, std::forward<BC>(bc)};
 }
 

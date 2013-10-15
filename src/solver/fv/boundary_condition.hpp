@@ -2,7 +2,6 @@
 #define HOM3_SOLVERS_FV_BOUNDARY_CONDITION_HPP_
 ////////////////////////////////////////////////////////////////////////////////
 /// Includes:
-#include <string>
 #include "globals.hpp"
 #include "grid/boundary.hpp"
 #include "tags.hpp"
@@ -25,7 +24,7 @@ template<SInd nd> struct Interface : grid::boundary::Interface<nd> {
 
   /// \brief Construct a boundary condition
   template<class Solver, class Geometry, class Condition>
-  Interface(const std::string name, std::shared_ptr<Geometry> geometry,
+  Interface(const String name, std::shared_ptr<Geometry> geometry,
             const Solver& solver, Condition&& condition) noexcept
       : grid::boundary::Interface<nd>(name, geometry, solver)
       , apply_lhs(condition), apply_rhs(condition)

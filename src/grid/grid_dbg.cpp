@@ -12,7 +12,7 @@
 // EXPECT_DEATH(cells[-1].myNum() = -2.0, "[\\S\\s]+");
 
 template<class Grid>
-void write_grid(const std::string fName, Grid* grid) {
+void write_grid(const String fName, Grid* grid) {
 
   static const int nd = Grid::no_dimensions();
 

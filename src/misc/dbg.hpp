@@ -15,7 +15,7 @@
 ///
 /// Example:
 /// \code
-/// int arg1 = 0; double arg2 = 3.5; std::string arg3("hello");
+/// int arg1 = 0; double arg2 = 3.5; String arg3("hello");
 /// DBG(arg1,arg2,arg3); // prints: "0 3.5 hello"
 /// \endcode
 #define DBG(...) do { DOUT(ENABLE_DBG_,"#",__VA_ARGS__); } while (false)
@@ -25,7 +25,7 @@
 ///
 /// Example:
 /// \code
-/// int arg1 = 0; double arg2 = 3.5; std::string arg3("hello");
+/// int arg1 = 0; double arg2 = 3.5; String arg3("hello");
 /// bool test = false;
 /// DBG_IF(test,arg1,arg2,arg3); // prints nothing
 /// test = true;
@@ -38,7 +38,7 @@
 ///
 /// Example:
 /// \code
-/// int arg1 = 2; std::string arg2("hello");
+/// int arg1 = 2; String arg2("hello");
 /// DBGV((arg1),(arg2)) // prints: "arg1 : 2 | arg2 : "hello"
 /// \endcode
 #define DBGV(...) do { DOUTV(ENABLE_DBG_,__VA_ARGS__); } while (false)

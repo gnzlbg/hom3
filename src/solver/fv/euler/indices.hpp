@@ -3,7 +3,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 /// \file \brief Implements Euler-Equations indices.
 ////////////////////////////////////////////////////////////////////////////////
-#include <string>
 #include "globals.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 namespace hom3 { namespace solver { namespace fv { namespace euler {
@@ -18,7 +17,7 @@ template<SInd nd_> struct Indices {
   static inline constexpr SInd rho() noexcept { return nd; }
   static inline constexpr SInd p() noexcept { return nd + 1; }
   static inline constexpr SInd rho_E() noexcept { return nd + 1; }
-  static inline std::string cv_names(const SInd i) noexcept {
+  static inline String cv_names(const SInd i) noexcept {
     if (i < nd) {
       return "rho_u" + std::to_string(i);
     } else if (i == nd) {
@@ -29,7 +28,7 @@ template<SInd nd_> struct Indices {
       TERMINATE("unknown variable index: " + std::to_string(i));
     }
   }
-  static inline std::string pv_names(const SInd i) noexcept {
+  static inline String pv_names(const SInd i) noexcept {
     if (i < nd) {
       return "u" + std::to_string(i);
     } else if (i == nd) {

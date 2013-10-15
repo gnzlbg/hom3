@@ -7,14 +7,26 @@
 ////////////////////////////////////////////////////////////////////////////////
 namespace hom3 {
 ////////////////////////////////////////////////////////////////////////////////
-inline MPI_Info mpi_info() noexcept { return MPI_INFO_NULL; }
 
-}  // namespace hom3
-////////////////////////////////////////////////////////////////////////////////
-
-namespace boost {
-
+/// \brief Message Passing Interface utilities
 namespace mpi {
+
+using namespace boost::mpi;
+
+inline MPI_Info info() noexcept { return MPI_INFO_NULL; }
+
+template<std::size_t N> using requests = std::array<boost::mpi::request, N>;
+
+template<std::size_t N>
+auto wait_all(requests<N>& reqs) {
+  return wait_all(std::begin(reqs), std::end(reqs));
+}
+
+/// Is rank the root rank?
+bool is_root_rank(int rank) { return rank == 0; }
+/// Is this process the root process of the communicator?
+bool is_root(const mpi::communicator& comm)
+{ return is_root_rank(comm.rank()); }
 
 namespace detail {
 
@@ -24,7 +36,7 @@ template<> struct is_void_type<void> { using type = is_void; };
 
 template<class F, class... Args> constexpr void root_do_
 (is_void, const communicator& comm, F&& f, Args&&... args) noexcept {
-  if (comm.rank() == 0) {
+  if (is_root(comm)) {
     f(std::forward<Args>(args)...);
   }
   return;
@@ -34,8 +46,8 @@ template<class F, class... Args>
 inline constexpr auto root_do_
 (not_void, const communicator& comm, F&& f, Args&&... args) noexcept
 -> decltype(f(std::forward<Args>(args)...)) {
-  decltype(f(std::forward<Args>(args)...)) result{};
-  if (comm.rank() == 0) {
+  decltype(f(std::forward<Args>(args)...)) result {};
+  if (is_root(comm)) {
     result = f(std::forward<Args>(args)...);
   }
   boost::mpi::broadcast(comm, result, 0);
@@ -60,6 +72,7 @@ inline constexpr auto root_do(const communicator& comm, F&& f, Args&&... args)
 
 }  // namespace mpi
 
-}  // namespace boost
+////////////////////////////////////////////////////////////////////////////////
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #endif

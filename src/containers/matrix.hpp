@@ -3,7 +3,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 /// Includes:
 #include <algorithm>
-#include <string>
 #include "globals.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 namespace hom3 {
@@ -66,7 +65,7 @@ struct Matrix {
   using container_type   = typename container_trait::type;
 
   Matrix() : c_(nullptr), data_(0, nd()), name_("unknown") {}
-  Matrix(const C* t, std::string name)
+  Matrix(const C* t, String name)
     : c_(t), data_(capacity_(), nd()), name_(name) {}
   explicit Matrix(const This& other)
     : c_(nullptr), data_(other()), name_(other.name()) {}
@@ -110,14 +109,14 @@ struct Matrix {
   inline void flip() noexcept { data_.flip(); }
   inline void flip(const SInd d) noexcept { data_.flip(d); }
 
-  inline std::string name() const noexcept { return name_; }
+  inline String name() const noexcept { return name_; }
 
  private:
   const C* c_;
   container data_;
-  std::string name_;
+  String name_;
 
-  inline std::string path() const noexcept
+  inline String path() const noexcept
   { return name() + " in container " + c_->name(); }
 
   inline bool preconditions_(const RowIdx i, const ColIdx d) const noexcept {

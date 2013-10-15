@@ -4,7 +4,6 @@
 #include <boost/iterator/counting_iterator.hpp>
 #include <type_traits>
 #include <limits>
-#include <string>
 #include <algorithm>
 #include "constants.hpp"
 ////////////////////////////////////////////////////////////////////////////////
@@ -138,7 +137,7 @@ template<class T, class B = void> struct Integer {
   }
 
   /// \brief to_string
-  friend inline std::string to_string(const Integer a)  {
+  friend inline String to_string(const Integer a)  {
     return std::to_string(a.value);
   }
 

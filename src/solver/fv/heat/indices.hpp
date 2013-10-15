@@ -3,7 +3,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 /// \file \brief Implements Heat-Equation indices.
 ////////////////////////////////////////////////////////////////////////////////
-#include <string>
 #include "globals.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 namespace hom3 { namespace solver { namespace fv { namespace heat {
@@ -14,14 +13,14 @@ template<SInd nd_> struct Indices {
   static const constexpr SInd nd = nd_;
   static const constexpr SInd nvars = 1;
   static inline constexpr SInd T() noexcept { return 0; }
-  static inline std::string cv_names(const SInd i) noexcept {
+  static inline String cv_names(const SInd i) noexcept {
     if (i == 0) {
       return "T";
     } else {
       TERMINATE("unknown variable index: " + std::to_string(i));
     }
   }
-  static inline std::string pv_names(const SInd i) noexcept
+  static inline String pv_names(const SInd i) noexcept
   { return cv_names(i); }
 };
 

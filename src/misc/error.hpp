@@ -5,7 +5,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 /// INCLUDES:
 #include <iostream>
-#include <string>
 #include <stdexcept>
 #include "misc/functions.hpp"
 ////////////////////////////////////////////////////////////////////////////////
@@ -17,7 +16,7 @@ namespace error {
 
 /// \brief Throws a runtime error exception with the description given
 /// in \p error_string.
-std::runtime_error exception(std::string error_string) {
+std::runtime_error exception(String error_string) {
   std::runtime_error tmp("EXCEPTION: " + error_string);
   return tmp;
 }
@@ -26,7 +25,7 @@ std::runtime_error exception(std::string error_string) {
 ///
 /// \warning this function never returns
 [[noreturn, noinline, cold]] void terminate
-(const std::string error_string, const std::string at) {
+(const String error_string, const String at) {
   std::cerr << "FATAL ERROR \"" << error_string << "\" (" << at << ")."
             << std::endl;
   exit(1);

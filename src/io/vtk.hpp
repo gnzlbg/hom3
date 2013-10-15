@@ -1,12 +1,11 @@
-#ifndef HOM3_OUTPUT_OUTPUT_HPP_
-#define HOM3_OUTPUT_OUTPUT_HPP_
+#ifndef HOM3_IO_VTK_HPP_
+#define HOM3_IO_VTK_HPP_
 ////////////////////////////////////////////////////////////////////////////////
 #include <iostream>
 #include <fstream>
-#include <string>
 #include <algorithm>
 #include <vector>
-#include "../globals.hpp"
+#include "globals.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 namespace hom3 {
 
@@ -64,21 +63,21 @@ struct StreamableVariable {
         name_(o.name_), noDims_(o.noDims_) {}
   /// \brief Constructor for Ind variables
   template<class T> StreamableVariable
-  (const T& t, Ind, std::function<std::string(const SInd)> n, SInd nd)
+  (const T& t, Ind, std::function<String(const SInd)> n, SInd nd)
       : value_type_(StreamableVariable::value_types::Ind),
         as_int([=](const Ind i, const SInd d){ return t(i,d); }),
         as_num([](const Ind, const SInd) { return invalid<Num>(); }),
         name_(n), noDims_(nd) {}
   /// \brief Constructor for SInd variables
   template<class T> StreamableVariable
-  (const T& t, SInd, std::function<std::string(const SInd)> n, SInd nd)
+  (const T& t, SInd, std::function<String(const SInd)> n, SInd nd)
       : value_type_(StreamableVariable::value_types::Ind),
         as_int([=](const Ind i, const SInd d){ return t(i,d); }),
         as_num([](const Ind, const SInd) { return invalid<Num>(); }),
         name_(n), noDims_(nd) {}
   /// \brief Constructor for Num variables
   template<class T> StreamableVariable
-  (const T& t, Num, std::function<std::string(const SInd)> n, SInd nd)
+  (const T& t, Num, std::function<String(const SInd)> n, SInd nd)
       : value_type_(StreamableVariable::value_types::Num),
         as_int([](const Ind, const SInd){ return invalid<Ind>(); }),
         as_num([=](const Ind i, const SInd d){ return t(i,d); }),
@@ -87,13 +86,13 @@ struct StreamableVariable {
   template<class T> StreamableVariable(const T& t)
       : StreamableVariable(t, typename T::value_type(), t.name(), t.dimensions()) {}
   /// \brief Constructor from function object
-  template<class F> StreamableVariable(std::string n, SInd nd, F&& f)
+  template<class F> StreamableVariable(String n, SInd nd, F&& f)
       : StreamableVariable(f, decltype(f(0,0))(), make_name(n,nd), nd) {}
   template<class F> StreamableVariable
-  (std::function<std::string(const SInd)> n, SInd nd, F&& f)
+  (std::function<String(const SInd)> n, SInd nd, F&& f)
       : StreamableVariable(f, decltype(f(0,0))(), n, nd) {}
 
-  std::string name(SInd d = 0) const { return name_(d); }
+  String name(SInd d = 0) const { return name_(d); }
   SInd no_dimensions() const { return noDims_; }
   SInd value_type() const { return value_type_; }
   struct value_types { enum { Ind = 0, Num = 1 }; };
@@ -103,10 +102,10 @@ struct StreamableVariable {
   const std::function<Ind(const Ind, const SInd)> as_int;
   const std::function<Num(const Ind, const SInd)> as_num;
  private:
-  //const std::string name_;
-  const std::function<std::string(const SInd)> name_;
+  //const String name_;
+  const std::function<String(const SInd)> name_;
   const SInd noDims_;
-  static std::function<std::string(const SInd)> make_name(std::string n, SInd nd) {
+  static std::function<String(const SInd)> make_name(String n, SInd nd) {
     if(nd > 1) {
       return [=](const SInd d) { return n + "_" + std::to_string(d); };
     } else {
@@ -120,12 +119,12 @@ template<class Variable> StreamableVariable stream
 (const Variable& v) { return StreamableVariable(v); }
 
 template<class Functor> StreamableVariable stream
-(std::string name, SInd nd, Functor&& f) {
+(String name, SInd nd, Functor&& f) {
   return StreamableVariable(name, nd, f);
 }
 
 template<class Functor> StreamableVariable stream
-(std::function<std::string(const SInd)> name, SInd nd, Functor&& f) {
+(std::function<String(const SInd)> name, SInd nd, Functor&& f) {
   return StreamableVariable(name, nd, f);
 }
 
@@ -170,16 +169,16 @@ template<SInd nd, class Format = io::format::ascii> struct Vtk {
 
   /// The constructor configures the output and prepares the header information
   template<class Precision = io::precision::standard>
-  Vtk(StreamableDomain<nd> d, const std::string fN, const Precision p = Precision())
+  Vtk(StreamableDomain<nd> d, const String fN, const Precision p = Precision())
       :  streams_(), fileName(fN + ".vtk"), domain(d), isFileOpen(false),
          isHeaderWritten(false) {
     set_precision(p);
 
     /// VTK Header Information:
-    const std::string version_  = "# vtk DataFile Version 2.0\n";
-    const std::string title_    = "HOM3 legacy vtk Output \n";
-    const std::string format_   = header_format_string();
-    const std::string meshType_ = "DATASET UNSTRUCTURED_GRID\n";
+    const String version_  = "# vtk DataFile Version 2.0\n";
+    const String title_    = "HOM3 legacy vtk Output \n";
+    const String format_   = header_format_string();
+    const String meshType_ = "DATASET UNSTRUCTURED_GRID\n";
 
     header_ << version_ << title_ << format_ << meshType_;
   }
@@ -205,8 +204,8 @@ template<SInd nd, class Format = io::format::ascii> struct Vtk {
     }
   }
 
-  inline void write_scalar_stream(const StreamableVariable& stream, const std::string& name, SInd dim) {
-    std::string type;
+  inline void write_scalar_stream(const StreamableVariable& stream, const String& name, SInd dim) {
+    String type;
     switch (stream.value_type()) {
       case StreamableVariable::value_types::Ind: {
         type = "int";
@@ -345,21 +344,21 @@ template<SInd nd, class Format = io::format::ascii> struct Vtk {
     return *this;
   }
 
-  static const std::string write_dim_type(io::data_types::scalar) { return "SCALARS "; }
-  static const std::string write_dim_type(io::data_types::vector) { return  "VECTOR "; }
-  static const std::string write_val_type(int)   { return " int"; }
-  static const std::string write_val_type(float) { return " float"; }
+  static const String write_dim_type(io::data_types::scalar) { return "SCALARS "; }
+  static const String write_dim_type(io::data_types::vector) { return  "VECTOR "; }
+  static const String write_val_type(int)   { return " int"; }
+  static const String write_val_type(float) { return " float"; }
 
  private:
-  void write_header(const std::string& i) { write_header(i,Format()); }
-  void write_header(const std::string& i, io::format::binary) {
+  void write_header(const String& i) { write_header(i,Format()); }
+  void write_header(const String& i, io::format::binary) {
     if(os.is_open()) { os.close(); }
     os.open(fileName, std::ios_base::app); // reopen in ascii mode
     os << i;
     os.close();
     os.open(fileName, std::ios_base::app|std::ios_base::binary);
   }
-  void write_header(const std::string& i, io::format::ascii) { os << i; }
+  void write_header(const String& i, io::format::ascii) { os << i; }
 
   template<class T> int interpret_id(T&& t) { return is_valid<Ind>(t) ? static_cast<int>(t) : -1; }
   template<class T> float interpret_num(T&& t) { return static_cast<float>(t); }
@@ -394,14 +393,14 @@ template<SInd nd, class Format = io::format::ascii> struct Vtk {
 
   using Vertex = typename grid::CartesianHSP<nd>::CellVertices::Vertex;
   std::vector<StreamableVariable> streams_;
-  const std::string fileName;
+  const String fileName;
   std::stringstream header_;
   StreamableDomain<nd> domain;
   Ind precision;
   std::ofstream os;
-  static const std::string header_format_string() { return header_format_string(Format()); }
-  static const std::string header_format_string(io::format::ascii) { return "ASCII\n"; }
-  static const std::string header_format_string(io::format::binary) { return "BINARY\n"; }
+  static const String header_format_string() { return header_format_string(Format()); }
+  static const String header_format_string(io::format::ascii) { return "ASCII\n"; }
+  static const String header_format_string(io::format::binary) { return "BINARY\n"; }
   void set_precision(io::precision::standard) { precision = 12; os.precision(precision); }
   void set_precision(io::precision::low) { precision = 6; os.precision(precision); }
 

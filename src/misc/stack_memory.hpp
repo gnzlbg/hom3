@@ -25,7 +25,7 @@
 /// - terminate if runs out of stack memory
 ////////////////////////////////////////////////////////////////////////////////
 #include <memory>
-#include <string>
+#include "misc/types.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 namespace hom3 {
 ////////////////////////////////////////////////////////////////////////////////
@@ -73,7 +73,7 @@ char* arena<T, M>::allocate(std::size_t n) {
     return r;
   }
   TERMINATE(
-    std::string("not enough memory | ")
+    String("not enough memory | ")
     + "in use: " + std::to_string((ptr_ - buf_) / sizeof(T)) + " Ts | "
     + "available: "  + std::to_string((buf_ + N - ptr_) / sizeof(T)) + " Ts | "
     + "requested: " + std::to_string(n / sizeof(T)) + " Ts | "

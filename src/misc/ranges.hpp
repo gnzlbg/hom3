@@ -20,6 +20,7 @@
 #include <boost/range/adaptors.hpp>
 #include <boost/range/any_range.hpp>
 #include <boost/range/join.hpp>
+#include <boost/iterator/zip_iterator.hpp>
 #include "misc/returns.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 namespace hom3 {
@@ -91,6 +92,19 @@ using namespace boost::adaptors;
 
 // all range utilities are available in the hom3 namespace
 using namespace range;
+
+/// Variadic join Ranges... rs -> Range
+template<class R> auto join(R&& r) RETURNS(boost::make_iterator_range(r));
+template<class R1, class R2, class... Rs>
+auto join(R1&& r1, R2&& r2, Rs&&... rs) RETURNS(boost::join(
+boost::join(boost::make_iterator_range(std::forward<R1>(r1)),
+              boost::make_iterator_range(std::forward<R2>(r2))),
+       join(std::forward<Rs>(rs)...)));
+
+/// Variadic zip: Ranges... rs -> Range
+template <class... R> auto zip(R&&... r) RETURNS(boost::make_iterator_range(
+boost::make_zip_iterator(boost::make_tuple(std::begin(std::forward<R>(r))...)),
+boost::make_zip_iterator(boost::make_tuple(std::end(std::forward<R>(r))...))));
 
 }  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////

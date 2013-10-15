@@ -5,7 +5,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 /// Includes:
 #include <memory>
-#include <string>
 #include <functional>
 #include "globals.hpp"
 /// Options:
@@ -29,7 +28,7 @@ namespace boundary {
 template<SInd nd> struct Interface {
   /// \brief Constructs a boundary with a custom boundary condition
   template<class Geometry, class Solver>
-  Interface(const std::string name,
+  Interface(const String name,
             std::shared_ptr<Geometry> geometry,
             const Solver& solver) noexcept
     : signed_distance([=](const NumA<nd> x) {
@@ -44,10 +43,10 @@ template<SInd nd> struct Interface {
   /// \brief Index of the solver owning the boundary condition
   inline SolverIdx solver_idx() const noexcept { return solverIdx_; }
   /// \brief Boundary condition name
-  inline std::string name() const noexcept { return name_; }
+  inline String name() const noexcept { return name_; }
  private:
   /// Boundary name
-  const std::string name_;
+  const String name_;
   /// Index of the solver owning the boundary condition
   const SolverIdx solverIdx_;
 };
