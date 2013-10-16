@@ -143,14 +143,15 @@ TEST(hdf5_file_test, complex_read_write_rt) {
   auto comm = initialize(fName);
 
   /// Data-structure: Range of elements + two arrays + functor
-  Range<Ind> range(Ind{0}, Ind{6});
+  Range<Ind> row_range(0, 6);
+  Range<Ind> col_range(0, 2);
   std::array<Ind, 6> data0 = {{ 1, 3, 5, 7,  9, 11 }};
   std::array<Ind, 6> data1 = {{ 2, 4, 6, 8, 10, 12 }};
-  auto f = [&](const Ind i, const SInd d) {
-    if (d == 0) {
-      return data0[i];
-    } else if (d == 1) {
-      return data1[i];
+  auto f = [&](const Ind rowIdx, const Ind colIdx) {
+    if (colIdx == 0) {
+      return data0[rowIdx];
+    } else if (colIdx == 1) {
+      return data1[rowIdx];
     } else {
       TERMINATE("error!");
     }
@@ -159,7 +160,7 @@ TEST(hdf5_file_test, complex_read_write_rt) {
   // Write to file:
   {
     auto file = HDF5w{fName, comm};
-    file.array("/dset", range, f, 2, hdf5::array_order::row_major_order);
+    file.array("/dset", f, row_range, col_range, hdf5::order::row_major);
   }
 
   /// Read file to 1D data-structure:
@@ -188,7 +189,7 @@ TEST(hdf5_file_test, complex_read_write_rt) {
 
   /// Read file back to another complex data-structure
   std::array<Ind, 6> data0r, data1r;
-  std::function<Ind&(Ind, Ind)> fr = [&](Ind i, Ind d) mutable -> Ind& {
+  auto fr = [&](Ind i, Ind d) mutable -> Ind& {
     if (d == 0) {
       return data0r[i];
     } else if (d == 1) {

@@ -2,7 +2,8 @@
 #define HOM3_MISC_ASSERT_HPP_
 ////////////////////////////////////////////////////////////////////////////////
 /// Includes:
-#include<iostream>
+#include <iostream>
+#include <type_traits>
 ////////////////////////////////////////////////////////////////////////////////
 
 /// \brief Returns a string containing the position where it is defined. That
@@ -36,6 +37,14 @@
     }                                                                   \
   } while (false)
 #endif
+
+namespace hom3 {
+
+/// Asserts that 2 types \p T and \p U are equal
+template<class T, class U> inline void assert_equal() noexcept
+{ static_assert(std::is_same<T, U>::value, "types are not equal!"); }
+
+}  // namespace hom3
 
 ////////////////////////////////////////////////////////////////////////////////
 #endif
