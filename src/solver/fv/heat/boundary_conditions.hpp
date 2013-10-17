@@ -40,11 +40,11 @@ template<class Solver> struct Dirichlet : fv::bc::Condition<Dirichlet<Solver>> {
 template<class Solver> struct Neumann : fv::bc::Condition<Neumann<Solver>> {
   /// \brief Imposes a \p heatFlux distribution
   template<class F> Neumann(Solver& solver, F&& heatFlux) noexcept
-    : g_srfc([=](CellIdx c) { return heatFlux(c, 0); }), s(solver) {}
+    : g_srfc(heatFlux), s(solver) {}
 
   /// \brief Imposes a constant surface \p heatFlux
   Neumann(Solver& solver, const Num heatFlux) noexcept
-    : g_srfc([=](CellIdx) { return heatFlux; }), s(solver) {}
+    : Neumann(solver, [=](CellIdx) { return heatFlux; }) {}
 
   /// \brief Applies the boundary condition to a range of ghost cells
   template<class _>

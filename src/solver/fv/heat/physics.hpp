@@ -3,7 +3,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 /// \file \brief Implements the physics class for the Heat-equation.
 ////////////////////////////////////////////////////////////////////////////////
-#include <string>
 #include "solver/fv/solver.hpp"
 #include "indices.hpp"
 #include "tags.hpp"
@@ -24,7 +23,7 @@ template<SInd nd_, class NumFlux, class Solver> struct Physics {
   ///@{
   using physics_type = type_tag;
   static const constexpr SInd nd = nd_;
-  static std::string physics_name() noexcept
+  static String physics_name() noexcept
   { return "Heat" + std::to_string(nd) + "D"; }
   ///@}
 

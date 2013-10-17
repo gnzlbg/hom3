@@ -1,5 +1,6 @@
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+add_subdirectory (./advection)
 add_subdirectory (./heat)
 add_subdirectory (./euler)
 add_subdirectory (./cns)

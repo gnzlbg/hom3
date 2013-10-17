@@ -656,11 +656,12 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
   template<class _>
   auto surface_slope(_, const CellIdx lIdx, const CellIdx rIdx,
                      const SInd v, const SInd slopeDir) const noexcept {
+    using container::hierarchical::neighbor_direction;
     const auto rIdxPosWrtLIdx = which_neighbor(lIdx, rIdx);
     ASSERT(is_valid(rIdxPosWrtLIdx), "lIdx = " + to_string(lIdx)
            + " and rIdx = " + to_string(rIdx) + " are not neighbors!");
 
-    const auto nghbrDir = grid().neighbor_direction(rIdxPosWrtLIdx);
+    const auto nghbrDir = neighbor_direction(rIdxPosWrtLIdx);
     ASSERT(cells().x_center(rIdx, nghbrDir) > cells().x_center(lIdx, nghbrDir),
            "cells are in the wrong order!");
 

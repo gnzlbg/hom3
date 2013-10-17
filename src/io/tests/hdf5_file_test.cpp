@@ -143,8 +143,7 @@ TEST(hdf5_file_test, complex_read_write_rt) {
   auto comm = initialize(fName);
 
   /// Data-structure: Range of elements + two arrays + functor
-  Range<Ind> row_range(0, 6);
-  Range<Ind> col_range(0, 2);
+  Range<Ind> row_range(0, 6), col_range(0, 2);
   std::array<Ind, 6> data0 = {{ 1, 3, 5, 7,  9, 11 }};
   std::array<Ind, 6> data1 = {{ 2, 4, 6, 8, 10, 12 }};
   auto f = [&](const Ind rowIdx, const Ind colIdx) {

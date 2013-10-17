@@ -42,7 +42,7 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     "-Woverloaded-virtual" "-Wsign-promo" "-Wstrict-overflow=5"
     "-Wswitch-default" "-DGTEST_USE_OWN_TR1_TUPLE=1"
     "-fdiagnostics-show-template-tree" "-ftemplate-backtrace-limit=0"
-    "-Wno-attributes"
+    "-Wno-attributes" "-DTHRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_TBB"
     )
   set(CMAKE_CXX_FLAGS_DEBUG_LIST
     "-O1" "-g3" "-fstack-protector-all" "-D_FORTIFY_SOURCE=2"
@@ -133,7 +133,16 @@ set(Boost_USE_STATIC_RUNTIME ON)
 find_package(Boost 1.53 COMPONENTS mpi serialization filesystem system REQUIRED)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
-set(HOM3_BASE_LIBS ${Boost_LIBRARIES} ${MPI_LIBRARIES} ${HDF5_LIBRARY} ${HDF5LITE_LIBRARY})
+# Thrust
+find_package(Thrust REQUIRED)
+include_directories(SYSTEM ${THRUST_INCLUDE_DIR})
+
+find_package(TBB REQUIRED)
+set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${TBB_COMPILE_FLAGS})
+set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${TBB_LINK_FLAGS})
+include_directories(TBB_INCLUDE_PATH)
+
+set(HOM3_BASE_LIBS ${Boost_LIBRARIES} ${MPI_LIBRARIES} ${HDF5_LIBRARY} ${HDF5LITE_LIBRARY} ${TBB_LIBRARIES})
 set(HOM3_TESTING_LIBS ${HOM3_BASE_LIBS} ${GTEST_LIBS})
 set(HOM3_TESTING_INCLUDES ${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 function(add_hom3_test name)

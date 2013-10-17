@@ -28,8 +28,10 @@ struct write {};  ///< Write access tag
 /// \brief HDF5 functionality
 namespace hdf5 {
 
+/// HDF5 file extension
 inline String extension() noexcept { return ".hdf5"; }
 
+/// Data-layout: row-major/col-major
 enum class order { row_major, col_major };
 
 }  // namespace hdf5
@@ -56,10 +58,10 @@ template<class AccessMode> struct HDF5File {
   { assert_read_mode(); read_array_to_memory_(dataset, target); }
 
   /// \brief Reads \p dataset into \p functor .
-  template<class Functor> inline auto array
-  (const String dataset, Functor&& functor) noexcept
-  -> decltype(std::function<decltype(functor(Ind{}, Ind{}))(Ind, Ind)>(functor),
-              void()) {
+  template<class Functor>
+  inline auto array(const String dataset, Functor&& functor)
+  -> decltype
+  (std::function<decltype(functor(Ind{}, Ind{}))(Ind, Ind)>(functor), void()) {
     assert_read_mode();
     read_array_to_f_(dataset, std::forward<Functor>(functor));
   }
@@ -84,7 +86,7 @@ template<class AccessMode> struct HDF5File {
   template<class Functor, class RowRange, class ColRange> inline auto array
   (const String dataset, Functor&& functor, RowRange&& row_range,
   ColRange&& col_range = Range<Ind>{Ind{0}, Ind{1}},
-  hdf5::order order = hdf5::order::col_major) noexcept {
+  hdf5::order order = hdf5::order::col_major) {
     assert_write_mode();
     write_array_from_f_(dataset, std::forward<Functor>(functor),
                         row_range, col_range, order);
@@ -116,7 +118,7 @@ template<class AccessMode> struct HDF5File {
   /// \brief Reads array \p name to \p functor
   /// \warning Not Thread-Safe!
   template<class Functor> inline auto read_array_to_f_
-  (const String name, Functor&& functor) noexcept {
+  (const String name, Functor&& functor) {
     assert_read_mode();
     using T = decltype(functor(Ind{}, Ind{}));
     static_assert(std::is_reference<T>::value,
@@ -160,7 +162,7 @@ template<class AccessMode> struct HDF5File {
   /// \warning Not Thread-Safe!
   template<class F, class RR, class CR> inline void write_array_from_f_
   (const String dataset, F&& f, RR&& row_range, CR&& col_range,
-  hdf5::order order) noexcept {
+  hdf5::order order) {
     assert_write_mode();
     using RT = typename std::remove_reference_t<RR>::value_type;
     using CT = typename std::remove_reference_t<CR>::value_type;

@@ -40,6 +40,8 @@ namespace hom3 { namespace container {
 /// \brief Hierarchical container utilities
 namespace hierarchical {
 
+namespace detail {
+
 /// Stencil of relative sibling positions
 static const constexpr std::array<std::array<SInd, 6>, 8>
 rel_sibling_positions_arr = {{
@@ -62,16 +64,32 @@ opposite_neighbor_positions_arr = {{ 1, 0, 3, 2, 5, 4 }};
 static const constexpr std::array<SInd, 6>
 neighbor_directions = {{ 0, 0, 1, 1, 2, 2 }};
 
+}  // namespace detail
+
+/// \brief Direction of neighbor located at \p position
+inline constexpr SInd neighbor_direction(const SInd position) noexcept
+{ return detail::neighbor_directions[position]; }
+
 struct neg_dir_t {}; static const constexpr neg_dir_t neg_dir {};
 struct pos_dir_t {}; static const constexpr pos_dir_t pos_dir {};
 
-// static produces a warning if function not used
-/*static*/ constexpr SInd neighbor_position(const SInd dir, neg_dir_t)
+/// \brief Position of neighbor at direction \p (dir, neg_dir_t)
+inline constexpr SInd neighbor_position(const SInd dir, neg_dir_t) noexcept
 { return 2 * dir; }
-/*static*/ constexpr SInd neighbor_position(const SInd dir, pos_dir_t)
+/// \brief Position of neighbor at direction \p (dir, pos_dir_t)
+inline constexpr SInd neighbor_position(const SInd dir, pos_dir_t) noexcept
 { return 2 * dir + 1; }
 
-static constexpr SInd no_samelvl_neighbor_positions(SInd nd) noexcept
+/// \brief Is neighbor at \p position in the negative side of its direction?
+inline constexpr bool is_neighbor_at(const SInd position, neg_dir_t) noexcept
+{ return position % 2 == 0; }
+
+/// \brief Is neighbor at \p position in the positive side of its direction?
+inline constexpr bool is_neighbor_at(const SInd position, pos_dir_t) noexcept
+{ return position % 2 != 0; }
+
+static inline constexpr
+SInd no_samelvl_neighbor_positions(const SInd nd) noexcept
 { return 2 * nd; }
 
 /// \brief Hierarchical Node Container: stores a hierarchical "nd"-space
@@ -272,12 +290,9 @@ template<SInd nd_> struct Implementation {
   /// \warning returns iSInd if out of bounds. Bound check
   /// not performed here.
   static constexpr SInd opposite_neighbor_position(const SInd pos) noexcept {
-    assert_neighbor_position(pos); return opposite_neighbor_positions_arr[pos];
+    assert_neighbor_position(pos);
+    return detail::opposite_neighbor_positions_arr[pos];
   }
-
-  /// \brief Direction of the neighbor located at position \pos
-  static constexpr SInd neighbor_direction(const SInd pos) noexcept
-  { assert_neighbor_position(pos); return neighbor_directions[pos]; }
 
   /// \brief Position in parent of a sibling in direction "nghbrPos"
   /// from a sibling in position "childPos"
@@ -290,7 +305,7 @@ template<SInd nd_> struct Implementation {
   static constexpr SInd rel_sibling_position
   (const SInd childPos, const SInd nghbrPos) noexcept {
     assert_child_position(childPos); assert_neighbor_position(nghbrPos);
-    return rel_sibling_positions_arr[childPos][nghbrPos];
+    return detail::rel_sibling_positions_arr[childPos][nghbrPos];
   }
   ///@}
   //////////////////////////////////////////////////////////////////////////////
