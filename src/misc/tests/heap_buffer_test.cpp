@@ -1,5 +1,5 @@
 /// \file Heap buffer tests
-#include "gtest/gtest.h"
+#include "misc/test.hpp"
 #include "globals.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 using namespace hom3;

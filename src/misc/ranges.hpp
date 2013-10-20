@@ -84,7 +84,7 @@ template<class From, class To> using RangeTransformer
 namespace algorithm {
 // makes all Boost.Range algorithms available
 using namespace boost::algorithm;
-using boost::join;
+using namespace boost::range;
 using namespace boost::adaptors;
 }  // namespace algorithm
 

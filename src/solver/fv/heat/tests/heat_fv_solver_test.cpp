@@ -4,7 +4,7 @@
 #include "solver/fv/utilities.hpp"
 #include "geometry/geometry.hpp"
 /// External Includes:
-#include "gtest/gtest.h"
+#include "misc/test.hpp"
 /// Options:
 #define ENABLE_DBG_ 0
 #include "misc/dbg.hpp"
@@ -69,7 +69,7 @@ auto heat_properties(grid::Grid<nd>* grid, const Num timeEnd) {
   insert<Ind>              (p, "maxNoCells", maxNoCells);
   insert<bool>             (p, "restart", false);
   insert<InitialDomain>    (p, "initialDomain", initialDomain);
-  insert<Num>              (p, "CFL", 1.0);
+  insert<Num>              (p, "CFL", 0.5);
 
   insert<Num>                (p, "timeEnd", timeEnd);
   insert<Temperature>        (p, "T_ref", 273.15 * unit::kelvin);

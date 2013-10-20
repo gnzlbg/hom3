@@ -33,10 +33,11 @@ T find_if(T first, const T last, Predicate &&p) {
   return first;
 }
 
-/// \brief Finds the first element in range \p c, that satisfies the predicate \p p
+/// \brief Finds the first element in range \p c, that satisfies the predicate
+/// \p p
 template<class Container, class Predicate>
 auto find_if(Container&& c, Predicate&& p) {
-  return find_if(c.first(),c.last(),std::forward<Predicate>(p));
+  return find_if(c.first(), c.last(), std::forward<Predicate>(p));
 }
 ///@}
 
@@ -61,8 +62,9 @@ Container& erase_remove_if(Container&& c, Predicate&& p) {
 ///@}
 
 ////////////////////////////////////////////////////////////////////////////////
-} } } } // hom3::container::sequential::algorithm
-////////////////////////////////////////////////////////////////////////////////
-
+}  // namespace algorithm
+}  // namespace sequential
+}  // namespace container
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #endif

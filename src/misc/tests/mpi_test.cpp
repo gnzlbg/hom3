@@ -1,4 +1,5 @@
-#include "gtest/gtest.h"
+/// \file \brief Implements tests for MPI related functionality
+#include "misc/test.hpp"
 #include "globals.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 

@@ -4,7 +4,7 @@
 #include "solver/fv/utilities.hpp"
 #include "geometry/geometry.hpp"
 /// External Includes:
-#include "gtest/gtest.h"
+#include "misc/test.hpp"
 /// Options:
 #define ENABLE_DBG_ 0
 #include "misc/dbg.hpp"
@@ -24,7 +24,7 @@ static const SInd nd = 2;  ///< #of spatial dimensions
 /// Select the physics to solve:
 namespace adv_physics = solver::fv::advection;
 /// Select the numerical flux:
-using flux = adv_physics::flux::local_lax_friedrichs;
+using flux = adv_physics::flux::upwind;
 /// Select the time integration method:
 using time_integration = solver::fv::time_integration::euler_forward;
 /// Build a FV solver for advection conduction:
@@ -89,7 +89,7 @@ auto adv_properties(grid::Grid<nd>* grid, const Num timeEnd) {
   insert<Ind>              (p, "maxNoCells", maxNoCells);
   insert<bool>             (p, "restart", false);
   insert<InitialDomain>    (p, "initialDomain", initialDomain);
-  insert<Num>              (p, "CFL", 0.5);
+  insert<Num>              (p, "CFL", 1.0);
 
   insert<Num>              (p, "timeEnd", timeEnd);
   insert<Velocity>         (p, "velocity", radial_velocity);

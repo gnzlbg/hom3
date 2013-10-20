@@ -717,7 +717,8 @@ template<SInd nd_> struct Implementation {
   inline auto node_to_cell(const SolverIdx solverIdx) const noexcept
   -> RangeTransformer<NodeIdx, CellIdx> {
     return {[&, solverIdx](const NodeIdx nIdx) {
-              return cell_idx(nIdx, solverIdx); }};
+        return is_valid(nIdx) ? cell_idx(nIdx, solverIdx)
+                              : invalid<CellIdx>(); }};
   }
 
   /// \brief Returns range of _all_ solver ids.
@@ -742,6 +743,10 @@ template<SInd nd_> struct Implementation {
   /// \todo Remove return type.
   inline auto cells(const SolverIdx solverIdx) const
   RETURNS(nodes(solverIdx) | node_to_cell(solverIdx));
+
+  /// \brief Range of all same level neighbors of \p nIdx belonging to \p sIdx
+  inline auto all_samelvl_neighbors(const NodeIdx nIdx, SolverIdx sIdx) const
+  RETURNS(all_samelvl_neighbors(nIdx) | node_to_cell(sIdx));
 
   ///@}
   //////////////////////////////////////////////////////////////////////////////

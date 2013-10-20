@@ -1,5 +1,5 @@
 /// \file Tests the Integer wrapper
-#include "gtest/gtest.h"
+#include "misc/test.hpp"
 #include "globals.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 using namespace hom3;

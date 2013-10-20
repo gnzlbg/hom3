@@ -1,6 +1,6 @@
 /// \file \brief Tests for HDF5 File handlers
 #include <random>
-#include "gtest/gtest.h"
+#include "misc/test.hpp"
 #include "globals.hpp"
 #include "io/hdf5_file.hpp"
 ////////////////////////////////////////////////////////////////////////////////

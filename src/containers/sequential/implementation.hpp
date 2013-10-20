@@ -61,7 +61,6 @@ namespace sequential {
 /// required to implement cell containers
 ///
 template<class Cells> struct Implementation {
-
   /// Traits:
   using iterator       = Iterator<Cells>;
   using value_type     = typename traits<Cells>::value_type;
@@ -287,7 +286,7 @@ template<class Cells> struct Implementation {
     auto next = first; ++first;
     for(; first != last_; ++first) {
       if(!p(first)) {
-        copy_cell(first,next);
+        copy_cell(first, next);
         ++next;
       }
     }

@@ -2,7 +2,7 @@
 #include "grid/grid.hpp"
 #include "grid/helpers.hpp"
 /// External Includes:
-#include "gtest/gtest.h"
+#include "misc/test.hpp"
 /// Options:
 #define ENABLE_DBG_ 0
 #include "misc/dbg.hpp"
