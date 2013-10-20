@@ -3,16 +3,22 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "globals.hpp"
 //////////////////////////////////////////////////////////////////////////
+namespace hom3 { namespace geometry {
 
-namespace hom3 { namespace geometry { namespace cell { namespace cartesian {
+namespace cell {
 
-template<SInd nd> constexpr Num volume(const Num dx) {
-  return dx * volume<nd-1>(dx);
-}
-template<> constexpr Num volume<1>(const Num dx) { return dx; }
+namespace cartesian {
 
+template<SInd nd> constexpr Num volume(const Num dx) noexcept
+{ return dx * volume<nd - 1>(dx); }
+template<> constexpr Num volume<1>(const Num dx) noexcept { return dx; }
 
-}}}} // hom3::geometry::cell::cartesian namespace
+}  // namespace cartesian
 
+}  // namespace cell
+
+////////////////////////////////////////////////////////////////////////////////
+}  // namespace geometry
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #endif

@@ -25,10 +25,12 @@ namespace generation {
 ///
 template<class Implementation> struct Interface {
   template<class Grid>
-  void operator()(Grid& g) { imp()->generate_mesh(g); }
+  void operator()(Grid& g) noexcept { imp()->generate_mesh(g); }
  private:
-        Implementation* imp()       { return static_cast<Implementation*>(this); }
-  const Implementation* imp() const { return static_cast<Implementation*>(this); }
+        Implementation* imp()       noexcept
+  { return static_cast<Implementation*>(this); }
+  const Implementation* imp() const noexcept
+  { return static_cast<Implementation*>(this); }
 };
 
 /// \brief Min-Level mesh generator: refines the grid up to a specified minimum
@@ -36,17 +38,18 @@ template<class Implementation> struct Interface {
 ///
 struct MinLevel : Interface<MinLevel> {
   const Ind minDesiredLvl;
-  MinLevel(io::Properties input) : minDesiredLvl(io::read<Ind>(input,"level"))
+  explicit MinLevel(io::Properties input) noexcept
+  : minDesiredLvl(io::read<Ind>(input, "level"))
   { TRACE_IN_(); TRACE_OUT(); }
 
   template<class Grid> void generate_mesh(Grid& g) {
     TRACE_IN_();
     bool done = false;
     std::cerr << "minDesLvl: " << minDesiredLvl << std::endl;
-    while(!done) {
+    while (!done) {
       done = true;
-      for(auto&& nIdx : g.nodes()) {
-        if(g.is_leaf(nIdx) && g.level(nIdx) != minDesiredLvl) {
+      for (auto&& nIdx : g.nodes()) {
+        if (g.is_leaf(nIdx) && g.level(nIdx) != minDesiredLvl) {
           g.refine_node(nIdx);
           done = false;
         }
@@ -56,8 +59,11 @@ struct MinLevel : Interface<MinLevel> {
   }
 };
 
+}  // namespace generation
+
 ////////////////////////////////////////////////////////////////////////////////
-}}} // hom3::grid::generation namespace
+}  // namespace grid
+}  // namespace hom3
 ////////////////////////////////////////////////////////////////////////////////
 #undef ENABLE_DBG_
 ////////////////////////////////////////////////////////////////////////////////

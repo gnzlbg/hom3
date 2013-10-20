@@ -162,14 +162,14 @@ template<SInd nd_> struct Implementation {
   ///                              can hold.
   /// \param [in] maxNoGridSolvers maximum number of solver grids that the
   ///                              container can store.
-  Implementation(io::Properties input)
-      : noActiveNodes_{0}
-      , maxNoNodes_{io::read<Ind>(input, "maxNoGridNodes")}
-      , lowerFreeNodeBound_{0}
-      , parentIds_{this, "parents"}
-      , childrenIds_{this, "childs"}
-      , isFree_{this, "isFree"}
-      , node2cells_{maxNoNodes_, io::read<SInd>(input, "maxNoGridSolvers")} {
+  explicit Implementation(io::Properties input)
+    : noActiveNodes_{0}
+    , maxNoNodes_{io::read<Ind>(input, "maxNoGridNodes")}
+    , lowerFreeNodeBound_{0}
+    , parentIds_{this, "parents"}
+    , childrenIds_{this, "childs"}
+    , isFree_{this, "isFree"}
+    , node2cells_{maxNoNodes_, io::read<SInd>(input, "maxNoGridSolvers")} {
     TRACE_IN_();
     initialize_root_node_();
     TRACE_OUT();
@@ -328,10 +328,10 @@ template<SInd nd_> struct Implementation {
 
     no_nodes_() += no_child_positions();
     lowerFreeNodeBound_ += NodeIdx{no_child_positions()};
-    //size_() = size() + no_child_positions();
-    if(lastChildIdx >= node_end()) {
+    if (lastChildIdx >= node_end()) {
+      ///\todo size_() += diff;
       auto diff = math::absdiff(lastChildIdx, node_end());
-      while(diff != NodeIdx{0}) {
+      while (diff != NodeIdx{0}) {
         ++size_();
         --diff;
       }
@@ -799,7 +799,8 @@ template<SInd nd_> struct Implementation {
   inline NodeIdx free_spot_() const noexcept {
     const auto spot
       = boost::find_if(Range<NodeIdx>(lowerFreeNodeBound_, node_end()),
-                       [&](const NodeIdx i) { return isFree_(i()); }) - std::begin(all_nodes());
+                       [&](const NodeIdx i) { return isFree_(i()); })
+        - std::begin(all_nodes());
     return NodeIdx{spot};
   }
 
