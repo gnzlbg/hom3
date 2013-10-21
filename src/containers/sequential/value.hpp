@@ -20,6 +20,15 @@ template<class Container> struct ValueFacade {
   using reference  = typename traits<Container>::reference;
   ///@}
 
+  inline operator reference() const noexcept {
+    reference ref{*r()};
+    return ref;
+  }
+  inline operator reference()       noexcept {
+    reference ref{*r()};
+    return ref;
+  }
+
   /// \brief Underlying value type
   inline       value_type* r()       noexcept
   { return static_cast<value_type*>(this); }

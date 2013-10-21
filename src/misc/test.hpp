@@ -7,9 +7,9 @@
 #include "gtest/gtest.h"
 ////////////////////////////////////////////////////////////////////////////////
 
-#define EXPECT_DEATH_(expr) EXPECT_DEATH((expr), "[\\S\\s]+")
-#define EXPECT_DEBUG_DEATH_(expr) EXPECT_DEATH((expr), "[\\S\\s]+")
-#define EXPECT_NUM_EQ(a, b) EXPECT_DOUBLE_EQ((a), (b))
+#define EXPECT_DEATH_(expr)       EXPECT_DEATH((expr), "[\\S\\s]+")
+#define EXPECT_DEBUG_DEATH_(expr) EXPECT_DEBUG_DEATH((expr), "[\\S\\s]+")
+#define EXPECT_NUM_EQ(a, b)       EXPECT_DOUBLE_EQ((a), (b))
 
 ////////////////////////////////////////////////////////////////////////////////
 #endif

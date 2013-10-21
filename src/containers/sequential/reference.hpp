@@ -64,12 +64,12 @@ template<class Container> struct ReferenceFacade {
   }
 
   /// \brief Implicit conversion its value type
-  operator value_type() const {
+  operator value_type() const noexcept {
     value_type ret;
     value_type::copy_values(*r(), ret);
     return ret;
   }
-  operator value_type() {
+  operator value_type() noexcept {
     value_type ret;
     value_type::copy_values(*r(), ret);
     return ret;

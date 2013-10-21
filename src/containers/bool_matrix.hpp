@@ -4,7 +4,7 @@
 /// \file \brief Bool matrix class
 ////////////////////////////////////////////////////////////////////////////////
 #include <string>
-#include <vector>
+#include <boost/container/vector.hpp>
 #include <algorithm>
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -13,7 +13,8 @@ namespace hom3 { namespace container {
 /// \brief Bool Matrix type: ColMajor
 template <SInd nd> struct BoolMatrix {
   using This            = BoolMatrix<nd>;
-  using container       = std::vector<bool>;
+  // Life is too short for dealing with std::vector
+  using container       = boost::container::vector<bool>;
   using value_type      = typename container::value_type;
   using reference       = typename container::reference;
   using const_reference = typename container::const_reference;
@@ -66,8 +67,6 @@ template <SInd nd> struct BoolMatrix {
 }  // namespace container
 
 using container::BoolMatrix;
-
-using BoolRef = typename BoolMatrix<1>::reference;
 
 ////////////////////////////////////////////////////////////////////////////////
 }  // namespace hom3

@@ -144,7 +144,7 @@ struct Reference : container::sequential::ReferenceFacade<Container<nd_>> {
       , mIntA_(*static_cast<IntA<nd>*>(nullptr))
       , mNumA_(*static_cast<NumA<nd>*>(nullptr))
   {}
-  Reference(Value<nd>& v)
+  explicit Reference(Value<nd>& v)
     : Base()
     , mInt_(v.mInt())
     , mNum_(v.mNum())
