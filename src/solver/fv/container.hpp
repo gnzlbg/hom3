@@ -112,8 +112,8 @@ struct Value : container::sequential::ValueFacade<Container<nd, nvars>> {
   inline CellIdx&     neighbors(SInd p) { return neighbors_(p); }
   inline NumA<2*nd>&  distances()       { return distances_;    }
   inline Num&         distances(SInd p) { return distances_(p); }
-  inline NumA<nd>&    x()               { return x_;            }
-  inline Num&         x(SInd d)         { return x_(d);         }
+  inline NumA<nd>&    x_center()               { return x_;            }
+  inline Num&         x_center(SInd d)         { return x_(d);         }
   inline SInd&        bc_idx()          { return bc_idx_;       }
   inline NodeIdx&     node_idx()        { return node_idx_;     }
   inline Num&         length()          { return length_;       }
@@ -129,7 +129,7 @@ struct Value : container::sequential::ValueFacade<Container<nd, nvars>> {
       swap(a.distances(p), b.distances(p));
     }
     for (SInd d = 0; d < nd; ++d) {
-      swap(a.x(d), b.x(d));
+      swap(a.x_center(d), b.x_center(d));
     }
     for (SInd v = 0; v < nvars; ++v) {
       swap(a.lhs(v), b.lhs(v));
@@ -138,7 +138,7 @@ struct Value : container::sequential::ValueFacade<Container<nd, nvars>> {
   }
 
   template<class Value1, class Value2>
-  static inline void copy_values(Value1& to, Value2& from) noexcept {
+  static inline void copy_values(Value1& from, Value2& to) noexcept {
     to.bc_idx()   = from.bc_idx();
     to.node_idx() = from.node_idx();
     to.length()   = from.length();
@@ -147,7 +147,7 @@ struct Value : container::sequential::ValueFacade<Container<nd, nvars>> {
       to.distances(p) = from.distances(p);
     }
     for (SInd d = 0; d < nd; ++d) {
-      to.x(d) = from.x(d);
+      to.x_center(d) = from.x_center(d);
     }
     for (SInd v = 0; v < nvars; ++v) {
       to.lhs(v) = from.lhs(v);
@@ -170,6 +170,7 @@ template<SInd nd, SInd nvars> struct Reference
 : container::sequential::ReferenceFacade<Container<nd, nvars>> {
   using Base = container::sequential::ReferenceFacade<Container<nd, nvars>>;
   using Base::c;
+  using Base::v;
   using Base::index;
   using Base::operator=;
   using Base::Base;
@@ -177,21 +178,21 @@ template<SInd nd, SInd nvars> struct Reference
   { return Base::operator=(rhs_); }
 
   inline Num&     lhs(SInd d = 0)   noexcept
-  { return c()->lhs(index(), d); }
+  { return c() ? c()->lhs(index(), d) : v().lhs(d); }
   inline Num&     rhs(SInd d = 0)   noexcept
-  { return c()->rhs(index(), d); }
+  { return c() ? c()->rhs(index(), d) : v().rhs(d); }
   inline CellIdx& neighbors(SInd d) noexcept
-  { return c()->neighbors(index(), d); }
+  { return c() ? c()->neighbors(index(), d) : v().neighbors(d); }
   inline Num&     distances(SInd d) noexcept
-  { return c()->distances(index(), d); }
-  inline Num&     x(SInd d)         noexcept
-  { return c()->x_center(index(), d); }
+  { return c() ? c()->distances(index(), d) : v().distances(d); }
+  inline Num&     x_center(SInd d)         noexcept
+  { return c() ? c()->x_center(index(), d) : v().x_center(d); }
   inline SInd&    bc_idx()          noexcept
-  { return c()->bc_idx(index()); }
+  { return c() ? c()->bc_idx(index()) : v().bc_idx(); }
   inline NodeIdx& node_idx()        noexcept
-  { return c()->node_idx(index()); }
+  { return c() ? c()->node_idx(index()) : v().node_idx(); }
   inline Num&     length()          noexcept
-  { return c()->length(index()); }
+  { return c() ? c()->length(index()) : v().length(); }
 };
 
 ////////////////////////////////////////////////////////////////////////////////

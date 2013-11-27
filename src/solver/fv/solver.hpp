@@ -307,8 +307,9 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
         break;
       }
     }
-    const SInd ghostPos = grid().opposite_neighbor_position(bndryPos);
     ASSERT(is_valid(bndryIdx), "boundary cell not found!");
+    ASSERT(bndryPos != invalid<SInd>(), "boundary cell not found!");
+    const SInd ghostPos = grid().opposite_neighbor_position(bndryPos);
     return {bndryIdx, bndryPos, ghostCellIdx, ghostPos};
   }
 
@@ -567,7 +568,7 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
     // this should check the #of bndry conditions for the solver,
     // if it is indeed 0 nothing should happen, but if its not, ASSERT is fine
     ASSERT(firstBndryCell != cells().last(), "no boundary cells found!");
-    SInd bcIdx = cells().bc_idx(firstBndryCell);  // first bcIdx
+    auto bcIdx = cells().bc_idx(firstBndryCell);  // first bcIdx
     auto eql_bcIdx = [&](const CellIdx i) {
       return cells().bc_idx(i) == bcIdx;
     };
@@ -780,7 +781,13 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
   ///@{
 
   inline bool is_ghost_cell(const CellIdx cIdx) const noexcept
-  { return !is_valid(node_idx(cIdx)); }
+  {
+    ASSERT([&]() {
+        if(!is_valid(node_idx(cIdx))) {
+          ASSERT(is_valid(cells().bc_idx(cIdx)), "Error: ghost cell does not have bcIdx!");
+        }
+        return true; }(), "ghost cell check!");
+    return !is_valid(node_idx(cIdx)) ; }
 
   /// \brief Computes the cell-center coordinates of the ghost cell \p
   /// ghostCellIdx
@@ -840,8 +847,11 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
   /// \returns the local ghostCellIdx
   ///
   /// Precondition: cell at \p localBCellId has no neighbor in \nghbrPos
+  /// Postcondition:
+  ///   - ghost cell that has a single neighbor
+  ///   - and a boundary condition index
   CellIdx create_ghost_cell(const CellIdx bndryCellIdx,
-                            const SInd nghbrPos) noexcept {
+                            const SInd nghbrPos, const SInd bcIdx) noexcept {
     ASSERT(!is_valid(cells().neighbors(bndryCellIdx, nghbrPos)),
            "There is already a cell there!");
 
@@ -849,14 +859,19 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
     const auto ghostCellIdx = cells().push_cell();
     cells().node_idx(ghostCellIdx) = invalid<NodeIdx>();
 
-    /// 1) Set neighbor relationships:
+    /// 1) Set ghost cell boundary condition:
+    cells().bc_idx(ghostCellIdx) = bcIdx;
+
+    /// 2) Set neighbor relationships:
     const auto oppositeNghbrPos = grid().opposite_neighbor_position(nghbrPos);
     cells().neighbors(bndryCellIdx, nghbrPos) = ghostCellIdx;
     cells().neighbors(ghostCellIdx, oppositeNghbrPos) = bndryCellIdx;
 
-    /// 2) Set ghost cell position
+    /// 3) Set ghost cell position
     cells().x_center.row(ghostCellIdx) = ghost_cell_coordinates(ghostCellIdx);
     cells().length(ghostCellIdx) = cells().length(bndryCellIdx);
+
+    /// \todo Test post-conditions
     return ghostCellIdx;
   }
 
@@ -889,6 +904,7 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
         grid().cell_idx(nIdx, solver_idx()) = cIdx;
         cells().x_center.row(cIdx) = xc;
         cells().length(cIdx) = grid().cell_length(nIdx);
+        cells().bc_idx(cIdx) = invalid<SInd>();
       }
     }
 
@@ -962,8 +978,7 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
 
         using boost::adaptors::filtered;
         for (auto nghbrPos : missingNghbrPositions | filtered(neg_distance)) {
-          auto ghostCellIdx = create_ghost_cell(bndryCellIdx, nghbrPos);
-          cells().bc_idx(ghostCellIdx) = ghostCellBoundaryIdx;
+          create_ghost_cell(bndryCellIdx, nghbrPos, ghostCellBoundaryIdx);
         }
       }
       ++ghostCellBoundaryIdx;

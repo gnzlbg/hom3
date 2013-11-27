@@ -79,6 +79,9 @@ template<class Container> struct ReferenceFacade {
   /// \warning The pointer can be a nullptr !
   inline Container*  c() const noexcept { return c_; }
   inline Container*& c()       noexcept { return c_; }
+  inline value_type      & v()       noexcept { return v_; }
+  inline value_type const& v() const noexcept { return v_; }
+
 
   /// \brief Returns the index of the element within a container, if the
   /// reference referes to an element within a container
@@ -91,12 +94,17 @@ template<class Container> struct ReferenceFacade {
     return index_;
   }
 
-  ReferenceFacade() noexcept : c_(nullptr), index_(invalid<CIdx>()) {}
-  ReferenceFacade(Container* c, CIdx i) noexcept : c_(c), index_(i) {}
+  ReferenceFacade() noexcept : c_(nullptr), index_(invalid<CIdx>()),
+    v_(*static_cast<value_type*>(nullptr)) {}
+  ReferenceFacade(Container* c, CIdx i) noexcept : c_(c), index_(i),
+    v_(*static_cast<value_type*>(nullptr)) {}
+  ReferenceFacade(value_type& v) noexcept : ReferenceFacade(), v_(v) {}
+  ReferenceFacade(const value_type& v) noexcept : ReferenceFacade(), v_(const_cast<value_type&>(v)) {}
 
  private:
   Container* c_;  ///< Pointer to the underlying container
   CIdx   index_;  ///< Index of the of the element within the container
+  value_type& v_;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
