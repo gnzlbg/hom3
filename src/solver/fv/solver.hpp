@@ -132,7 +132,7 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
   /// \brief Initializes the solver
   void initialize() {
     init_solver_variables();
-    create_local_cells();
+    create_initial_cells();
     impose_initial_condition();
     set_dt();
   }
@@ -837,7 +837,36 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
         }
       }
     }
+
+    ASSERT(check_all_cells(), "solver cells / grid node links are wrong!");
+    ASSERT(check_all_nghbrs(), "internal cell nghbrIds don't agree with grid!");
     return firstGhostCell;
+  }
+
+  /// \brief Creates a single internal cell whose neighbors belong exclusively
+  /// to the grid
+  ///
+  /// Note: this updates the connectivity of the cells neighbors!
+  ///
+  /// Postcondition: cell without any ghost cell as neighbors!
+  CellIdx create_internal_cell(const NodeIdx nIdx) noexcept {
+    const auto cIdx = cells().push_cell();
+    cells().node_idx(cIdx) = nIdx;
+    grid().cell_idx(nIdx, solver_idx()) = cIdx;
+    cells().x_center.row(cIdx) = grid().cell_coordinates(nIdx);
+    cells().length(cIdx) = grid().cell_length(nIdx);
+    cells().bc_idx(cIdx) = invalid<SInd>();
+    const auto nghbrs = grid().all_samelvl_neighbors(node_idx(cIdx), solver_idx());
+    for (auto nghbrPos : grid().neighbor_positions()) {
+      const auto nghbrIdx = nghbrs(nghbrPos);
+      cells().neighbors(cIdx, nghbrPos) = nghbrIdx;
+      if (is_valid(nghbrIdx)) {
+        cells().neighbors(nghbrIdx,
+                          grid().opposite_neighbor_position(nghbrPos)) = cIdx;
+        cells().distances(cIdx, nghbrPos) = cell_dx(cIdx, nghbrIdx);
+      }
+    }
+    return cIdx;
   }
 
   /// Creates a ghost-cell for \p localBCellId located in the position of the
@@ -871,6 +900,11 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
     cells().x_center.row(ghostCellIdx) = ghost_cell_coordinates(ghostCellIdx);
     cells().length(ghostCellIdx) = cells().length(bndryCellIdx);
 
+    /// 4) Set distance stencil
+    const auto dx = cell_dx(bndryCellIdx, ghostCellIdx);
+    cells().distances(bndryCellIdx, nghbrPos) = dx;
+    cells().distances(ghostCellIdx, oppositeNghbrPos) = dx;
+
     /// \todo Test post-conditions
     return ghostCellIdx;
   }
@@ -888,67 +922,33 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
     forced_dt_step_ = invalid<Ind>();
   }
 
-  void create_local_cells() noexcept {
-    // 1) create a local cell for each grid leaf cell
-    //    set the nodeIdx in the local cells
-    //    set the cIdx in the grid cells
-    //    set the cell coordinates
-    {
-      auto initialDomain
-          = io::read<InitialDomain>(properties_, "initialDomain");
-      for (auto nIdx : grid().leaf_nodes()) {
-        auto xc = grid().cell_coordinates(nIdx);
-        if (!initialDomain(xc)) { continue; }
-        auto cIdx = cells().push_cell();
-        cells().node_idx(cIdx) = nIdx;
-        grid().cell_idx(nIdx, solver_idx()) = cIdx;
-        cells().x_center.row(cIdx) = xc;
-        cells().length(cIdx) = grid().cell_length(nIdx);
-        cells().bc_idx(cIdx) = invalid<SInd>();
+
+  void create_initial_internal_cells() noexcept {
+    auto initialDomain
+        = io::read<InitialDomain>(properties_, "initialDomain");
+    for (auto nIdx : grid().leaf_nodes()) {
+      if (initialDomain(grid().cell_coordinates(nIdx))) {
+        create_internal_cell(nIdx);
       }
     }
-
     ASSERT(check_all_cells(), "solver cells / grid node links are wrong!");
-
-    // set local nghbr ids: (localCellId,nIdx) -> globalNghbrIds ->
-    // localNghbrIds
-    for (auto cIdx : cell_ids()) {
-      auto nodeNghbrIds =  grid().template
-                           all_samelvl_neighbors<strict>(node_idx(cIdx));
-      for (auto nghbrPos : grid().neighbor_positions()) {
-        auto nghbrIdx = nodeNghbrIds(nghbrPos);
-        cells().neighbors(cIdx, nghbrPos)
-            = is_valid(nghbrIdx) ? grid().cell_idx(nghbrIdx, solver_idx())
-                                 : invalid<CellIdx>();
-      }
-    }
-
-    firstGC_ = CellIdx{cells().size()};
-
-    create_ghost_cells();
-
-    /// sort ghost cells by boundary id
-    sort_gc();
-
-    /// set distances to nghbrs
-    {
-      for (auto cIdx : cell_ids()) {
-        for (const auto nghbrPos : grid().neighbor_positions()) {
-          auto nghbrIdx = cells().neighbors(cIdx, nghbrPos);
-          if (!is_valid(nghbrIdx)) { continue; }  // \todo necessary?
-          DBGV((cIdx)(nghbrIdx)(nghbrPos));
-          cells().distances(cIdx, nghbrPos) = cell_dx(cIdx, nghbrIdx);
-          DBGV((cells().distances(cIdx, nghbrPos)));
-        }
-      }
-    }
     ASSERT(check_all_nghbrs(), "internal cell nghbrIds don't agree with grid!");
+  }
+
+  void create_initial_cells() noexcept {
+    create_initial_internal_cells();
+    create_ghost_cells();
+    sort_gc();
   }
 
   /// Create Ghost Cells:
   ///
   /// \warning this only works for cutoff right now
+  ///
+  /// \warning assumes that there are no ghost cells in the collector!
   void create_ghost_cells() noexcept {
+    firstGC_ = CellIdx{cells().size()};
+
     memory::stack::arena<SInd, 6 + 2> stackMemory;  // 6nghbrs + 2 alignment
     auto noLeafCells = cells().size();
     SInd ghostCellBoundaryIdx = 0;
