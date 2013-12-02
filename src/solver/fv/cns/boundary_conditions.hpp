@@ -35,29 +35,27 @@ template<class Solver> struct Inflow : fv::bc::Condition<Inflow<Solver>> {
     : condition(distribution), s(solver) {}
 
   template<class _>
-  void operator()(_, Range<CellIdx> ghost_cells) const noexcept {
-    for (auto ghostIdx : ghost_cells) {
-      const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
-      const auto bndryPVars = s.pv(_(), bndryIdx);  /// PV of boundary cell
+  void operator()(_, const CellIdx ghostIdx) const noexcept {
+    const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
+    const auto bndryPVars = s.pv(_(), bndryIdx);  /// PV of boundary cell
 
-      /// Surface primitive variables
-      const Num rhoD = condition(bndryIdx, V::rho());
-      NumA<nd> uD;
-      for (auto d : s.grid().dimensions()) {
-        uD(d) = condition(bndryIdx, V::u(d));
-      }
-
-      NumA<nvars> gCellVars;  /// PV of ghost cell:
-      for (auto d : s.grid().dimensions()) {  /// velocity_surface = uD
-        gCellVars(V::u(d)) = this->dirichlet(bndryPVars(V::u(d)), uD(d));
-      }
-      /// density_surface = rhoD
-      gCellVars(V::rho()) = this->dirichlet(bndryPVars(V::rho()), rhoD);
-      /// normal pressure gradient = 0
-      gCellVars(V::p()) = this->neumann(bndryPVars(V::p()));
-
-      s.Q(_(), ghostIdx) = s.cv(gCellVars);
+    /// Surface primitive variables
+    const Num rhoD = condition(bndryIdx, V::rho());
+    NumA<nd> uD;
+    for (auto d : s.grid().dimensions()) {
+      uD(d) = condition(bndryIdx, V::u(d));
     }
+
+    NumA<nvars> gCellVars;  /// PV of ghost cell:
+    for (auto d : s.grid().dimensions()) {  /// velocity_surface = uD
+      gCellVars(V::u(d)) = this->dirichlet(bndryPVars(V::u(d)), uD(d));
+    }
+    /// density_surface = rhoD
+    gCellVars(V::rho()) = this->dirichlet(bndryPVars(V::rho()), rhoD);
+    /// normal pressure gradient = 0
+    gCellVars(V::p()) = this->neumann(bndryPVars(V::p()));
+
+    s.Q(_(), ghostIdx) = s.cv(gCellVars);
   }
 
   std::function<Num(CellIdx, SInd)> condition;
@@ -79,25 +77,23 @@ template<class Solver> struct Outflow : fv::bc::Condition<Outflow<Solver>>  {
     : condition(distribution), s(solver) {}
 
   template<class _>
-  void operator()(_, Range<CellIdx> ghost_cells) const noexcept {
-    for (auto ghostIdx : ghost_cells) {
-      const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
-      const auto bndryPVars = s.pv(_(), bndryIdx);  /// PV of boundary cell
+  void operator()(_, const CellIdx ghostIdx) const noexcept {
+    const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
+    const auto bndryPVars = s.pv(_(), bndryIdx);  /// PV of boundary cell
 
-      const Num pD = condition(bndryIdx, V::p());
+    const Num pD = condition(bndryIdx, V::p());
 
-      NumA<nvars> gCellVars;  /// PV of ghost cell:
+    NumA<nvars> gCellVars;  /// PV of ghost cell:
 
-      for (auto d : s.grid().dimensions()) {  // normal velocity gradient = 0
-        gCellVars(V::u(d)) = this->neumann(bndryPVars(V::u(d)));
-      }
-      /// normal density gradient = 0
-      gCellVars(V::rho()) = this->neumann(bndryPVars(V::rho()));
-      /// pressure_surface = pD
-      gCellVars(V::p()) = this->dirichlet(bndryPVars(V::p()), pD);
-
-      s.Q(_(), ghostIdx) = s.cv(gCellVars);
+    for (auto d : s.grid().dimensions()) {  // normal velocity gradient = 0
+      gCellVars(V::u(d)) = this->neumann(bndryPVars(V::u(d)));
     }
+    /// normal density gradient = 0
+    gCellVars(V::rho()) = this->neumann(bndryPVars(V::rho()));
+    /// pressure_surface = pD
+    gCellVars(V::p()) = this->dirichlet(bndryPVars(V::p()), pD);
+
+    s.Q(_(), ghostIdx) = s.cv(gCellVars);
   }
 
   std::function<Num(CellIdx, SInd)> condition;
@@ -122,22 +118,20 @@ struct AdiabaticNoSlip : fv::bc::Condition<AdiabaticNoSlip<Solver>>  {
   explicit AdiabaticNoSlip(Solver& solver) : s(solver) {}
 
   template<class _>
-  void operator()(_, Range<CellIdx> ghost_cells) const noexcept {
-    for (auto ghostIdx : ghost_cells) {
-      const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
-      const auto bndryPVars = s.pv(_(), bndryIdx);  /// PV of boundary cell
+  void operator()(_, const CellIdx ghostIdx) const noexcept {
+    const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
+    const auto bndryPVars = s.pv(_(), bndryIdx);  /// PV of boundary cell
 
-      NumA<nvars> gCellVars;  /// PV of ghost cell:
-      for (auto d : s.grid().dimensions()) {  /// velocity_srfc = 0
-        gCellVars(V::u(d)) = this->dirichlet(bndryPVars(V::u(d)));
-      }
-      /// density gradient normal to surface = 0
-      gCellVars(V::rho()) = this->neumann(bndryPVars(V::rho()));
-      /// pressure gradient normal to surface = 0
-      gCellVars(V::p()) = this->neumann(bndryPVars(V::p()));
-
-      s.Q(_(), ghostIdx) = s.cv(gCellVars);
+    NumA<nvars> gCellVars;  /// PV of ghost cell:
+    for (auto d : s.grid().dimensions()) {  /// velocity_srfc = 0
+      gCellVars(V::u(d)) = this->dirichlet(bndryPVars(V::u(d)));
     }
+    /// density gradient normal to surface = 0
+    gCellVars(V::rho()) = this->neumann(bndryPVars(V::rho()));
+    /// pressure gradient normal to surface = 0
+    gCellVars(V::p()) = this->neumann(bndryPVars(V::p()));
+
+    s.Q(_(), ghostIdx) = s.cv(gCellVars);
   }
 
   template<class _> Num slope
@@ -162,31 +156,29 @@ struct AdiabaticSlip  : fv::bc::Condition<AdiabaticSlip<Solver>> {
   explicit AdiabaticSlip(Solver& solver) : s(solver) {}
 
   template<class _>
-  void operator()(_, Range<CellIdx> ghost_cells) const noexcept {
-    for (auto ghostIdx : ghost_cells) {
-      const auto bndryInfo = s.boundary_info(ghostIdx);
-      const CellIdx bndryIdx = bndryInfo.bndryIdx;
-      auto pos_wrt_ghostCell = bndryInfo.bndryPos;
+  void operator()(_, const CellIdx ghostIdx) const noexcept {
+    const auto bndryInfo = s.boundary_info(ghostIdx);
+    const CellIdx bndryIdx = bndryInfo.bndryIdx;
+    auto pos_wrt_ghostCell = bndryInfo.bndryPos;
 
-      auto normalDirection
+    auto normalDirection
         = static_cast<SInd>(std::floor(pos_wrt_ghostCell / 2));
-      const auto bndryPVars = s.pv(_(), bndryIdx);  /// PV of boundary cell
+    const auto bndryPVars = s.pv(_(), bndryIdx);  /// PV of boundary cell
 
-      NumA<nvars> gCellVars;  /// PV of ghost cell:
+    NumA<nvars> gCellVars;  /// PV of ghost cell:
 
-      // Neumann BC: velocity
-      for (auto d : s.grid().dimensions()) {  /// normal velocity gradient = 0
-        gCellVars(d) = this->neumann(bndryPVars(d));
-      }
-      /// Except for the normal component: normal velocity_srfc = 0
-      gCellVars(normalDirection) = this->dirichlet(bndryPVars(normalDirection));
-      // normal density gradient = 0
-      gCellVars(V::rho()) = this->neumann(bndryPVars(V::rho()));
-      // normal pressure gradient = 0
-      gCellVars(V::p()) = this->neumann(bndryPVars(V::p()));
-
-      s.Q(_(), ghostIdx) = s.cv(gCellVars);
+    // Neumann BC: velocity
+    for (auto d : s.grid().dimensions()) {  /// normal velocity gradient = 0
+      gCellVars(d) = this->neumann(bndryPVars(d));
     }
+    /// Except for the normal component: normal velocity_srfc = 0
+    gCellVars(normalDirection) = this->dirichlet(bndryPVars(normalDirection));
+    // normal density gradient = 0
+    gCellVars(V::rho()) = this->neumann(bndryPVars(V::rho()));
+    // normal pressure gradient = 0
+    gCellVars(V::p()) = this->neumann(bndryPVars(V::p()));
+
+    s.Q(_(), ghostIdx) = s.cv(gCellVars);
   }
 
   Solver& s;
@@ -207,24 +199,22 @@ struct IsothermalNoSlip : fv::bc::Condition<IsothermalNoSlip<Solver>> {
     : T_srfc(temperature), s(solver) {}
 
   template<class _>
-  void operator()(_, Range<CellIdx> ghost_cells) const noexcept {
-    for (auto ghostIdx : ghost_cells) {
-      const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
-      const auto bndryPVars = s.pv(_(), bndryIdx);  /// PV of boundary cell
+  void operator()(_, const CellIdx ghostIdx) const noexcept {
+    const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
+    const auto bndryPVars = s.pv(_(), bndryIdx);  /// PV of boundary cell
 
-      NumA<nvars> gCellVars;  /// PV of ghost cell:
-      for (auto d : s.grid().dimensions()) {  /// velocity surface = 0
-        gCellVars(d) = this->dirichlet(bndryPVars(d));
-      }
-      /// density surface = gamma * p_srfc / T_srfc
-      auto p_srfc = bndryPVars(V::p());  // i.e. ~= p_bndryCell
-      const Num rho_srfc = p_srfc * s.quantities.gamma() / T_srfc(ghostIdx);
-      gCellVars(V::rho()) = this->dirichlet(bndryPVars(V::rho()), rho_srfc);
-      /// normal pressure gradient = 0
-      gCellVars(V::p()) = this->neumann(bndryPVars(V::p()));
-
-      s.Q(_(), ghostIdx) = s.cv(gCellVars);
+    NumA<nvars> gCellVars;  /// PV of ghost cell:
+    for (auto d : s.grid().dimensions()) {  /// velocity surface = 0
+      gCellVars(d) = this->dirichlet(bndryPVars(d));
     }
+    /// density surface = gamma * p_srfc / T_srfc
+    auto p_srfc = bndryPVars(V::p());  // i.e. ~= p_bndryCell
+    const Num rho_srfc = p_srfc * s.quantities.gamma() / T_srfc(ghostIdx);
+    gCellVars(V::rho()) = this->dirichlet(bndryPVars(V::rho()), rho_srfc);
+    /// normal pressure gradient = 0
+    gCellVars(V::p()) = this->neumann(bndryPVars(V::p()));
+
+    s.Q(_(), ghostIdx) = s.cv(gCellVars);
   }
 
   template<class _> Num slope

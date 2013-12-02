@@ -21,13 +21,11 @@ struct Euler : fv::bc::Condition<Euler<EulerSolver>> {
 
   /// \brief Applies the boundary condition to a range of ghost cells
   template<class _>
-  void operator()(_, Range<CellIdx> ghost_cells) const noexcept {
-    for (auto thisGhostIdx : ghost_cells) {
+  void operator()(_, const CellIdx thisGhostIdx) const noexcept {
       CellIdx thisBndryIdx, otherBndryIdx;
       std::tie(thisBndryIdx, otherBndryIdx)
         = fv::coupling::local_bndry_ids(thisGhostIdx, s, os_);
       s.Q(_(), thisGhostIdx) = os_.Q(_(), otherBndryIdx);
-    }
   }
 
   EulerSolver& s;

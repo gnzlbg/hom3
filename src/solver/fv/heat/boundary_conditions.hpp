@@ -23,12 +23,10 @@ template<class Solver> struct Dirichlet : fv::bc::Condition<Dirichlet<Solver>> {
 
   /// \brief Applies the boundary condition to a range of ghost cells
   template<class _>
-  void operator()(_, Range<CellIdx> ghost_cells) const noexcept {
-    for (auto ghostIdx : ghost_cells) {
-      const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
-      s.T(_(), ghostIdx)
-          = this->dirichlet(s.T(_(), bndryIdx), T_srfc(ghostIdx));
-    }
+  void operator()(_, const CellIdx ghostIdx) const noexcept {
+    const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
+    s.T(_(), ghostIdx)
+        = this->dirichlet(s.T(_(), bndryIdx), T_srfc(ghostIdx));
   }
 
   /// Surface temperature distribution
@@ -48,13 +46,11 @@ template<class Solver> struct Neumann : fv::bc::Condition<Neumann<Solver>> {
 
   /// \brief Applies the boundary condition to a range of ghost cells
   template<class _>
-  void operator()(_, Range<CellIdx> ghost_cells) const noexcept {
-    for (auto ghostIdx : ghost_cells) {
-      const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
-      s.T(_(), ghostIdx)
-          = this->neumann(s.T(_(), bndryIdx), g_srfc(ghostIdx),
-                          s.cell_dx(bndryIdx, ghostIdx));
-    }
+  void operator()(_, const CellIdx ghostIdx) const noexcept {
+    const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
+    s.T(_(), ghostIdx)
+        = this->neumann(s.T(_(), bndryIdx), g_srfc(ghostIdx),
+                        s.cell_dx(bndryIdx, ghostIdx));
   }
 
   /// Surface flux distribution

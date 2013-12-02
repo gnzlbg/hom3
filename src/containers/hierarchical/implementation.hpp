@@ -64,6 +64,16 @@ opposite_neighbor_positions_arr = {{ 1, 0, 3, 2, 5, 4 }};
 static const constexpr std::array<SInd, 6>
 neighbor_directions = {{ 0, 0, 1, 1, 2, 2 }};
 
+
+/// Stencil of diagonal neighbor positions
+static const constexpr std::array<std::array<SInd, 2>, 4>
+diagonal_neighbor_pos_arr = {{
+    {{0,2}},  // pos 0
+    {{1,2}},  // pos 1
+    {{0,3}},  // pos 2
+    {{1,3}}   // pos 3
+}};
+
 }  // namespace detail
 
 /// \brief Direction of neighbor located at \p position
@@ -554,6 +564,56 @@ template<SInd nd_> struct Implementation {
     NodeIdxA<no_samelvl_neighbor_positions()> nodeNghbrs;
     for (const auto& pos : neighbor_positions()) {
       nodeNghbrs[pos] = find_samelvl_neighbor(nIdx, pos);
+    }
+    TRACE_OUT();
+    return nodeNghbrs;
+  }
+
+  inline std::array<SInd, 2> diagonal_neighbor_pos_alt1(const SInd pos) const noexcept {
+    return detail::diagonal_neighbor_pos_arr[pos];
+  }
+
+  inline std::array<SInd, 2> diagonal_neighbor_pos_alt2(const SInd pos) const noexcept {
+    const auto p = detail::diagonal_neighbor_pos_arr[pos];
+    return {{ p[1], p[0] }};
+  }
+
+  NodeIdx find_samelvl_diagonal_neighbor_via(const NodeIdx nIdx,
+                                             const std::array<SInd, 2> via) const noexcept {
+    const auto n = find_samelvl_neighbor(nIdx, via[0]);
+    if(is_valid(n)) {
+      const auto d = find_samelvl_neighbor(n, via[1]);
+      return d;
+    } else {
+      return n;
+    }
+  }
+
+  NodeIdx find_samelvl_diagonal_neighbor(const NodeIdx nIdx, const SInd pos) const noexcept {
+    const auto n1 = find_samelvl_diagonal_neighbor_via(nIdx, diagonal_neighbor_pos_alt1(pos));
+
+    if(is_valid(n1)) {
+      ASSERT([&]() {
+          const auto n2 = find_samelvl_diagonal_neighbor_via(nIdx, diagonal_neighbor_pos_alt2(pos));
+          if(is_valid(n2)) {
+            ASSERT(n1 == n2, "alternative ways should deliver the same neighbor");
+          }
+          return true;
+        }(), "both ways should get the same neighbor if both ways exist!");
+      return n1;
+    } else {
+      const auto n2 = find_samelvl_diagonal_neighbor_via(nIdx, diagonal_neighbor_pos_alt2(pos));
+      return n2;
+    }
+  }
+
+  NodeIdxA<no_samelvl_neighbor_positions()>
+  find_samelvl_diagonal_neighbors(const NodeIdx nIdx) const noexcept {
+    TRACE_IN((nIdx));
+    assert_valid(nIdx); assert_active(nIdx);
+    NodeIdxA<no_samelvl_neighbor_positions()> nodeNghbrs;
+    for (const auto& pos : neighbor_positions()) {
+      nodeNghbrs[pos] = find_samelvl_diagonal_neighbor(nIdx, pos);
     }
     TRACE_OUT();
     return nodeNghbrs;

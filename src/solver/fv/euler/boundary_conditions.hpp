@@ -26,14 +26,12 @@ template<class Solver> struct Neumann : fv::bc::Condition<Neumann<Solver>> {
 
   /// \brief Applies the boundary condition to a range of ghost cells
   template<class _>
-  void operator()(_, Range<CellIdx> ghost_cells) const noexcept {
-    for (auto ghostIdx : ghost_cells) {
-      const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
-      const auto dx = s.cell_dx(bndryIdx, ghostIdx);
-      for (auto v : s.variables()) {
-        s.Q(_(), ghostIdx, v)
+  void operator()(_, const CellIdx ghostIdx) const noexcept {
+    const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
+    const auto dx = s.cell_dx(bndryIdx, ghostIdx);
+    for (auto v : s.variables()) {
+      s.Q(_(), ghostIdx, v)
           = this->neumann(s.Q(_(), bndryIdx, v), g_srfc(ghostIdx, v), dx);
-      }
     }
   }
 
@@ -51,13 +49,11 @@ template<class Solver> struct Dirichlet : fv::bc::Condition<Dirichlet<Solver>> {
 
   /// \brief Applies the boundary condition to a range of ghost cells
   template<class _>
-  void operator()(_, Range<CellIdx> ghost_cells) const noexcept {
-    for (auto ghostIdx : ghost_cells) {
-      const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
-      for (auto v : s.variables()) {
-        s.Q(_(), ghostIdx, v)
+  void operator()(_, const CellIdx ghostIdx) const noexcept {
+    const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
+    for (auto v : s.variables()) {
+      s.Q(_(), ghostIdx, v)
           = this->dirichlet(s.Q(_(), bndryIdx, v), Q_srfc(ghostIdx, v));
-      }
     }
   }
 
@@ -76,17 +72,14 @@ struct IsentropicVortex : fv::bc::Condition<IsentropicVortex<Solver>> {
 
   /// \brief Applies the boundary condition to a range of ghost cells
   template<class _>
-  void operator()(_, Range<CellIdx> ghost_cells) const noexcept {
-    for (auto ghostIdx : ghost_cells) {
-      const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
-
-      const NumA<nd>    x_bc = s.cells().x_center.row(bndryIdx);
-      const NumA<nd>    x_gc = s.cells().x_center.row(ghostIdx);
-      const NumA<nvars> gcVars = ic::isentropic_vortex<nd>(x_gc, s.time());
-      const NumA<nvars> bcVars = ic::isentropic_vortex<nd>(x_bc, s.time());
-      s.Q(_(), ghostIdx) = gcVars;
-      s.Q(_(), bndryIdx) = bcVars;
-    }
+  void operator()(_, const CellIdx ghostIdx) const noexcept {
+    const CellIdx bndryIdx = s.boundary_info(ghostIdx).bndryIdx;
+    const NumA<nd>    x_bc = s.cells().x_center.row(bndryIdx);
+    const NumA<nd>    x_gc = s.cells().x_center.row(ghostIdx);
+    const NumA<nvars> gcVars = ic::isentropic_vortex<nd>(x_gc, s.time());
+    const NumA<nvars> bcVars = ic::isentropic_vortex<nd>(x_bc, s.time());
+    s.Q(_(), ghostIdx) = gcVars;
+    s.Q(_(), bndryIdx) = bcVars;
   }
 
   Solver& s;

@@ -297,17 +297,17 @@ static inline constexpr T absdiff(const T& a, const T& b) noexcept
 { return (a > b) ? (a - b) : (b - a); }
 
 template <class T>
-static inline constexpr int signum(const T& x, std::false_type) noexcept
+static inline constexpr SInt signum(const T& x, std::false_type) noexcept
 { return T{0} < x; }
 
 template <class T>
-static inline constexpr int signum(const T& x, std::true_type) noexcept
+static inline constexpr SInt signum(const T& x, std::true_type) noexcept
 { return (T{0} < x) - (x < T{0}); }
 
 /// \brief Returns the signum of \p x, i.e. -1 if x < 0, +1 if x > 0, and 0
 /// otherwise
 template <class T>
-static inline constexpr int signum(const T& x) noexcept
+static inline constexpr SInt signum(const T& x) noexcept
 { return signum(x, std::is_signed<T>()); }
 
 /// Useful traits

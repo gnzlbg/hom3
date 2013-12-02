@@ -53,6 +53,7 @@ struct Container : container::Sequential<Container<nd, nvars>> {
     , length(this, "length")
     , bc_idx(this, "bc_idx")
     , node_idx(this, "node_idx")
+    , is_active(this, "is_active")
   {}
 
   /// Data:
@@ -64,11 +65,13 @@ struct Container : container::Sequential<Container<nd, nvars>> {
   M<NumM>             length;
   M<SIndM>            bc_idx;
   M<NodeIdxM>         node_idx;
+  M<BoolM>            is_active;
 
   inline void reset_cell(const CellIdx cId) noexcept {
     bc_idx(cId)   = invalid<SInd>();
     node_idx(cId) = invalid<NodeIdx>();
     length(cId)   = invalid<Num>();
+    is_active(cId)= false;
     for (SInd d = 0; d < nd; ++d) {
       x_center(cId, d) = invalid<Num>();
     }
@@ -87,6 +90,7 @@ struct Container : container::Sequential<Container<nd, nvars>> {
     bc_idx(toId)   = bc_idx(fromId);
     node_idx(toId) = node_idx(fromId);
     length(toId)   = length(fromId);
+    is_active(toId) = is_active(fromId);
     for (SInd d = 0; d < nd; ++d) {
       x_center(toId, d) = x_center(fromId, d);
     }
@@ -112,11 +116,12 @@ struct Value : container::sequential::ValueFacade<Container<nd, nvars>> {
   inline CellIdx&     neighbors(SInd p) { return neighbors_(p); }
   inline NumA<2*nd>&  distances()       { return distances_;    }
   inline Num&         distances(SInd p) { return distances_(p); }
-  inline NumA<nd>&    x_center()               { return x_;            }
-  inline Num&         x_center(SInd d)         { return x_(d);         }
+  inline NumA<nd>&    x_center()        { return x_;            }
+  inline Num&         x_center(SInd d)  { return x_(d);         }
   inline SInd&        bc_idx()          { return bc_idx_;       }
   inline NodeIdx&     node_idx()        { return node_idx_;     }
   inline Num&         length()          { return length_;       }
+  inline bool&        is_active()       { return is_active_;    }
 
   template<class Value1, class Value2>
   static inline void swap_values(Value1& a, Value2& b) noexcept {
@@ -124,6 +129,7 @@ struct Value : container::sequential::ValueFacade<Container<nd, nvars>> {
     swap(a.bc_idx()  , b.bc_idx());
     swap(a.node_idx(), b.node_idx());
     swap(a.length()  , b.length());
+    swap(a.is_active(), b.is_active());
     for (SInd p = 0; p < 2 * nd; ++p) {
       swap(a.neighbors(p), b.neighbors(p));
       swap(a.distances(p), b.distances(p));
@@ -142,6 +148,7 @@ struct Value : container::sequential::ValueFacade<Container<nd, nvars>> {
     to.bc_idx()   = from.bc_idx();
     to.node_idx() = from.node_idx();
     to.length()   = from.length();
+    to.is_active() = from.is_active();
     for (SInd p = 0; p < 2 * nd; ++p) {
       to.neighbors(p) = from.neighbors(p);
       to.distances(p) = from.distances(p);
@@ -163,6 +170,7 @@ struct Value : container::sequential::ValueFacade<Container<nd, nvars>> {
   NumA<2*nd> distances_;
   NumA<nd> x_;
   Num length_;
+  bool is_active_;
 };
 
 /// Boilerplate: Reference Type
@@ -193,6 +201,8 @@ template<SInd nd, SInd nvars> struct Reference
   { return c() ? c()->node_idx(index()) : v().node_idx(); }
   inline Num&     length()          noexcept
   { return c() ? c()->length(index()) : v().length(); }
+  inline bool&    is_active()       noexcept
+  { return c() ? c()->is_active(index()) : v().is_active(); }
 };
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -17,7 +17,7 @@ static const Ind outputInterval = 10;
 static const Ind maxNoTimeSteps = 1000;
 
 /// General Physical properties:
-static const SInd nd = 3;  ///< #of spatial dimensions
+static const SInd nd = 2;  ///< #of spatial dimensions
 
 /// Heat Solver properties:
 

@@ -5,11 +5,13 @@
 #include <limits>
 #include <vector>
 #include <algorithm>
+#include <boost/container/flat_set.hpp>
 #include "grid/grid.hpp"
 #include "solver/fv/boundary_condition.hpp"
 #include "solver/fv/container.hpp"
 #include "solver/fv/tags.hpp"
 #include "geometry/algorithms.hpp"
+#include "interpolation/rbf.hpp"
 #include "quadrature/quadrature.hpp"
 /// Options:
 #define ENABLE_DBG_ 0
@@ -274,16 +276,20 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
   /// i.e. all cells which are not ghost cells
   /// \warning internal_cells assumes that the Ghost Cells have
   /// been sorted!
-  inline auto internal_cells() const -> Range<CellIdx> {
-    return boost::counting_range(CellIdx{0}, is_valid(firstGC_)?
-                                 firstGC_ : cells().last());
+  inline auto internal_cells() const -> FRange<CellIdx> {
+    std::function<bool(CellIdx)> filter = [&](CellIdx i) {
+        return cells().is_active(i) && !is_ghost_cell(i);
+    };
+    return cell_ids() | boost::adaptors::filtered(filter);
+    // boost::counting_range(CellIdx{0}, is_valid(firstGC_)?
+    //                              firstGC_ : cells().last());
   }
 
   /// \brief Range of global ids
   inline auto node_ids() const
   RETURNS(cell_ids() | cell_to_node() | grid().valid());
 
-  /// \brief Boudnary information: cell indices and positions wrt each other.
+  /// \brief Boundary information: cell indices and positions wrt each other.
   struct BndryInfo {
     const CellIdx bndryIdx;  ///< Boundary cell index.
     const SInd    bndryPos;  ///< Boundary cell position wrt the ghost cell.
@@ -298,6 +304,8 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
   inline auto boundary_info(const CellIdx ghostCellIdx) const noexcept
   -> BndryInfo {
     ASSERT(is_ghost_cell(ghostCellIdx), "Expecting a ghost cell!");
+    ASSERT(!is_moving_boundary_ghost_cell(ghostCellIdx),
+           "only for cutoff ghost cells!");
     SInd bndryPos = invalid<SInd>();
     CellIdx bndryIdx = invalid<CellIdx>();
     for (const auto nghbrPos : grid().neighbor_positions()) {
@@ -307,8 +315,10 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
         break;
       }
     }
-    ASSERT(is_valid(bndryIdx), "boundary cell not found!");
-    ASSERT(bndryPos != invalid<SInd>(), "boundary cell not found!");
+    ASSERT((is_valid(bndryIdx) || bndryPos != invalid<SInd>()),
+           "boundary cell not found (bndryIdx: " << bndryIdx << ") for ghostCellIdx: "
+           << ghostCellIdx << " with bcIdx: " << cells().bc_idx(ghostCellIdx)
+           << " (mb: " << is_moving_boundary_ghost_cell(ghostCellIdx) << ")!");
     const SInd ghostPos = grid().opposite_neighbor_position(bndryPos);
     return {bndryIdx, bndryPos, ghostCellIdx, ghostPos};
   }
@@ -341,14 +351,13 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
               << "| Time: " << solver.time() << "\n";
     io::Vtk<nd, io::format::binary> out
       (io::StreamableDomain<nd>
-        (  // the following is not necessary but really cool:
-          [&]() -> AnyRange<Ind> {
-            return {algorithm::join(solver.cell_ids() | solver.not_ghosts(),
-                                    solver.cell_ids() | solver.ghosts())
-                   | boost::adaptors::transformed([](CellIdx i) { return i(); })
-          }; },
-          [&](const Ind cIdx) { return solver.cell_vertices(CellIdx{cIdx}); }),
-        fName, io::precision::standard());
+        ([&]() -> AnyRange<Ind> {
+          return solver.cell_ids()
+              | boost::adaptors::filtered([&](CellIdx i) { return solver.cells().is_active(i); })
+              | boost::adaptors::transformed([](CellIdx i) { return i(); });
+         },
+         [&](const Ind cIdx) { return solver.cell_vertices(CellIdx{cIdx}); }),
+         fName, io::precision::standard());
 
     out << io::stream("locallCellIds", 1, [](const Ind cId, const SInd) {
       return cId;
@@ -372,6 +381,28 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
       [&](const Ind cIdx, const SInd d) -> Num {
         return solver.cells().lhs(CellIdx{cIdx}, d);
     });
+
+    out << io::stream("is_active", 1, [&](const Ind cIdx, const SInd) -> Ind {
+        return solver.cells().is_active(CellIdx{cIdx}) ? 1 : invalid<Ind>();
+    });
+
+    out << io::stream("is_cut_by_mb", 1, [&](const Ind cIdx, const SInd) -> Ind {
+        return is_valid(solver.node_idx(CellIdx{cIdx})) &&
+            solver.cut_by_which_moving_boundary(CellIdx{cIdx}) != invalid<SInd>() ?
+            1 : invalid<Ind>();
+    });
+
+    SInd mbcIdx = 0;
+    for (auto&& boundary : solver.boundary_conditions()) {
+      if (boundary.is_moving()) {
+        out << io::stream("mb_" + std::to_string(mbcIdx), 1,
+                          [&](const Ind cIdx, const SInd) -> Num {
+                            return boundary.signed_distance
+                                (solver.cells().x_center.row(CellIdx{cIdx}));
+                          });
+        ++mbcIdx;
+      }
+    }
 
     solver.physics()->template physics_output(out);
   }
@@ -441,13 +472,19 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
   inline NumA<nvars> num_flux(const CellIdx cIdx) const noexcept {
     DBG("first term in rhs:");
     DBGV((cIdx));
+    ASSERT(is_valid(cIdx), "invalid cell: " << cIdx << "!");
     NumA<nvars> result = NumA<nvars>::Zero();
     const auto dx = cells().length(cIdx);
     for (auto d : grid().dimensions()) {
-      const SInd nghbrM = d * 2;
-      const SInd nghbrP = nghbrM + 1;
+      using namespace container::hierarchical;
+      const SInd nghbrM = neighbor_position(d, neg_dir);
+      const SInd nghbrP = neighbor_position(d, pos_dir);
       const auto nghbrMId = cells().neighbors(cIdx, nghbrM);
       const auto nghbrPId = cells().neighbors(cIdx, nghbrP);
+      ASSERT(is_valid(nghbrMId), "invalid M neighbor: " << nghbrMId
+             << " in dir: " << d << " of cell: " << cIdx << "!");
+      ASSERT(is_valid(nghbrPId), "invalid P neighbor: " << nghbrPId
+             << " in dir: " << d << " of cell: " << cIdx << "!");
       const auto flux_m = physics()->template
                           compute_num_flux<T>(nghbrMId, cIdx, d, dx, dt());
       const auto flux_p = physics()->template
@@ -471,11 +508,15 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
   inline void evolve(CellIdxRange&& cells,
                      time_integration::euler_forward) noexcept {
     for (auto&& cIdx : cells) {
-      Q(rhs, cIdx) = Q(lhs, cIdx) + num_flux<lhs_tag>(cIdx).transpose()
-                     + source_term(lhs, cIdx).transpose();
+      if (!is_ghost_cell(cIdx)) {
+        Q(rhs, cIdx) = Q(lhs, cIdx) + num_flux<lhs_tag>(cIdx).transpose()
+                       + source_term(lhs, cIdx).transpose();
+      }
     }
     for (auto&& cIdx : cells) {
-      Q(lhs, cIdx) = Q(rhs, cIdx);
+      if (!is_ghost_cell(cIdx)) {
+        Q(lhs, cIdx) = Q(rhs, cIdx);
+      }
     }
   }
 
@@ -503,6 +544,7 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
   inline void advance() noexcept {
     time_ += dt();
     ++step_;
+    update_cells();
   }
 
   /// \brief Computes the time-step
@@ -556,33 +598,44 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
   // then get a [fromGhostCell,toGhostCell) range
   // apply bcIdx kernel to range
   //
-  // unsolved: kernel needs to access the boudnary cell
+  // unsolved: kernel needs to access the boundary cell
   // this access is random access
   // it would be nice to eliminate this random access
   template<class _> void apply_bcs(_) noexcept {
-    namespace csa = container::sequential::algorithm;
-    auto firstBndryCell
-      = csa::find_if(cells(), [&](const CellIdx i) {
-          return cells().bc_idx(i) != invalid<SInd>();
-    });
-    // this should check the #of bndry conditions for the solver,
-    // if it is indeed 0 nothing should happen, but if its not, ASSERT is fine
-    ASSERT(firstBndryCell != cells().last(), "no boundary cells found!");
-    auto bcIdx = cells().bc_idx(firstBndryCell);  // first bcIdx
-    auto eql_bcIdx = [&](const CellIdx i) {
-      return cells().bc_idx(i) == bcIdx;
-    };
-    auto firstGhostCell = csa::find_if(cells(), eql_bcIdx);
-    auto lastGhostCell = firstGhostCell;
-    // DBGV((bcIdx)(firstGhostCell));
+    // namespace csa = container::sequential::algorithm;
+    // auto firstBndryCell
+    //   = csa::find_if(cells(), [&](const CellIdx i) {
+    //       return cells().bc_idx(i) != invalid<SInd>();
+    // });
+    // // this should check the #of bndry conditions for the solver,
+    // // if it is indeed 0 nothing should happen, but if its not, ASSERT is fine
+    // ASSERT(firstBndryCell != cells().last(), "no boundary cells found!");
+    // auto bcIdx = cells().bc_idx(firstBndryCell);  // first bcIdx
+    // auto eql_bcIdx = [&](const CellIdx i) {
+    //   return cells().bc_idx(i) == bcIdx;
+    // };
+    // auto firstGhostCell = csa::find_if(cells(), eql_bcIdx);
+    // auto lastGhostCell = firstGhostCell;
+    // // DBGV((bcIdx)(firstGhostCell));
+    // for (auto& boundaryCondition : boundary_conditions()) {
+    //   ++bcIdx;
+    //   firstGhostCell = lastGhostCell;
+    //   lastGhostCell = csa::find_if(firstGhostCell, cells().last(), eql_bcIdx);
+    //   // DBGV((physics()->physics_name())(bcIdx)
+    //   // (firstGhostCell)(lastGhostCell));
+    //   auto GCRange = Range<CellIdx>{firstGhostCell, lastGhostCell};
+    //   for (auto ghostIdx : GCRange) {
+    //     boundaryCondition.apply(_(), ghostIdx);
+    //   }
+    // }
+    SInd bcIdx = 0;
     for (auto& boundaryCondition : boundary_conditions()) {
+      for (auto cIdx : cell_ids()) {
+        if (cells().bc_idx(cIdx) == bcIdx) {
+          boundaryCondition.apply(_(), cIdx);
+        }
+      }
       ++bcIdx;
-      firstGhostCell = lastGhostCell;
-      lastGhostCell = csa::find_if(firstGhostCell, cells().last(), eql_bcIdx);
-      // DBGV((physics()->physics_name())(bcIdx)
-      // (firstGhostCell)(lastGhostCell));
-      auto GCRange = Range<CellIdx>{firstGhostCell, lastGhostCell};
-      boundaryCondition.apply(_(), GCRange);
     }
   }
 
@@ -617,7 +670,8 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
              "ghost cell with no neighbors?");
       ASSERT(is_ghost_cell(cIdx), "cIdx is not a ghostCell ?!?!");
 
-      const auto bndryIdx = boundary_info(cIdx).bndryIdx;
+      const auto bndryIdx = !is_moving_boundary_ghost_cell(cIdx) ?
+                            boundary_info(cIdx).bndryIdx : cIdx;
       const auto bcIdx = cells().bc_idx(cIdx);
       return boundary_condition(bcIdx).slope(_(), bndryIdx, v, dir);
     }
@@ -741,7 +795,15 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
     }
     return true;
   }
+public:
+  bool is_moving_boundary_ghost_cell(const CellIdx ghostIdx) const {
+    ASSERT(is_valid(ghostIdx), "invalid cell");
+    ASSERT(is_ghost_cell(ghostIdx), "must be a ghost cell");
 
+    const auto bcIdx = cells().bc_idx(ghostIdx);
+    return boundary_conditions()[bcIdx].is_moving();
+  }
+private:
   ///@}
 
   /// \name Grid functions
@@ -763,36 +825,42 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
   -> typename Grid::CellVertices {
     const auto x_c = cells().x_center.row(cIdx);
 
-    const auto length
-        = !is_ghost_cell(cIdx)
-        // cell is a global cell -> get its length
-        ? grid().cell_length(node_idx(cIdx))
-        // cell is a ghost cell -> get its boundary cell's length
-        : [&]() {
-            const auto bndryCellId = boundary_info(cIdx).bndryIdx;
-            return grid().cell_length(node_idx(bndryCellId));
-    }();
+    Num length = invalid<Num>();
 
+    if (!is_ghost_cell(cIdx)) {
+      length = grid().cell_length(node_idx(cIdx));
+    } else {
+      if (is_moving_boundary_ghost_cell(cIdx)) {
+        length = grid().cell_length(node_idx(cIdx));
+      } else {
+        const auto bndryCellId = boundary_info(cIdx).bndryIdx;
+        length = grid().cell_length(node_idx(bndryCellId));
+      }
+    }
+    ASSERT(!math::approx(length,invalid<Num>()), "error!");
     return {cIdx(), grid().cell_vertices_coords(length, x_c)};
   }
   ///@}
 
   /// \name Ghost-cell related
   ///@{
-
+public:
   inline bool is_ghost_cell(const CellIdx cIdx) const noexcept
   {
-    ASSERT([&]() {
-        if(!is_valid(node_idx(cIdx))) {
-          ASSERT(is_valid(cells().bc_idx(cIdx)), "Error: ghost cell does not have bcIdx!");
-        }
-        return true; }(), "ghost cell check!");
-    return !is_valid(node_idx(cIdx)) ; }
-
+    // ASSERT([&]() {
+    //     if(!is_valid(cells().bc_idx(cIdx))) {
+    //       ASSERT(is_valid(cells().bc_idx(cIdx)), "Error: ghost cell does not have bcIdx!");
+    //     }
+    //     return true; }(), "ghost cell check!");
+    //return !is_valid(node_idx(cIdx));
+    return is_valid(cells().bc_idx(cIdx));
+  }
+private:
   /// \brief Computes the cell-center coordinates of the ghost cell \p
   /// ghostCellIdx
   NumA<nd> ghost_cell_coordinates(const CellIdx ghostCellIdx) const noexcept  {
     ASSERT(no_nghbrs(ghostCellIdx) == 1, "Invalid ghost cell!");
+    ASSERT(!is_moving_boundary_ghost_cell(ghostCellIdx), "only for cutoff ghost cells!");
 
     /// Find local boundary cell id and the ghost cell position w.r.t. the
     /// boundary cell
@@ -843,6 +911,29 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
     return firstGhostCell;
   }
 
+  void add_cell_to_neighbors(const CellIdx cIdx) {
+    ASSERT(is_valid(cIdx), "invalid cell!");
+    for (auto nghbrPos : grid().neighbor_positions()) {
+      const auto nghbrIdx = cells().neighbors(cIdx, nghbrPos);
+      if (is_valid(nghbrIdx)) {
+        cells().neighbors(nghbrIdx,
+                          grid().opposite_neighbor_position(nghbrPos)) = cIdx;
+      }
+    }
+  }
+
+  void remove_cell_from_neighbors(const CellIdx cIdx) {
+    ASSERT(is_valid(cIdx), "invalid cell!");
+    for (auto nghbrPos : grid().neighbor_positions()) {
+      const auto nghbrIdx = cells().neighbors(cIdx, nghbrPos);
+      if (is_valid(nghbrIdx)) {
+        cells().neighbors(nghbrIdx,
+                          grid().opposite_neighbor_position(nghbrPos))
+            = invalid<CellIdx>();
+      }
+    }
+  }
+
   /// \brief Creates a single internal cell whose neighbors belong exclusively
   /// to the grid
   ///
@@ -853,16 +944,18 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
     const auto cIdx = cells().push_cell();
     cells().node_idx(cIdx) = nIdx;
     grid().cell_idx(nIdx, solver_idx()) = cIdx;
+    cells().is_active(cIdx) = true;
     cells().x_center.row(cIdx) = grid().cell_coordinates(nIdx);
     cells().length(cIdx) = grid().cell_length(nIdx);
     cells().bc_idx(cIdx) = invalid<SInd>();
     const auto nghbrs = grid().all_samelvl_neighbors(node_idx(cIdx), solver_idx());
     for (auto nghbrPos : grid().neighbor_positions()) {
-      const auto nghbrIdx = nghbrs(nghbrPos);
-      cells().neighbors(cIdx, nghbrPos) = nghbrIdx;
+      cells().neighbors(cIdx, nghbrPos) = nghbrs(nghbrPos);
+    }
+    add_cell_to_neighbors(cIdx);
+    for (auto nghbrPos : grid().neighbor_positions()) {
+      const auto nghbrIdx = cells().neighbors(cIdx, nghbrPos);
       if (is_valid(nghbrIdx)) {
-        cells().neighbors(nghbrIdx,
-                          grid().opposite_neighbor_position(nghbrPos)) = cIdx;
         cells().distances(cIdx, nghbrPos) = cell_dx(cIdx, nghbrIdx);
       }
     }
@@ -891,16 +984,19 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
     /// 1) Set ghost cell boundary condition:
     cells().bc_idx(ghostCellIdx) = bcIdx;
 
-    /// 2) Set neighbor relationships:
+    /// 2) Make active:
+    cells().is_active(ghostCellIdx) = true;
+
+    /// 3) Set neighbor relationships:
     const auto oppositeNghbrPos = grid().opposite_neighbor_position(nghbrPos);
     cells().neighbors(bndryCellIdx, nghbrPos) = ghostCellIdx;
     cells().neighbors(ghostCellIdx, oppositeNghbrPos) = bndryCellIdx;
 
-    /// 3) Set ghost cell position
+    /// 4) Set ghost cell position
     cells().x_center.row(ghostCellIdx) = ghost_cell_coordinates(ghostCellIdx);
     cells().length(ghostCellIdx) = cells().length(bndryCellIdx);
 
-    /// 4) Set distance stencil
+    /// 5) Set distance stencil
     const auto dx = cell_dx(bndryCellIdx, ghostCellIdx);
     cells().distances(bndryCellIdx, nghbrPos) = dx;
     cells().distances(ghostCellIdx, oppositeNghbrPos) = dx;
@@ -922,7 +1018,6 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
     forced_dt_step_ = invalid<Ind>();
   }
 
-
   void create_initial_internal_cells() noexcept {
     auto initialDomain
         = io::read<InitialDomain>(properties_, "initialDomain");
@@ -937,53 +1032,308 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
 
   void create_initial_cells() noexcept {
     create_initial_internal_cells();
-    create_ghost_cells();
+    create_cutoff_ghost_cells();
     sort_gc();
+    update_cells();
+  }
+public:
+  /// \brief Is cell \p cIdx cut by a moving boundary? Returns bcIdx.
+  ///
+  /// Precondition: cIdx must have a valid node_idx
+  /// Returns invalid bcIdx if
+  SInd cut_by_which_moving_boundary(const CellIdx cIdx) const noexcept {
+    ASSERT(is_valid(node_idx(cIdx)), "mb cells must have a valid nodeIdx");
+    SInd bcIdx = 0;
+    for (auto boundary : boundary_conditions()) {
+      if (boundary.is_moving()) {
+        if (grid().is_cut_by(node_idx(cIdx), [&](const NumA<nd> x){ return boundary.signed_distance(x); })) {
+          return bcIdx;
+        }
+      }
+      ++bcIdx;
+    }
+    return invalid<SInd>();
+  }
+private:
+
+public:
+  bool is_in_positive_lsv(const CellIdx cIdx) const {
+    for (auto& boundary : boundary_conditions()) {
+      if (boundary.signed_distance(cells().x_center.row(cIdx)) < 0.) {
+        return false;
+      }
+    }
+    return true;
+  }
+private:
+
+  void average_neighbor_variables(const CellIdx cIdx) {
+    for(auto v : variables()) {
+      cells().lhs(cIdx, v) = 0;
+      cells().rhs(cIdx, v) = 0;
+    }
+    SInd count = 0;
+    for (auto nghbrPos : grid().neighbor_positions()) {
+      auto nghbrIdx = cells().neighbors(cIdx, nghbrPos);
+      if (is_valid(nghbrIdx)) {
+        ++count;
+        for(auto v : variables()) {
+          cells().lhs(cIdx, v) += cells().lhs(nghbrIdx, v);
+          cells().rhs(cIdx, v) += cells().rhs(nghbrIdx, v);
+        }
+      }
+    }
+    ASSERT(count > 0, "error cant average variables of cell without neighbors!");
   }
 
-  /// Create Ghost Cells:
+  void update_inactive_cell_neighbors(const CellIdx cIdx) {
+    for(auto p : grid().neighbor_positions()) {
+      const auto nghbrIdx = cells().neighbors(cIdx, p);
+      if (is_valid(nghbrIdx)) {
+        if (!cells().is_active(nghbrIdx)) {
+          cells().neighbors(cIdx, p) = invalid<CellIdx>();
+        }
+      }
+    }
+  }
+
+  void activate_cell(const CellIdx cIdx) {
+    ASSERT(!cells().is_active(cIdx), "cell is already active!");
+    cells().is_active(cIdx) = true;
+    add_cell_to_neighbors(cIdx);
+    update_inactive_cell_neighbors(cIdx);
+  }
+
+  void deactivate_cell(const CellIdx cIdx) {
+    ASSERT(cells().is_active(cIdx), "cell is already inactive!");
+    cells().is_active(cIdx) = false;
+    cells().bc_idx(cIdx) = invalid<SInd>();
+    remove_cell_from_neighbors(cIdx);
+  }
+
+public:
+  std::vector<CellIdx> find_interpolation_neighbors(const CellIdx cIdx) const {
+    boost::container::flat_set<CellIdx> nghbrs; nghbrs.reserve(10);
+    /// add all valid non ghost direct neighbors
+    for (auto p : grid().neighbor_positions()) {
+      auto nghbrIdx = cells().neighbors(cIdx, p);
+      if(is_valid(nghbrIdx) && !is_ghost_cell(nghbrIdx)) {
+        nghbrs.insert(nghbrIdx);
+      }
+    }
+    /// add all valid non-ghost neighbors of direct neighbors
+    for (auto p0 : grid().neighbor_positions()) {
+      auto nghbrIdx0 = cells().neighbors(cIdx, p0);
+      if(is_valid(nghbrIdx0)) {
+        for (auto p : grid().neighbor_positions()) {
+          auto nghbrIdx = cells().neighbors(nghbrIdx0, p);
+          if(is_valid(nghbrIdx) && !is_ghost_cell(nghbrIdx)) {
+            nghbrs.insert(nghbrIdx);
+          }
+        }
+      }
+    }
+
+    /// compute distances
+    std::vector<std::tuple<CellIdx, Num>> distances;
+    distances.reserve(nghbrs.size());
+    for (auto n : nghbrs) {
+      distances.push_back(
+          std::make_tuple(n, geometry::algorithm::distance
+                          (cells().x_center.row(n).transpose(),
+                           cells().x_center.row(cIdx).transpose())));
+    }
+
+    /// sort by distance
+    boost::sort(distances, [](const auto& i, const auto& j) {
+        return std::get<1>(i) > std::get<1>(j);
+    });
+    /// return the ids of the 4 closest neighbors
+    std::vector<CellIdx> result; result.reserve(3);
+    for(std::size_t i = 0; i < 3 && i < distances.size(); ++i) {
+      result.push_back(std::get<0>(distances[i]));
+    }
+
+    return result;
+  }
+
+   std::vector<CellIdx> find_interpolation_neighbors2(const CellIdx cIdx) const {
+     ASSERT(is_valid(cIdx), "invalid cell");
+     ASSERT(is_valid(node_idx(cIdx)), "valid cell without valid node");
+
+     std::vector<CellIdx> nghbrIds; nghbrIds.reserve(nd == 2? 8 : 26);
+
+     auto are_all_nghbrs_mb_cells = [&](const CellIdx c) {
+       SInd nghbr = 0, mbnghbr = 0;
+       for(auto p : grid().neighbor_positions()) {
+         auto nghbrIdx = cells().neighbors(c, p);
+         if (is_valid(nghbrIdx) && cells().is_active(nghbrIdx)) {
+           ++nghbr;
+           if (is_ghost_cell(nghbrIdx)
+               && is_valid(cut_by_which_moving_boundary(nghbrIdx))) {
+               ++mbnghbr;
+           }
+         }
+       }
+       ASSERT(nghbr != 0, "wrong!");
+       return nghbr == mbnghbr;
+     };
+
+     /// add all valid direct neighbors
+     {
+       const auto nodeIds = grid().find_samelvl_neighbors(node_idx(cIdx));
+       for (auto p : grid().neighbor_positions()) {
+         const auto nodeIdx = nodeIds(p);
+         if (is_valid(nodeIdx)) {
+           const auto nghbrIdx = grid().cell_idx(nodeIdx, solver_idx());
+           if (is_valid(nghbrIdx) && cells().is_active(nghbrIdx)
+               && !are_all_nghbrs_mb_cells(nghbrIdx)) {
+             nghbrIds.push_back(nghbrIdx);
+           }
+         }
+       }
+     }
+
+     /// add all valid diagonal neighbors
+     {
+       const auto nodeIds = grid().find_samelvl_diagonal_neighbors(node_idx(cIdx));
+       for (auto p : grid().neighbor_positions()) {
+         const auto nodeIdx = nodeIds(p);
+         if(is_valid(nodeIdx)) {
+           const auto nghbrIdx = grid().cell_idx(nodeIdx, solver_idx());
+           if(is_valid(nghbrIdx) && cells().is_active(nghbrIdx)
+              && !are_all_nghbrs_mb_cells(nghbrIdx)) {
+             nghbrIds.push_back(nghbrIdx);
+           }
+         }
+       }
+     }
+     return nghbrIds;
+  }
+
+private:
+  void initialize_emerged_cell_variables(const CellIdx cIdx) {
+    ASSERT(is_moving_boundary_ghost_cell(cIdx),
+           "only mb gc can be recently emerged!");
+
+    boundary_conditions()[cells().bc_idx(cIdx)].apply(lhs_tag(), cIdx);
+    boundary_conditions()[cells().bc_idx(cIdx)].apply(rhs_tag(), cIdx);
+
+    // if(cIdx == CellIdx{236}) {
+    //   for(auto v: variables()) {
+    //     DBGV_ON((cells().lhs(cIdx, v)));
+    //     DBGV_ON((cells().rhs(cIdx, v)));
+    //   }
+    // }
+  }
+
+  void update_cells() {
+    for (auto cIdx : cell_ids()) {
+      if (is_valid(node_idx(cIdx))) {
+
+        const auto bcIdx = cut_by_which_moving_boundary(cIdx);
+        const bool is_a_mb_cell = is_ghost_cell(cIdx) && is_moving_boundary_ghost_cell(cIdx);
+        const bool will_be_a_mb_cell = is_valid(bcIdx);
+        const bool is_in_pos_lsv = is_in_positive_lsv(cIdx);
+        const bool is_active = cells().is_active(cIdx);
+
+        // if (cIdx == CellIdx{227} || cIdx == CellIdx{236}) {
+        //   DBGV_ON((cIdx)(bcIdx)(is_a_mb_cell)(will_be_a_mb_cell)(is_in_pos_lsv)(is_active));
+        // }
+
+        if (!is_active && will_be_a_mb_cell) {
+          to_moving_boundary_cell(cIdx, bcIdx);
+          initialize_emerged_cell_variables(cIdx);
+          continue;
+        }
+
+        // not mb_cell, but now cut by mb: -> make mb cell
+        if (!is_a_mb_cell && will_be_a_mb_cell) {
+          to_moving_boundary_cell(cIdx, bcIdx);
+          continue;
+        }
+
+        // mb_cell, but not anymore:
+        if (is_a_mb_cell && !will_be_a_mb_cell) {
+          if (is_in_pos_lsv) {  // make internal cell
+            mb_to_internal_cell(cIdx);
+          } else {              // deactivate
+            if(is_active) { deactivate_cell(cIdx); }
+          }
+          continue;
+        }
+
+        if (is_in_pos_lsv && !is_active) {
+          std::cerr << "cell lsv > 0 but not active !!!!!\n";
+          activate_cell(cIdx);  /// in lsv >0 but inactive -> activate
+        } else if (!is_in_pos_lsv && !will_be_a_mb_cell && is_active) {
+          deactivate_cell(cIdx);  /// in lsv <0 and not cut and still active -> deactivate
+        }
+      }
+    }
+  }
+
+  template<class T>
+  void internal_to_cutoff_boundary_cell(T&& boundary, const NodeIdx bndryNodeIdx, const SInd bcIdx) noexcept {
+    const auto bndryCellIdx
+        = grid().cell_idx(bndryNodeIdx, solver_idx());
+    ASSERT(is_valid(bndryCellIdx), "invalid bndryCellIdx!");
+    ASSERT(node_idx(bndryCellIdx) == bndryNodeIdx,
+           "solver and grid are not synchronized");
+    ASSERT(is_valid(node_idx(bndryCellIdx)),
+           "the global id has to be valid!");
+
+    // find missing neighbor positions
+    memory::stack::arena<SInd, 6 + 2> stackMemory;  // 6nghbrs + 2 alignment
+    auto missingNghbrPositions
+        = memory::stack::make<std::vector>(stackMemory);
+    for (const auto nghbrPos : grid().neighbor_positions()) {
+      if (cells().neighbors(bndryCellIdx, nghbrPos) == invalid<CellIdx>()) {
+          missingNghbrPositions.emplace_back(nghbrPos);
+      }
+    }
+
+    auto neg_distance = [&](const SInd pos) {
+      return boundary.signed_distance
+      (grid().neighbor_coordinates(bndryNodeIdx, pos)) < 0.;
+    };
+
+    using boost::adaptors::filtered;
+    for (auto nghbrPos : missingNghbrPositions | filtered(neg_distance)) {
+      create_ghost_cell(bndryCellIdx, nghbrPos, bcIdx);
+    }
+  }
+
+  void to_moving_boundary_cell(const CellIdx cIdx, const SInd bcIdx) {
+    cells().bc_idx(cIdx) = bcIdx;
+    if(!cells().is_active(cIdx)) { activate_cell(cIdx); }
+    if(cIdx == CellIdx{236}) {
+
+
+    }
+  }
+
+  void mb_to_internal_cell(const CellIdx cIdx) {
+    cells().bc_idx(cIdx) = invalid<SInd>();
+  }
+
+  /// Create cutoff Ghost Cells:
   ///
   /// \warning this only works for cutoff right now
   ///
   /// \warning assumes that there are no ghost cells in the collector!
-  void create_ghost_cells() noexcept {
+  void create_cutoff_ghost_cells() noexcept {
     firstGC_ = CellIdx{cells().size()};
-
-    memory::stack::arena<SInd, 6 + 2> stackMemory;  // 6nghbrs + 2 alignment
     auto noLeafCells = cells().size();
-    SInd ghostCellBoundaryIdx = 0;
+    SInd bcIdx = 0;
     for (auto boundary : boundary_conditions()) {
-      for (auto bndryNodeIdx : node_ids() | grid().cut_by_boundary(boundary)) {
-        const auto bndryCellIdx
-          = grid().cell_idx(bndryNodeIdx, solver_idx());
-        ASSERT(is_valid(bndryCellIdx), "invalid bndryCellIdx!");
-        ASSERT(node_idx(bndryCellIdx) == bndryNodeIdx,
-               "solver and grid are not synchronized");
-        ASSERT(is_valid(node_idx(bndryCellIdx)),
-               "the global id has to be valid!");
-
-        // find missing neighbor positions
-        auto missingNghbrPositions
-            = memory::stack::make<std::vector>(stackMemory);
-        for (const auto nghbrPos : grid().neighbor_positions()) {
-          if (cells().neighbors(bndryCellIdx, nghbrPos) == invalid<CellIdx>()) {
-            missingNghbrPositions.emplace_back(nghbrPos);
-          }
-        }
-
-        auto neg_distance = [&](const SInd pos) {
-          return boundary.signed_distance
-          (grid().neighbor_coordinates(bndryNodeIdx, pos)) < 0.;
-        };
-
-        using boost::adaptors::filtered;
-        for (auto nghbrPos : missingNghbrPositions | filtered(neg_distance)) {
-          create_ghost_cell(bndryCellIdx, nghbrPos, ghostCellBoundaryIdx);
+      if(!boundary.is_moving()) {
+        for (auto bndryNodeIdx : node_ids() | grid().cut_by_boundary(boundary)) {
+          internal_to_cutoff_boundary_cell(boundary, bndryNodeIdx, bcIdx);
         }
       }
-      ++ghostCellBoundaryIdx;
+      ++bcIdx;
     }
-
     auto newTotalNoCells = cells().size();
     std::cerr << "fv container | #of leafs: " << noLeafCells
               << " | #of ghosts: " << newTotalNoCells - noLeafCells

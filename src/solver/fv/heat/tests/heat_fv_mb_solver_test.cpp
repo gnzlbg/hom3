@@ -78,7 +78,7 @@ auto heat_properties(grid::Grid<nd>* grid, const Num timeEnd) {
   return p;
 }
 
-TEST(heat_fv_solver, one_dimensional_dirichlet) {
+TEST(heat_fv_mb_solver, one_dimensional_dirichlet) {
   /// Create a solver
   auto heatSolver =   HeatSolver<nd> {
     heatSolverIdx, heat_properties<nd>(&test_grid, 1.0)
@@ -94,21 +94,23 @@ TEST(heat_fv_solver, one_dimensional_dirichlet) {
   auto dBc = heat_physics::bc::Dirichlet<HeatSolver<nd>>{heatSolver, 1.0};
   auto nBc = heat_physics::bc::Neumann<HeatSolver<nd>>{heatSolver, 0.0};
   auto bcs = std::make_tuple(dBc, dBc, nBc, nBc);
-  solver::fv::append_external_bcs(heatSolver, rootCell, bcs);
+  solver::fv::append_bcs(heatSolver, rootCell, bcs);
 
   /// Create moving boundary conditions
-  auto mBc = heat_physics::bc::mb::Dirichlet<HeatSolver<nd>>{heatSolver, 2.0};
-
-  //NumA<nd> x_center = NumA<nd>::Constant(0.5);
-  std::function<NumA<nd>(void)> x_center = [&]() {
+  std::function<NumA<nd>()> x_center = [&]() {
+    Num angular_frequency = 2. * math::pi * 2.;
     NumA<nd> tmp = NumA<nd>::Constant(0.5)
-     + NumA<nd>::Constant(0.1 * std::sin(heatSolver.time()));
+     + NumA<nd>::Constant(0.1 * std::sin(angular_frequency * heatSolver.time()));
     return tmp;
   };
   Num radius = 0.2;
+
+  auto moving_sphere =
+      geometry::make_geometry<geometry::implicit::moving::Sphere<nd>>(x_center, radius);
+  auto mBc = heat_physics::bc::mb::Dirichlet<HeatSolver<nd>>{heatSolver, moving_sphere, 2.0};
   heatSolver.append_bc(solver::fv::bc::Interface<nd> {
       "movingBoundary",
-      geometry::make_geometry<geometry::implicit::moving::Sphere<nd>>(x_center, radius),
+      moving_sphere,
       heatSolver,
       mBc
   });

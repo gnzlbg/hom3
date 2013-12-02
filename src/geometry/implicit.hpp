@@ -45,6 +45,19 @@ template<SInd nd> struct Sphere {
   { return (x - xc).norm() - r; }
 };
 
+namespace moving {
+
+template<SInd nd> struct Sphere {
+  static const SInd no_dims = nd;
+  std::function<NumA<nd>()> xc;
+  const Num r;
+  Sphere(std::function<NumA<nd>()> center, Num radius) noexcept : xc(center), r(radius) {}
+  Num operator()(const NumA<nd>& x) const noexcept
+  { return (x - xc()).norm() - r; }
+};
+
+}  // moving
+
 /// \brief Signed-distance to hexaedron of lengths L=(lx,ly,lz)^T,
 /// centered at xc = (x,y,z)^T, and rotated by phi = (phi_x,phi_y,phi_z)^T.
 ///

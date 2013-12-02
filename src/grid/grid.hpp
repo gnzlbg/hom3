@@ -14,6 +14,7 @@
 #include "generation.hpp"
 #include "boundary.hpp"
 #include "io/output.hpp"
+#include <iomanip>
 /// Options:
 #define ENABLE_DBG_ 0
 #include "misc/dbg.hpp"
@@ -82,26 +83,29 @@ static constexpr std::array<SInt,3*6> nghbr_rel_pos_3d_arr {{
 
 /// \name vertex_rel_pos stencils
 ///@{
-static constexpr std::array<SInt,4*2> vertex_pos_2d_arr {{
-    // x   y   z
-      -1, -1 , // pos: 0
-       1, -1 , // pos: 1
-       1,  1 , // pos: 2
-      -1,  1   // pos: 3
-    }};
 
-static constexpr std::array<SInt,8*3> vertex_pos_3d_arr {{
-    // x   y   z
-      -1, -1, -1 , // pos: 0
-       1, -1, -1 , // pos: 1
-       1,  1, -1 , // pos: 2
-      -1,  1, -1 , // pos: 3
-      -1, -1,  1 , // pos: 4
-       1, -1,  1 , // pos: 5
-       1,  1,  1 , // pos: 6
-      -1,  1,  1   // pos: 7
-    }};
+static constexpr std::array<std::tuple<SInd,Num>,4*2> vertex_vertex_connectivity_2d_arr {{
+    // x          y        z
+    {1, +1.}, {2, +1.}, // pos: 0
+    {0, -1.}, {3, +1.}, // pos: 1
+    {3, +1.}, {0, -1.}, // pos: 2
+    {2, -1.}, {1, -1.}  // pos: 3
+}};
+
+static constexpr std::array<std::tuple<SInd,Num>,8*3> vertex_vertex_connectivity_3d_arr {{
+    // x          y        z
+    {1, +1.}, {2, +1.}, {4, +1.},  // pos: 0
+    {0, -1.}, {3, +1.}, {5, +1.},  // pos: 1
+    {3, +1.}, {0, -1.}, {6, +1.},  // pos: 2
+    {2, -1.}, {1, -1.}, {7, +1.},  // pos: 3
+    {5, +1.}, {6, +1.}, {0, -1.},  // pos: 4
+    {4, -1.}, {7, +1.}, {1, -1.},  // pos: 5
+    {7, +1.}, {4, -1.}, {2, -1.},  // pos: 6
+    {6, -1.}, {5, -1.}, {1, -1.}   // pos: 7
+}};
+
 ///@}
+
 
 template<int nd> struct RootCell {
   RootCell(const RootCell<nd>&) = default;
@@ -317,7 +321,7 @@ template <SInd nd_> struct CartesianHSP : container::Hierarchical<nd_> {
   ///
   /// That is:
   ///              o________________________o
-  ///            /|   pos: 7   |   pos: 6  /|
+  ///            /|   pos: 6   |   pos: 7  /|
   ///           / | (-1,+1,+1) | (+1,+1,+1) |
   ///          /  |____________|____________|
   ///         /   |   pos: 4   |   pos: 5   |
@@ -325,7 +329,7 @@ template <SInd nd_> struct CartesianHSP : container::Hierarchical<nd_> {
   ///       /     o____________|____________o
   ///      /     /                   /     /
   ///     o_____/__________________o/     /
-  ///    |   pos: 3   |   pos: 2   |     /    y (1) ^
+  ///    |   pos: 2   |   pos: 3   |     /    y (1) ^
   ///    | (-1,+1,-1) | (+1,+1,-1) |    /           |     ^ z (2)
   ///    |____________|____________|   /            |    /
   ///    |   pos: 0   |   pos: 1   |  /             |  /
@@ -334,10 +338,10 @@ template <SInd nd_> struct CartesianHSP : container::Hierarchical<nd_> {
   ///
   /// Note:
   ///  - the positions correspond to the vertices.
-  ///  - the stencil is the same one as that for the relative child position,
-  ///    just sorted in a different order.
-  static constexpr SInt vertex_pos(const NodeIdx childIdx, const SInt d) {
-    return vertex_pos_(childIdx,d,Dim());
+  ///  - the stencil is the same one as that for the relative child position!
+  ///  - the ordering agrees with VTK's Pixel (8) and Voxel(11) elements!
+  static constexpr SIntA<nd> vertex_rel_pos(const SInd vertexIdx) {
+    return child_rel_pos_(vertexIdx, Dim());
   }
 
   /// \brief Length of cells at \p level
@@ -409,25 +413,19 @@ template <SInd nd_> struct CartesianHSP : container::Hierarchical<nd_> {
   = boost::transformed_range<std::function<CellVertices(NodeIdx)>,
                              const AnyRange<NodeIdx>>;
 
-  /// \brief Vertices of cell at \p x_cell with cell length \p cellLength sorted
-  /// in counter clockwise direction
+  auto vertex_positions() const
+  RETURNS(boost::counting_range(SInd{0},no_edge_vertices()));
+
+  /// \brief Vertices of cell at \p x_cell with cell length \p cellLength
+  /// Note: the order is same as the order of a cells children
   auto cell_vertices_coords(const Num cellLength, const NumA<nd> x_cell) const
-  -> typename CellVertices::Vertices
-  {
+  -> typename CellVertices::Vertices {
     TRACE_IN((cellLength)(x_cell));
-    enum class VTK { Pixel, Polyline };
-    const VTK element_type = VTK::Pixel;
     const auto cellHalfLength = 0.5 * cellLength;
     typename CellVertices::Vertices relativePosition;
-    for(auto v : boost::counting_range(SInd{0},no_edge_vertices())) {
-      if(element_type == VTK::Pixel) {
-        relativePosition[v] = x_cell + cellHalfLength
-                              * child_rel_pos(v).template cast<Num>();
-      } else if(element_type == VTK::Polyline) {
-        TERMINATE("polyline support deprecated? (TODO: decide!)");
-        // old implementation, needs update: relativePosition[v][d] =
-        // vertex_pos(v,d) * relLength + cellCoordinates[d];
-      }
+    for(auto v : vertex_positions()) {
+      relativePosition[v] = x_cell + cellHalfLength
+                            * vertex_rel_pos(v).template cast<Num>();
     }
     TRACE_OUT();
     return relativePosition;
@@ -582,9 +580,177 @@ template <SInd nd_> struct CartesianHSP : container::Hierarchical<nd_> {
   }
 
   /// \brief EXPERIMENTAL
-  Num level_set(const NodeIdx nIdx) const {
-    const NumA<nd> x = cell_coordinates(nIdx);
-    return level_set(x);
+  template<class SignedDistance>
+  bool is_cut_by(const NodeIdx nIdx, SignedDistance&& signed_distance) const {
+    auto lsvEdges = signed_distance_at_vertices(nIdx, std::forward<SignedDistance>(signed_distance));
+    // if sign is not same for all then is cut!
+    if((lsvEdges.array() > 0).all() || (lsvEdges.array() < 0).all()) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  template<class SignedDistance>
+  NumA<no_edge_vertices()> signed_distance_at_vertices(const NodeIdx nIdx,
+                                                       SignedDistance&& signed_distance) const {
+    const auto vertices = compute_cell_vertices(nIdx)();
+    NumA<no_edge_vertices()> sd_at_vertices;
+    for (auto pos : vertex_positions()) {
+      sd_at_vertices(pos) = signed_distance(vertices[pos]);
+    }
+    return sd_at_vertices;
+  }
+
+  template<class Vertices, class LSVs, class CutPoints>
+  void debug_cut_points_at_node(const NodeIdx nIdx, const Vertices& vertices,
+                                const LSVs& lsv,
+                                const CutPoints& cutPoints) const {
+
+    auto print_point = [&](const std::string label, auto vertex) {
+      std::cerr << label;
+      for (auto d : dimensions()) { std::cerr << vertex(d) << " "; }
+      std::cerr << "\n";
+    };
+    auto cp = [](auto c) { return std::get<0>(c); };
+    auto vB_p = [](auto c) { return std::get<1>(c); };
+    auto vB = [&](auto c) { return vertices()[vB_p(c)]; };
+    auto vE_p = [](auto c) { return std::get<2>(c); };
+    auto vE = [&](auto c) { return vertices()[vE_p(c)]; };
+
+    std::cerr << std::setprecision(16);
+    std::cerr << "Wrong #of cut points: " << cutPoints.size()
+              <<  " in node: " << nIdx << ".\n";
+
+    print_point("Cell center coordinates are:\n  x_c: ", cell_coordinates(nIdx));
+
+    std::cerr << "\n";
+    std::cerr << "Cell length is: " << cell_length(nIdx) << ".\n";
+    std::cerr << "Vertices are:\n";
+    for (auto v : vertex_positions()) {
+      print_point("  #" + std::to_string(v) + ", x: ", vertices()[v]);
+      std::cerr << " lsv: " << lsv[v] << "\n";
+    }
+    std::cerr << "Cut-points are:\n";
+    SInd i = 0;
+    for (auto c : cutPoints) {
+      std::cerr << "  #" << i << " vB_p: " << vB_p(c) << " vE_p: " << vE_p(c) << "\n";
+      print_point("    vB_x: ", vB(c));
+      print_point("    vE_x: ", vE(c));
+      print_point("    CP_x: ", cp(c));
+      ++i;
+    }
+  }
+
+  struct CutSurface {
+    NumA<nd> centroid;
+    std::array<NumA<nd>, nd> cut_points;
+  };
+
+  template<class SignedDistance>
+  CutSurface cut_surface(const NodeIdx nIdx, SignedDistance&& signed_distance) const {
+    using namespace geometry::algorithm;
+    using std::get;
+    ASSERT(is_valid(nIdx), "invalid node!");
+    ASSERT(is_cut_by(nIdx, signed_distance), "node must be cut by sd!");
+
+    const auto vertices = compute_cell_vertices(nIdx);
+    std::array<Num, no_edge_vertices()> vertices_lsv;
+    for (auto v : vertex_positions()) {
+      vertices_lsv[v] = signed_distance(vertices()[v]);
+    }
+    memory::stack::arena<std::tuple<NumA<nd>,SInd,SInd>, no_edge_vertices()+2> stackMemory;
+    auto cutPoints = memory::stack::make<std::vector>(stackMemory);
+
+    for (auto v : vertex_positions()) {
+      for (auto d : dimensions()) {
+        SInd ov; Num s;
+        std::tie(ov, s) = vertex_vertex_connectivity(v, d);
+        ASSERT(!math::approx(vertices_lsv[v], 0.) && !math::approx(vertices_lsv[ov], 0.),
+               "lsv at vertex is zero!");
+        if (math::signum(vertices_lsv[v]) != math::signum(vertices_lsv[ov])) {
+          const auto cp = cut_point_along_direction<nd>
+                          (vertices()[v], vertices()[ov],
+                           vertices_lsv[v], vertices_lsv[ov], d);
+          cutPoints.emplace_back(std::make_tuple(std::move(cp), v, ov));
+        }
+      }
+    }
+
+    remove_duplicate_points<nd>(cutPoints,
+      [&](auto a, auto b) { return PointLT<nd>()(get<0>(a), get<0>(b)); },
+      [&](auto a, auto b) { return PointEQ()(get<0>(a), get<0>(b)); });
+
+    ASSERT([&](){
+        if((nd == 2 && cutPoints.size() == 2)
+           || (nd == 3 && (cutPoints.size() == 3 || cutPoints.size() == 4))) {
+          return true;
+        }
+        debug_cut_points_at_node(nIdx, vertices, vertices_lsv, cutPoints);
+        return false;
+      }(), "wrong number of cutpoints!");
+
+    auto centroid = surface_centroid<nd>()([&](const SInd p){ return std::get<0>(cutPoints[p]); });
+
+    CutSurface cs;
+    cs.centroid = centroid;
+    cs.cut_points[0] = std::get<0>(cutPoints[0]);
+    cs.cut_points[1] = std::get<0>(cutPoints[1]);
+    return cs;
+  }
+  
+  template<class SignedDistance>
+  NumA<nd> cut_surface_centroid(const NodeIdx nIdx, SignedDistance&& signed_distance) const {
+    using namespace geometry::algorithm;
+    using std::get;
+    ASSERT(is_valid(nIdx), "invalid node!");
+    ASSERT(is_cut_by(nIdx, signed_distance), "node must be cut by sd!");
+
+    const auto vertices = compute_cell_vertices(nIdx);
+    std::array<Num, no_edge_vertices()> vertices_lsv;
+    for (auto v : vertex_positions()) {
+      vertices_lsv[v] = signed_distance(vertices()[v]);
+    }
+    memory::stack::arena<std::tuple<NumA<nd>,SInd,SInd>, no_edge_vertices()+2> stackMemory;
+    auto cutPoints = memory::stack::make<std::vector>(stackMemory);
+
+    for (auto v : vertex_positions()) {
+      for (auto d : dimensions()) {
+        SInd ov; Num s;
+        std::tie(ov, s) = vertex_vertex_connectivity(v, d);
+        ASSERT(!math::approx(vertices_lsv[v], 0.) && !math::approx(vertices_lsv[ov], 0.),
+               "lsv at vertex is zero!");
+        if (math::signum(vertices_lsv[v]) != math::signum(vertices_lsv[ov])) {
+          const auto cp = cut_point_along_direction<nd>
+                          (vertices()[v], vertices()[ov],
+                           vertices_lsv[v], vertices_lsv[ov], d);
+          cutPoints.emplace_back(std::make_tuple(std::move(cp), v, ov));
+        }
+      }
+    }
+
+    remove_duplicate_points<nd>(cutPoints,
+      [&](auto a, auto b) { return PointLT<nd>()(get<0>(a), get<0>(b)); },
+      [&](auto a, auto b) { return PointEQ()(get<0>(a), get<0>(b)); });
+
+    ASSERT([&](){
+        if((nd == 2 && cutPoints.size() == 2)
+           || (nd == 3 && (cutPoints.size() == 3 || cutPoints.size() == 4))) {
+          return true;
+        }
+        debug_cut_points_at_node(nIdx, vertices, vertices_lsv, cutPoints);
+        return false;
+      }(), "wrong number of cutpoints!");
+
+    return surface_centroid<nd>()([&](const SInd p){ return std::get<0>(cutPoints[p]); });
+  }
+
+
+  bool is_cut_by(const CellVertices cellVertices,
+                 const SInd boundaryIdx) const { // todo BoundaryIdx
+    return is_cut_by(cellVertices,[&](const NumA<nd> x){
+        return boundaries()[boundaryIdx].signed_distance(x);
+    });
   }
 
   /// \brief EXPERIMENTAL
@@ -597,44 +763,8 @@ template <SInd nd_> struct CartesianHSP : container::Hierarchical<nd_> {
   }
 
   /// \brief EXPERIMENTAL
-  template<class SignedDistance>
-  bool is_cut_by(const NodeIdx nIdx, SignedDistance&& signed_distance) const {
-    return is_cut_by(compute_cell_vertices(nIdx), std::forward<SignedDistance>(signed_distance));
-  }
-
-  /// \brief EXPERIMENTAL
-  template<class SignedDistance>
-  bool is_cut_by(const CellVertices cellVertices,
-                 SignedDistance&& signed_distance) const {
-    // compute level set values at vertices
-    NumA<no_edge_vertices()> lsvEdges;
-    int i = 0;
-    for(auto vertex : cellVertices()) {
-      NumA<nd> v;
-      int j = 0;
-      for(auto d : vertex) {
-        v(j++) = d;
-      }
-      lsvEdges(i++) = signed_distance(v);
-    }
-    // if sign is not same for all then is cut!
-    if((lsvEdges.array() > 0).all() || (lsvEdges.array() < 0).all()) {
-      return false;
-    } else {
-      return true;
-    }
-  }
-
-  bool is_cut_by(const CellVertices cellVertices,
-                 const SInd boundaryIdx) const { // todo BoundaryIdx
-    return is_cut_by(cellVertices,[&](const NumA<nd> x){
-        return boundaries()[boundaryIdx].signed_distance(x);
-    });
-  }
-
-  /// \brief EXPERIMENTAL
   bool is_cut_by_levelset(const NodeIdx nIdx) {
-    return is_cut_by(nIdx,[&](const NumA<nd> x){ return level_set(x); });
+    return is_cut_by(nIdx, [&](const NumA<nd> x){ return level_set(x); });
   }
 
   /// \brief EXPERIMENTAL
@@ -675,6 +805,10 @@ template <SInd nd_> struct CartesianHSP : container::Hierarchical<nd_> {
     out << io::stream("nghbrIds", grid.no_samelvl_neighbor_positions(),
       [&](const Ind nIdx, const SInd pos) {
         return grid.find_samelvl_neighbor(NodeIdx{nIdx}, pos)();
+    });
+    out << io::stream("x_center", grid.no_dimensions(),
+      [&](const Ind nIdx, const SInd pos) {
+        return grid.cell_coordinates(NodeIdx{nIdx})(pos);
     });
     out << io::stream("solver", grid.solver_capacity(),
       [&](const Ind nIdx, const SInd pos) {
@@ -754,16 +888,19 @@ template <SInd nd_> struct CartesianHSP : container::Hierarchical<nd_> {
             nghbr_rel_pos_(nghbrPos,2,D3())};
   }
 
-  /// \brief Relative position of vertex in position \p vertexId (sorted in
-  /// counter clock-wise order) w.r.t. to cell along the \p -axis for 2D.
-  static constexpr SInt vertex_pos_(const SInt vertexPos, const SInt d, D2) {
-    return vertex_pos_2d_arr[vertexPos * nd + d];
-  }
+  static constexpr std::tuple<SInd, Num>
+  vertex_vertex_connectivity_(const SInd i, D2)
+  { return vertex_vertex_connectivity_2d_arr[i]; }
 
-  /// \brief Relative position of vertex in position \p vertexId (sorted in
-  /// counter clock-wise order) w.r.t. to cell along the \p -axis for 3D.
-  static constexpr SInt vertex_pos_(const SInt vertexPos, const SInt d, D3) {
-    return vertex_pos_3d_arr[vertexPos * nd + d];
+  static constexpr std::tuple<SInd, Num>
+  vertex_vertex_connectivity_(const SInd i, D3)
+  { return vertex_vertex_connectivity_3d_arr[i]; }
+
+  /// Vertex sharing \p edge with vertex at position \p vertexPos
+  /// Returns tuple of (vertex_position, sign)
+  static constexpr std::tuple<SInd, Num>
+  vertex_vertex_connectivity(const SInd vertexPos, const SInt d) {
+    return vertex_vertex_connectivity_(vertexPos * nd + d, Dim());
   }
 
   ///@}

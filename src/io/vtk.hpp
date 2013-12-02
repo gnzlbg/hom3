@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <vector>
 #include "globals.hpp"
+#include "geometry/algorithms.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 namespace hom3 {
 
@@ -186,7 +187,7 @@ template<SInd nd, class Format = io::format::ascii> struct Vtk {
   ~Vtk() {
 
     /// Output log:
-    std::cout << "#of grid dimensions: " << domain.no_dimensions() << "\n";
+    std::cout << "IO::VTK: file: " << fileName << ", #of grid dimensions: " << domain.no_dimensions() << "\n";
     for(auto stream : streams_) {
       std::cerr << "name: " << stream.name() << " dim: " << stream.no_dimensions() << "\n";
     }
@@ -243,6 +244,7 @@ template<SInd nd, class Format = io::format::ascii> struct Vtk {
 
     /// complexity: O(N)
     const Ind noCells = boost::distance(domain.cells());
+    std::cerr << "IO::VTK: #of cells: " << noCells << "\n";
     static constexpr Ind noCellVertices = math::ct::ipow(2u,nd);
 
     auto cell_positions = [&](){ return boost::counting_range(Ind(0),noCells); };
@@ -266,32 +268,7 @@ template<SInd nd, class Format = io::format::ascii> struct Vtk {
     /// complexity: O((N*M)log(N*M)) | cumulative: O((N*M)log(N*M))
     auto unique_cell_vertices = cell_vertices;
 
-    /// LessThanComparable: is a < b ?
-    auto vertex_cmp = [](const Vertex& a, const Vertex& b) {
-      if(a(0) > b(0)) { // \todo optimize?
-        return false;
-      } else if(math::approx(a(0),b(0))) {
-        if(a(1) > b(1)) {
-          return false;
-        } else if(math::approx(a(1),b(1))) {
-          if(nd == 2) {
-            return false;
-          } else if(nd == 3 && (a(2) > b(2) || math::approx(a(2),b(2)))) {
-            return false;
-          }
-        }
-      }
-      return true;
-    };
-
-    /// EqualityComparable: is a == b ?
-    auto vertex_eq = [](const Vertex& a, const Vertex& b) { return a.isApprox(b, math::eps); };
-
-    /// Removes the duplicated elements: erase(unique(sort(rng)))
-    /// Note: resulting unique range remains sorted according to vertex_cmp
-    boost::erase(unique_cell_vertices,
-                 boost::unique<boost::return_found_end>(
-                     boost::sort(unique_cell_vertices, vertex_cmp), vertex_eq));
+    geometry::algorithm::remove_duplicate_points<nd>(unique_cell_vertices);
 
     /// Write unique vertices (points) to file
     write_header("POINTS " + std::to_string(unique_cell_vertices.size())+ " FLOAT\n");
@@ -316,7 +293,7 @@ template<SInd nd, class Format = io::format::ascii> struct Vtk {
         auto vertex = cell_vertices[vertexId];
 
         // (O(logN)):
-        auto it = boost::lower_bound(unique_cell_vertices, vertex, vertex_cmp);
+        auto it = boost::lower_bound(unique_cell_vertices, vertex, geometry::algorithm::PointLT<nd>{});
         const Ind uniqueVertexId = it - std::begin(unique_cell_vertices);
         write_formated_scalar(uniqueVertexId);
 

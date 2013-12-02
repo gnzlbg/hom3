@@ -32,7 +32,7 @@ template<SInd nd> struct Interface {
             std::shared_ptr<Geometry> geometry,
             const Solver& solver) noexcept
     : signed_distance([=](const NumA<nd> x) {
-        return geometry->operator()(x);
+        return (*geometry)(x);
       })
     , name_(name)
     , solverIdx_(solver.solver_idx())

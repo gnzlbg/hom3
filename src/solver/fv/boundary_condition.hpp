@@ -20,8 +20,6 @@ namespace bc {
 /// - an apply(GhostCellRange) function, that imposes the boundary condition
 ///
 template<SInd nd> struct Interface : grid::boundary::Interface<nd> {
-  using GhostCellRange = Range<CellIdx>;
-
   /// \brief Construct a boundary condition
   template<class Solver, class Geometry, class Condition>
   Interface(const String name, std::shared_ptr<Geometry> geometry,
@@ -32,15 +30,16 @@ template<SInd nd> struct Interface : grid::boundary::Interface<nd> {
           return condition.template slope<lhs_tag>(cIdx, v, dir); })
       , slope_rhs([=](const CellIdx cIdx, const SInd v, const SInd dir) {
           return condition.template slope<rhs_tag>(cIdx, v, dir); })
+      , is_moving([=]() -> bool { return condition.is_moving(); })
   {}
 
   /// Applies the boundary condition to the lhs of a GhostCellRange
-  void apply(lhs_tag, GhostCellRange ghost_cells) const noexcept
-  { apply_lhs(lhs, ghost_cells); }
+  void apply(lhs_tag, const CellIdx ghostIdx) const noexcept
+  { apply_lhs(lhs, ghostIdx); }
 
   /// Applies the boundary condition to the rhs of a GhostCellRange
-  void apply(rhs_tag, GhostCellRange ghost_cells) const noexcept
-  { apply_rhs(rhs, ghost_cells); }
+  void apply(rhs_tag, const CellIdx ghostIdx) const noexcept
+  { apply_rhs(rhs, ghostIdx); }
 
   Num slope(lhs_tag, const CellIdx cIdx, const SInd v,
             const SInd dir) const noexcept
@@ -51,10 +50,12 @@ template<SInd nd> struct Interface : grid::boundary::Interface<nd> {
   { return slope_rhs(cIdx, v, dir); }
 
  private:
-  const std::function<void(lhs_tag, GhostCellRange)> apply_lhs;
-  const std::function<void(rhs_tag, GhostCellRange)> apply_rhs;
+  const std::function<void(lhs_tag, const CellIdx)> apply_lhs;
+  const std::function<void(rhs_tag, const CellIdx)> apply_rhs;
   const std::function<Num(CellIdx, SInd, SInd)> slope_lhs;
   const std::function<Num(CellIdx, SInd, SInd)> slope_rhs;
+ public:
+  const std::function<bool()> is_moving;
 };
 
 /// \brief Contains general boundary condition functionality
@@ -75,6 +76,8 @@ template<class BC> struct Condition {
   inline Num neumann(const Num boundaryCellValue, const Num surfaceFlux = 0,
                      const Num cell_distance = 0) const noexcept
   { return boundaryCellValue - cell_distance * surfaceFlux; }
+
+  inline bool is_moving() const noexcept { return false; }
 };
 
 }  // namespace bc

@@ -74,6 +74,7 @@ template<SInd nd = 1> using SIntM = EigenColMajor<SInt, nd>;
 template<SInd nd = 1> using IndM  = EigenColMajor< Ind, nd>;
 template<SInd nd = 1> using SIndM = EigenColMajor<SInd, nd>;
 template<SInd nd = 1> using NumM  = EigenColMajor< Num, nd>;
+template<SInd nd = 1> using BoolM  = EigenColMajor< bool, nd>;
 ///@}
 
 /// \name Row-major matrix types (dynamic length, static # of columns)
