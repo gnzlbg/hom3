@@ -187,16 +187,21 @@ template<SInd nd, class Format = io::format::ascii> struct Vtk {
   ~Vtk() {
 
     /// Output log:
-    std::cout << "IO::VTK: file: " << fileName << ", #of grid dimensions: " << domain.no_dimensions() << "\n";
+    std::cout << "IO::VTK: file: " << fileName
+              << ", #of grid dimensions: "
+              << domain.no_dimensions() << "\n";
+    std::cout << "The following variables will be written:\n";
     for(auto stream : streams_) {
       std::cerr << "name: " << stream.name() << " dim: " << stream.no_dimensions() << "\n";
     }
 
+    std::cerr << "Initializing...";
     initializeOutput();
-
+    std::cerr << "done! Writting...";
     write_to_file();
-
+    std::cerr << "done! Finalizing...";
     finalizeOutput();
+    std::cerr << "done!\n";
   }
 
   inline void write_stream(const StreamableVariable& stream) {

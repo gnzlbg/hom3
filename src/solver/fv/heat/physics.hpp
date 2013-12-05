@@ -111,10 +111,17 @@ template<SInd nd_, class NumFlux, class Solver> struct Physics {
   /// \name Three-point stencil
   ///@{
   template<class _> inline NumA<nvars> compute_num_flux_
-  (const CellIdx lIdx, const CellIdx rIdx, const SInd, const Num dx,
+  (const CellIdx lIdx, const CellIdx rIdx, const SInd d, const Num dx,
     const Num, flux::three_point) const noexcept {
     NumA<nvars> tmp;
-    tmp(0) = 1 / dx * (T<_>(lIdx) - T<_>(rIdx));
+    const auto v = b_()->rigid_body_velocity_at_surface(lIdx, rIdx);
+    const auto v_d = v(d);
+    //const auto v_mag = v.norm();
+    tmp(0) = 1 / dx * (T<_>(lIdx) - T<_>(rIdx))
+        // + 0.5 * (v_d * (T<_>(lIdx) + T<_>(rIdx))
+        //          + v_mag * (T<_>(lIdx) - T<_>(rIdx)));
+             + v_d * (T<_>(lIdx) + T<_>(rIdx));
+
     return tmp;
   }
 

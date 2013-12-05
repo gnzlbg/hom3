@@ -1,6 +1,8 @@
 #ifndef HOM3_GEOMETRY_ALGORITHMS_HPP_
 #define HOM3_GEOMETRY_ALGORITHMS_HPP_
 ////////////////////////////////////////////////////////////////////////////////
+#include <Eigen/Geometry>
+////////////////////////////////////////////////////////////////////////////////
 namespace hom3 { namespace geometry {
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -37,7 +39,7 @@ struct PointEQ {
     ASSERT(a.size() == b.size(), "Comparing vectors of different sizes!");
     const auto n = a.size();
     for(SInd d = 0; d < n; ++d) {
-      if(!math::approx(a(d), b(d))) { return false; }
+      if (!(std::abs(a(d) - b(d)) < 1e-9)) { return false; }
     }
     return true;
   }
@@ -66,7 +68,7 @@ template <>
 struct surface_centroid<2> {
   template<class Points>
   inline NumA<2> operator()(const Points& ps) {
-    return ps(0) + 0.5 * (ps(0) + ps(1));
+    return ps(0) + 0.5 * (ps(1) - ps(0));
   }
 };
 
@@ -75,6 +77,37 @@ struct surface_centroid<3> {
   template<class Points>
   inline NumA<3> operator()(const Points&) {
     TERMINATE("surface centroid for 3D not implemented yet");
+  }
+};
+
+template <SInd nd> struct surface_normal {};
+
+template <>
+struct surface_normal<2> {
+  template<class Points>
+  inline NumA<2> operator()(const Points& ps) {
+    NumA<2> normal = ps(1) - ps(0);
+    normal(1) = -normal(1);
+    return normal.normalized();
+  }
+};
+
+template<SInd nd>
+bool is_point_inside_cell(const NumA<nd> p, const NumA<nd> x_c, const Num l) {
+  const auto l2 = 0.5 * l;
+  for (SInd d = 0; d < nd; ++d) {
+    if ((p(d) < (x_c(d) - l2)) || (p(d) > (x_c(d) + l2))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+template <>
+struct surface_normal<3> {
+  template<class Points>
+  inline NumA<3> operator()(const Points&) {
+    TERMINATE("surface normal for 3D not implemented yet");
   }
 };
 

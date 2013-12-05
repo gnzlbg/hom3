@@ -85,8 +85,11 @@ TEST(heat_fv_mb_solver, one_dimensional_dirichlet) {
   };
 
   /// Define an initial condition
-  auto constant_ic = [](const NumA<nd>) {
-    return NumA<HeatSolver<nd>::nvars>::Zero();
+  auto constant_ic = [](const NumA<nd> x) {
+    return NumA<HeatSolver<nd>::nvars>::Constant(1.0);
+    //  NumA<HeatSolver<nd>::nvars>::Zero()
+    // + NumA<HeatSolver<nd>::nvars>::Constant
+    // ((x- NumA<nd>::Constant(0.5)).norm() * 2.0 + 1.0);
   };
   heatSolver.set_initial_condition(constant_ic);
 
@@ -97,17 +100,28 @@ TEST(heat_fv_mb_solver, one_dimensional_dirichlet) {
   solver::fv::append_bcs(heatSolver, rootCell, bcs);
 
   /// Create moving boundary conditions
+  const Num angular_frequency = 8. * math::pi * 2.;
+  const Num amplitude = 0.1;
   std::function<NumA<nd>()> x_center = [&]() {
-    Num angular_frequency = 2. * math::pi * 2.;
     NumA<nd> tmp = NumA<nd>::Constant(0.5)
-     + NumA<nd>::Constant(0.1 * std::sin(angular_frequency * heatSolver.time()));
+     + NumA<nd>::Constant(amplitude * std::sin(angular_frequency * heatSolver.time()));
     return tmp;
+  };
+  std::function<Num(SInd)> velocity = [&](SInd d) {
+    const auto v = NumA<nd>::Constant(amplitude * angular_frequency
+                                      * std::cos(angular_frequency
+                                                 * heatSolver.time()));
+    return v(d);
   };
   Num radius = 0.2;
 
   auto moving_sphere =
-      geometry::make_geometry<geometry::implicit::moving::Sphere<nd>>(x_center, radius);
-  auto mBc = heat_physics::bc::mb::Dirichlet<HeatSolver<nd>>{heatSolver, moving_sphere, 2.0};
+      geometry::make_geometry<
+    //   geometry::implicit::adaptors::Invert<
+          geometry::implicit::moving::Sphere<nd>
+    //      >
+    >(x_center, radius);
+  auto mBc = heat_physics::bc::mb::Dirichlet<HeatSolver<nd>>{heatSolver, moving_sphere, velocity, 2.0};
   heatSolver.append_bc(solver::fv::bc::Interface<nd> {
       "movingBoundary",
       moving_sphere,

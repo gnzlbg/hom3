@@ -374,7 +374,8 @@ struct Solver : PhysicsTT<Solver<PhysicsTT, TimeIntegration>> {
       return solver.is_ghost_cell(CellIdx{cIdx}) ? 1 : invalid<Ind>();
     });
     out << io::stream("bcIdx", 1, [&](const Ind cIdx, const SInd) -> Ind {
-      return solver.cells().bc_idx(CellIdx{cIdx});
+      auto bcIdx = solver.cells().bc_idx(CellIdx{cIdx});
+      return is_valid(bcIdx) ? bcIdx : invalid<Ind>();
     });
 
     out << io::stream(Solver::V::cv_names, nvars,
@@ -1056,6 +1057,17 @@ public:
   }
 private:
 
+  Num level_set_value(const CellIdx cIdx) const noexcept {
+    Num lsv = std::numeric_limits<Num>::max();
+    for (auto& boundary : boundary_conditions()) {
+      auto sd = boundary.signed_distance(cells().x_center.row(cIdx));
+      if (std::abs(sd) < std::abs(lsv)) {
+        lsv = sd;
+      }
+    }
+    return lsv;
+  }
+
 public:
   bool is_in_positive_lsv(const CellIdx cIdx) const {
     for (auto& boundary : boundary_conditions()) {
@@ -1112,52 +1124,7 @@ private:
   }
 
 public:
-  std::vector<CellIdx> find_interpolation_neighbors(const CellIdx cIdx) const {
-    boost::container::flat_set<CellIdx> nghbrs; nghbrs.reserve(10);
-    /// add all valid non ghost direct neighbors
-    for (auto p : grid().neighbor_positions()) {
-      auto nghbrIdx = cells().neighbors(cIdx, p);
-      if(is_valid(nghbrIdx) && !is_ghost_cell(nghbrIdx)) {
-        nghbrs.insert(nghbrIdx);
-      }
-    }
-    /// add all valid non-ghost neighbors of direct neighbors
-    for (auto p0 : grid().neighbor_positions()) {
-      auto nghbrIdx0 = cells().neighbors(cIdx, p0);
-      if(is_valid(nghbrIdx0)) {
-        for (auto p : grid().neighbor_positions()) {
-          auto nghbrIdx = cells().neighbors(nghbrIdx0, p);
-          if(is_valid(nghbrIdx) && !is_ghost_cell(nghbrIdx)) {
-            nghbrs.insert(nghbrIdx);
-          }
-        }
-      }
-    }
-
-    /// compute distances
-    std::vector<std::tuple<CellIdx, Num>> distances;
-    distances.reserve(nghbrs.size());
-    for (auto n : nghbrs) {
-      distances.push_back(
-          std::make_tuple(n, geometry::algorithm::distance
-                          (cells().x_center.row(n).transpose(),
-                           cells().x_center.row(cIdx).transpose())));
-    }
-
-    /// sort by distance
-    boost::sort(distances, [](const auto& i, const auto& j) {
-        return std::get<1>(i) > std::get<1>(j);
-    });
-    /// return the ids of the 4 closest neighbors
-    std::vector<CellIdx> result; result.reserve(3);
-    for(std::size_t i = 0; i < 3 && i < distances.size(); ++i) {
-      result.push_back(std::get<0>(distances[i]));
-    }
-
-    return result;
-  }
-
-   std::vector<CellIdx> find_interpolation_neighbors2(const CellIdx cIdx) const {
+   std::vector<CellIdx> find_interpolation_neighbors(const CellIdx cIdx) const {
      ASSERT(is_valid(cIdx), "invalid cell");
      ASSERT(is_valid(node_idx(cIdx)), "valid cell without valid node");
 
@@ -1175,7 +1142,8 @@ public:
            }
          }
        }
-       ASSERT(nghbr != 0, "wrong!");
+       ASSERT(nghbr != 0, "No interpolation neighbors found for cIdx: "
+              << cIdx << "!");
        return nghbr == mbnghbr;
      };
 
@@ -1228,49 +1196,147 @@ private:
   }
 
   void update_cells() {
+
+    /// deactivate cells first:
     for (auto cIdx : cell_ids()) {
       if (is_valid(node_idx(cIdx))) {
+         auto bcIdx = cut_by_which_moving_boundary(cIdx);
+         bool is_a_mb_cell = is_ghost_cell(cIdx) && is_moving_boundary_ghost_cell(cIdx);
+         bool will_be_a_mb_cell = is_valid(bcIdx);
+         bool is_in_pos_lsv = is_in_positive_lsv(cIdx);
+         bool is_active = cells().is_active(cIdx);
 
-        const auto bcIdx = cut_by_which_moving_boundary(cIdx);
-        const bool is_a_mb_cell = is_ghost_cell(cIdx) && is_moving_boundary_ghost_cell(cIdx);
-        const bool will_be_a_mb_cell = is_valid(bcIdx);
-        const bool is_in_pos_lsv = is_in_positive_lsv(cIdx);
-        const bool is_active = cells().is_active(cIdx);
+         auto update_flags = [&]() {
+          bcIdx = cut_by_which_moving_boundary(cIdx);
+          is_a_mb_cell = is_ghost_cell(cIdx) && is_moving_boundary_ghost_cell(cIdx);
+          will_be_a_mb_cell = is_valid(bcIdx);
+          is_in_pos_lsv = is_in_positive_lsv(cIdx);
+          is_active = cells().is_active(cIdx);
+        };
 
-        // if (cIdx == CellIdx{227} || cIdx == CellIdx{236}) {
-        //   DBGV_ON((cIdx)(bcIdx)(is_a_mb_cell)(will_be_a_mb_cell)(is_in_pos_lsv)(is_active));
-        // }
-
-        if (!is_active && will_be_a_mb_cell) {
-          to_moving_boundary_cell(cIdx, bcIdx);
-          initialize_emerged_cell_variables(cIdx);
-          continue;
+        if (cIdx == CellIdx{12403}) {
+          DBG_ON("Deactivating cells... Entry");
+          DBGV_ON((cIdx)(is_a_mb_cell)(will_be_a_mb_cell)(is_in_pos_lsv)(is_active)(level_set_value(cIdx)));
         }
-
-        // not mb_cell, but now cut by mb: -> make mb cell
-        if (!is_a_mb_cell && will_be_a_mb_cell) {
-          to_moving_boundary_cell(cIdx, bcIdx);
-          continue;
-        }
-
-        // mb_cell, but not anymore:
+        // was an mb_cell, but is not anymore:
         if (is_a_mb_cell && !will_be_a_mb_cell) {
           if (is_in_pos_lsv) {  // make internal cell
             mb_to_internal_cell(cIdx);
           } else {              // deactivate
             if(is_active) { deactivate_cell(cIdx); }
           }
+          if (cIdx == CellIdx{12403}) {
+             update_flags();
+            DBGV_ON((cIdx)(is_a_mb_cell)(will_be_a_mb_cell)(is_in_pos_lsv)(is_active)(level_set_value(cIdx)));
+            DBG_ON("Deactivating cells... done 1");
+          }
+          continue;
+        }
+
+        if (!is_in_pos_lsv && !will_be_a_mb_cell && is_active) {
+          deactivate_cell(cIdx);  /// lsv<0, not cut, but active -> deactivate
+          if (cIdx == CellIdx{12403}) {
+            update_flags();
+            DBGV_ON((cIdx)(is_a_mb_cell)(will_be_a_mb_cell)(is_in_pos_lsv)(is_active)(level_set_value(cIdx)));
+            DBG_ON("Deactivating cells... done 2");
+          }
+          continue;
+        }
+        if (cIdx == CellIdx{12403}) {
+           update_flags();
+          DBGV_ON((cIdx)(is_a_mb_cell)(will_be_a_mb_cell)(is_in_pos_lsv)(is_active)(level_set_value(cIdx)));
+          DBG_ON("Deactivating cells... done 3");
+        }
+      }
+    }
+
+    /// activate cells:
+    for (auto cIdx : cell_ids()) {
+      if (is_valid(node_idx(cIdx))) {
+        auto bcIdx = cut_by_which_moving_boundary(cIdx);
+        bool is_a_mb_cell = is_ghost_cell(cIdx) && is_moving_boundary_ghost_cell(cIdx);
+        bool will_be_a_mb_cell = is_valid(bcIdx);
+        bool is_in_pos_lsv = is_in_positive_lsv(cIdx);
+        bool is_active = cells().is_active(cIdx);
+
+        auto update_flags = [&]() {
+          bcIdx = cut_by_which_moving_boundary(cIdx);
+          is_a_mb_cell = is_ghost_cell(cIdx) && is_moving_boundary_ghost_cell(cIdx);
+          will_be_a_mb_cell = is_valid(bcIdx);
+          is_in_pos_lsv = is_in_positive_lsv(cIdx);
+          is_active = cells().is_active(cIdx);
+        };
+
+        if(cIdx == CellIdx{12403}) {
+          DBG_ON("Activating cells... Entry");
+          update_flags();
+          DBGV_ON((cIdx)(is_a_mb_cell)(will_be_a_mb_cell)(is_in_pos_lsv)(is_active)(level_set_value(cIdx)));
+        }
+
+        if (!is_active && will_be_a_mb_cell) {
+          to_moving_boundary_cell(cIdx, bcIdx);
+          initialize_emerged_cell_variables(cIdx);
+          if (cIdx == CellIdx{12403}) {
+            update_flags();
+            DBGV_ON((cIdx)(is_a_mb_cell)(will_be_a_mb_cell)(is_in_pos_lsv)(is_active)(level_set_value(cIdx)));
+            DBG_ON("Activating cells... done 1");
+          }
+          continue;
+        }
+
+        // not mb_cell, but is active and now cut by mb: -> make mb cell
+        if (!is_a_mb_cell && will_be_a_mb_cell && is_active) {
+          to_moving_boundary_cell(cIdx, bcIdx);
+          if (cIdx == CellIdx{12403}) {
+            update_flags();
+            DBGV_ON((cIdx)(is_a_mb_cell)(will_be_a_mb_cell)(is_in_pos_lsv)(is_active)(level_set_value(cIdx)));
+            DBG_ON("Activating cells... done 2");
+          }
           continue;
         }
 
         if (is_in_pos_lsv && !is_active) {
-          std::cerr << "cell lsv > 0 but not active !!!!!\n";
-          activate_cell(cIdx);  /// in lsv >0 but inactive -> activate
-        } else if (!is_in_pos_lsv && !will_be_a_mb_cell && is_active) {
-          deactivate_cell(cIdx);  /// in lsv <0 and not cut and still active -> deactivate
+          
+          DBG_ON("wtf:");
+          update_flags();
+          DBGV_ON((cIdx)(is_a_mb_cell)(will_be_a_mb_cell)(is_in_pos_lsv)(is_active)(level_set_value(cIdx)));
+          //activate_cell(cIdx);
+          //    initialize_emerged_cell_variables(cIdx);
+          //   ASSERT(!will_be_a_mb_cell, "this should be covered somewhere else!");
+          ASSERT(false, "time-step is too large! Internal cell has positive lsv but is inactive probably because a boundary jumped over it!");
+        }
+        if (cIdx == CellIdx{12403}) {
+          update_flags();
+          DBGV_ON((cIdx)(is_a_mb_cell)(will_be_a_mb_cell)(is_in_pos_lsv)(is_active)(level_set_value(cIdx)));
+          DBG_ON("Activating cells... done 3");
         }
       }
     }
+  }
+public:
+  template<class XS, class VS, class Point>
+  auto interpolate(Point&& p, XS&& xs, VS&& vs) {
+    namespace rip = interpolation::rbf;
+    const auto kernel = rip::kernel::InverseMultiquadric
+                        (1. / (std::sqrt(2) * cells().length(CellIdx{0})));
+    return rip::interpolate(p, xs, rip::build_weights(xs, vs, kernel),
+                            kernel);
+  }
+private:
+  NumA<nd> rigid_body_velocity_at_surface(const CellIdx lIdx, const CellIdx rIdx) const noexcept {
+    for (auto&& b : boundary_conditions()) {
+      if(b.is_moving()) {
+        if (b.signed_distance(cells().x_center.row(lIdx)) > 0.
+            || b.signed_distance(cells().x_center.row(rIdx)) > 0.) {
+          NumA<nd> v;
+          for (auto d : grid().dimensions()) {
+            v(d) = b.velocity(d);
+          }
+          return v;
+        }
+      }
+    }
+    return NumA<nd>::Constant(0.);
   }
 
   template<class T>
@@ -1307,10 +1373,7 @@ private:
   void to_moving_boundary_cell(const CellIdx cIdx, const SInd bcIdx) {
     cells().bc_idx(cIdx) = bcIdx;
     if(!cells().is_active(cIdx)) { activate_cell(cIdx); }
-    if(cIdx == CellIdx{236}) {
 
-
-    }
   }
 
   void mb_to_internal_cell(const CellIdx cIdx) {
@@ -1338,7 +1401,10 @@ private:
     std::cerr << "fv container | #of leafs: " << noLeafCells
               << " | #of ghosts: " << newTotalNoCells - noLeafCells
               << " | #of cells: " << newTotalNoCells << "\n";
-    ASSERT(newTotalNoCells - noLeafCells > 0, "#of ghost cells is 0!");
+    ASSERT(newTotalNoCells - noLeafCells > 0
+           || algorithm::any_of(boundary_conditions(), [&](auto& i) {
+               return i.is_moving(); }),
+           "#of ghost cells is 0 and there are no mb conditions!");
   }
 
   /// \brief Imposes the initial condition on the lhs

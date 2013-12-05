@@ -15,6 +15,7 @@
 #include "boundary.hpp"
 #include "io/output.hpp"
 #include <iomanip>
+#include <Eigen/Geometry>
 /// Options:
 #define ENABLE_DBG_ 0
 #include "misc/dbg.hpp"
@@ -645,6 +646,7 @@ template <SInd nd_> struct CartesianHSP : container::Hierarchical<nd_> {
   struct CutSurface {
     NumA<nd> centroid;
     std::array<NumA<nd>, nd> cut_points;
+    NumA<nd> normal;
   };
 
   template<class SignedDistance>
@@ -691,14 +693,23 @@ template <SInd nd_> struct CartesianHSP : container::Hierarchical<nd_> {
       }(), "wrong number of cutpoints!");
 
     auto centroid = surface_centroid<nd>()([&](const SInd p){ return std::get<0>(cutPoints[p]); });
+    auto normal = surface_normal<nd>()([&](const SInd p){ return std::get<0>(cutPoints[p]); });
+
+    auto scaled_normal = Eigen::Scaling(cell_length(nIdx) * 0.25) * normal;
+    auto translated_centroid = Eigen::Translation<Num, nd>(scaled_normal) * centroid;
+    //DBGV_ON((normal)(centroid)(scaled_normal)(translated_centroid)(signed_distance(translated_centroid)));
+    if (signed_distance(translated_centroid) < 0.) {
+      normal = Eigen::Rotation2D<Num>(math::pi) * normal;
+    }
 
     CutSurface cs;
     cs.centroid = centroid;
     cs.cut_points[0] = std::get<0>(cutPoints[0]);
     cs.cut_points[1] = std::get<0>(cutPoints[1]);
+    cs.normal = normal;
     return cs;
   }
-  
+
   template<class SignedDistance>
   NumA<nd> cut_surface_centroid(const NodeIdx nIdx, SignedDistance&& signed_distance) const {
     using namespace geometry::algorithm;
