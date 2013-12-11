@@ -17,6 +17,7 @@
 #include "misc/math.hpp"
 #include "misc/mpi.hpp"
 #include "misc/stack_memory.hpp"
+#include "misc/stack_vector.hpp"
 #include "misc/heap_buffer.hpp"
 #include "misc/functions.hpp"
 #include "misc/ranges.hpp"

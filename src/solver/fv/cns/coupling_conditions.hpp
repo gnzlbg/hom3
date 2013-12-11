@@ -4,6 +4,7 @@
 /// \file \brief Implements the Navier-Stokes coupling conditions.
 ////////////////////////////////////////////////////////////////////////////////
 #include "solver/fv/cns/boundary_conditions.hpp"
+#include "solver/fv/cns/moving_boundary_conditions.hpp"
 #include "solver/fv/coupling.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 namespace hom3 { namespace solver { namespace fv { namespace cns {
@@ -38,6 +39,71 @@ struct Heat : wall::IsothermalNoSlip<CNSSolver> {
 
     const auto T_srfc = 0.5 * (T_fluid + T_solid);  // \todo interpolate better!
 
+    return T_srfc;
+  }
+};
+
+template<class CNSSolver, class HeatSolver>
+struct MBHeat : moving_wall::IsothermalNoSlip<CNSSolver> {
+  template<class G, class V, class A>
+  MBHeat(CNSSolver& cnsSolver, const HeatSolver& heatSolver, G&& g, V&& v, A&& a)
+      : moving_wall::IsothermalNoSlip<CNSSolver>(cnsSolver, g, v, a,
+                                                [&](const CellIdx ghostIdx) {
+        return surface_temperature(ghostIdx, cnsSolver, heatSolver);})
+  {}
+
+  inline Num surface_temperature
+  (const CellIdx cnsGhostIdx, const CNSSolver& cns_,
+    const HeatSolver& hs_) const noexcept {
+
+    CellIdx cnsBndryIdx = cnsGhostIdx;
+    CellIdx heatBndryIdx = cns_.grid().cell_idx
+                          (cns_.node_idx(cnsBndryIdx), hs_.solver_idx());
+    ASSERT(is_valid(heatBndryIdx), "!!");
+    ASSERT(is_valid(cnsBndryIdx), "!!");
+
+    /// find closest cell in heat domain
+    auto in = hs_.find_interpolation_neighbors(heatBndryIdx);
+    auto nghbrs = memory::stack::vector<CellIdx, 82>{};
+    nghbrs.reserve(40);
+    Num dist = std::numeric_limits<Num>::max();
+    CellIdx heatInternalIdx = invalid<CellIdx>();
+    Int ns = 0;
+    for (auto n : in) {
+      if (is_valid(n) && hs_.exists(n) && is_valid(hs_.node_idx(n))) {
+        nghbrs.push_back(n);
+        auto tmp =  hs_.find_interpolation_neighbors(n);
+        for (auto t : tmp) {
+          if (is_valid(t) && hs_.exists(t) && is_valid(hs_.node_idx(t))) {
+            nghbrs.push_back(t);
+          }
+        }
+      }
+    }
+
+    for (auto n : nghbrs) {
+      if (is_valid(n) && !hs_.is_ghost_cell(n)
+          && !is_valid(hs_.cut_by_which_moving_boundary(n))) {
+        ++ns;
+        if (hs_.cell_dx(heatBndryIdx, n) < dist) {
+          dist = hs_.cell_dx(heatBndryIdx, n);
+          heatInternalIdx = n;
+        }
+      }
+    }
+
+    if(!is_valid(heatInternalIdx)) {
+      std::cerr << "hIdx: " << heatBndryIdx << " cnsIdx: " << cnsBndryIdx
+                << " no_in: " << in.size()
+                << " no_valid_in: " << nghbrs.size() << std::endl;
+      std::cerr << "ns: ";
+      for (auto n : nghbrs) {
+        std::cerr << n << " ";
+      }
+      std::cerr << std::endl;
+      TERMINATE("HEAT CC: INVALID IDX!");
+    }
+    Num T_srfc = hs_.T(lhs, heatInternalIdx);
     return T_srfc;
   }
 };

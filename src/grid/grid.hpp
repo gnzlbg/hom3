@@ -82,6 +82,8 @@ static constexpr std::array<SInt,3*6> nghbr_rel_pos_3d_arr {{
     }};
 ///@}
 
+static inline constexpr SInd max_no_boundaries() { return 20; }
+
 /// \name vertex_rel_pos stencils
 ///@{
 
@@ -435,12 +437,15 @@ template <SInd nd_> struct CartesianHSP : container::Hierarchical<nd_> {
   /// \brief Vertices of cell at node \p nIdx sorted in counter clockwise
   /// direction
   CellVertices compute_cell_vertices(const NodeIdx nIdx) const {
-    TRACE_IN((nIdx));
-
     const NumA<nd> x_cell = cell_coordinates(nIdx);
     const Num l_cell = cell_length(nIdx);
+    return compute_cell_vertices(nIdx, x_cell, l_cell);
+  }
 
-    return { nIdx(), cell_vertices_coords(l_cell,x_cell) };
+  CellVertices compute_cell_vertices(const NodeIdx nIdx,
+                                     const NumA<nd> x_cell,
+                                     const Num l_cell) const {
+    return { nIdx(), cell_vertices_coords(l_cell, x_cell) };
   }
 
   /// \brief Total #of _leaf_ cell vertices
@@ -583,7 +588,8 @@ template <SInd nd_> struct CartesianHSP : container::Hierarchical<nd_> {
   /// \brief EXPERIMENTAL
   template<class SignedDistance>
   bool is_cut_by(const NodeIdx nIdx, SignedDistance&& signed_distance) const {
-    auto lsvEdges = signed_distance_at_vertices(nIdx, std::forward<SignedDistance>(signed_distance));
+    auto lsvEdges = signed_distance_at_vertices
+                    (nIdx, std::forward<SignedDistance>(signed_distance));
     // if sign is not same for all then is cut!
     if((lsvEdges.array() > 0).all() || (lsvEdges.array() < 0).all()) {
       return false;
@@ -593,12 +599,42 @@ template <SInd nd_> struct CartesianHSP : container::Hierarchical<nd_> {
   }
 
   template<class SignedDistance>
+  bool is_cut_by(const NodeIdx nIdx, const NumA<nd> x_center, const Num l,
+                 SignedDistance&& signed_distance) const {
+    auto lsvEdges = signed_distance_at_vertices
+                    (nIdx, x_center, l,
+                     std::forward<SignedDistance>(signed_distance));
+    // if sign is not same for all then is cut!
+    if((lsvEdges.array() > 0).all() || (lsvEdges.array() < 0).all()) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+
+  template<class SignedDistance>
   NumA<no_edge_vertices()> signed_distance_at_vertices(const NodeIdx nIdx,
                                                        SignedDistance&& signed_distance) const {
-    const auto vertices = compute_cell_vertices(nIdx)();
+    const auto vertices = compute_cell_vertices(nIdx);
+    return signed_distance_at_vertices(vertices,
+                                       std::forward<SignedDistance>(signed_distance));
+  }
+
+  template<class SignedDistance>
+  NumA<no_edge_vertices()> signed_distance_at_vertices
+  (const NodeIdx nIdx, const NumA<nd> x_center, const Num l,
+   SignedDistance&& signed_distance) const {
+    return signed_distance_at_vertices(compute_cell_vertices(nIdx, x_center, l),
+                                       std::forward<SignedDistance>(signed_distance));
+  }
+
+  template<class SignedDistance>
+  NumA<no_edge_vertices()> signed_distance_at_vertices(const CellVertices& vertices,
+                                                       SignedDistance&& signed_distance) const {
     NumA<no_edge_vertices()> sd_at_vertices;
     for (auto pos : vertex_positions()) {
-      sd_at_vertices(pos) = signed_distance(vertices[pos]);
+      sd_at_vertices(pos) = signed_distance(vertices()[pos]);
     }
     return sd_at_vertices;
   }
@@ -661,9 +697,8 @@ template <SInd nd_> struct CartesianHSP : container::Hierarchical<nd_> {
     for (auto v : vertex_positions()) {
       vertices_lsv[v] = signed_distance(vertices()[v]);
     }
-    memory::stack::arena<std::tuple<NumA<nd>,SInd,SInd>, no_edge_vertices()+2> stackMemory;
-    auto cutPoints = memory::stack::make<std::vector>(stackMemory);
-
+    auto cutPoints = memory::stack::vector<std::tuple<NumA<nd>,SInd,SInd>,
+                                           no_edge_vertices() + 2>{};
     for (auto v : vertex_positions()) {
       for (auto d : dimensions()) {
         SInd ov; Num s;
@@ -779,11 +814,24 @@ template <SInd nd_> struct CartesianHSP : container::Hierarchical<nd_> {
   }
 
   /// \brief EXPERIMENTAL
-  std::vector<SInd> is_cut_by_boundaries(const NodeIdx nIdx) {
-    std::vector<SInd> result;
+  auto is_cut_by_boundaries(const NodeIdx nIdx) {
+    memory::stack::vector<SInd, max_no_boundaries()> result;
     SInd i = 0;
     for(auto b : boundaries()) {
       if(is_cut_by(nIdx,[&](const NumA<nd> x){ return b.signed_distance(x); })) {
+        result.push_back(i);
+      }
+      ++i;
+    }
+    return result;
+  }
+
+  auto is_cut_by_boundaries(const NodeIdx nIdx, const NumA<nd> x_center, const Num l) {
+    memory::stack::vector<SInd, max_no_boundaries()> result;
+    SInd i = 0;
+    for(auto b : boundaries()) {
+      if(is_cut_by(nIdx, x_center, l,
+                   [&](const NumA<nd> x){ return b.signed_distance(x); })) {
         result.push_back(i);
       }
       ++i;

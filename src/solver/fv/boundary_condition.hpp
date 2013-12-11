@@ -83,6 +83,97 @@ template<class BC> struct Condition {
   template<class CV, class S, class G, class V>
   inline Num mb_dirichlet(CV&& cell_values, S&& s, G&& g, const CellIdx ghostIdx,
                           V&& value_srfc) const noexcept {
+
+     #define NAIVE
+    //#define ACCURATE_SP
+#ifdef NAIVE
+   /// cut surface:
+    auto cs = s.grid().cut_surface(s.node_idx(ghostIdx), g);
+
+    /// get interpolation neighbors
+    auto nghbrs = s.find_interpolation_neighbors(ghostIdx);
+    ASSERT(nghbrs.size() != 0, "no nghbrs found?!");
+    std::size_t mbNghbrs = 0;
+    for(auto n : nghbrs) {
+      if(s.is_ghost_cell(n)
+         && is_valid(s.cut_by_which_moving_boundary(n))) {
+        ++mbNghbrs;
+      }
+    }
+
+    if(ghostIdx == CellIdx{9323} && s.solver_idx() == SolverIdx{1}) {
+      DBGV_ON((ghostIdx)(s.solver_idx())(nghbrs.size())(mbNghbrs));
+    }
+
+    if(!(nghbrs.size() - mbNghbrs > 1)) {
+      if(nghbrs.size() != mbNghbrs) {
+        /// only one neighbor is not a mb neighbor
+        // note: this cell won't be part of any stencil
+        ASSERT(nghbrs.size() > 0, "no neighbors found!!");
+        CellIdx nghbr = invalid<CellIdx>();
+        for(auto n : nghbrs) {
+          if(s.is_ghost_cell(n) && is_valid(s.cut_by_which_moving_boundary(n))) {
+            continue;
+          }
+          nghbr = n;
+          break;
+        }
+        ASSERT(is_valid(nghbr), "WTF: ghostIdx: " << ghostIdx << " has: "
+               << nghbrs.size() << " interpolation neighbors, of which "
+               << mbNghbrs << " are mb ghost cells");
+        auto x_n = NumA<std::decay_t<S>::nd>{s.cells().x_center.row(nghbr)};
+        auto points = [&](SInd p) {
+          return p == 0? cs.centroid : x_n;
+        };
+        auto values = [&](SInd p) {
+          return p == 0? value_srfc(ghostIdx) : cell_values(nghbr);
+        };
+        auto x_gc = NumA<std::decay_t<S>::nd>{s.cells().x_center.row(ghostIdx)};
+        if(ghostIdx == CellIdx{9323} && s.solver_idx() == SolverIdx{1}) {
+          std::cerr << "lin interp" << std::endl;
+        }
+        return geometry::algorithm::linear_interpolation(x_gc, points, values);
+      } else {
+        /// all neighbors are moving boundary cells
+        /// the right value will be interpolated at the ghost cell centroid
+        /// automatically
+        if(ghostIdx == CellIdx{9323} && s.solver_idx() == SolverIdx{1}) {
+          std::cerr << "all neighbors are mb cells" << std::endl;
+        }
+      }
+    }
+
+    memory::stack::vector<NumA<std::decay_t<S>::nd>, 30> xs;
+    memory::stack::vector<Num, 30> vs;
+    xs.reserve(nghbrs.size() + 3); vs.reserve(nghbrs.size() + 3);
+
+    xs.push_back(cs.centroid);      vs.push_back(value_srfc(ghostIdx));
+    xs.push_back(cs.cut_points[0]); vs.push_back(value_srfc(ghostIdx));
+    xs.push_back(cs.cut_points[1]); vs.push_back(value_srfc(ghostIdx));
+
+    /// add neighbors to stencil
+    for (auto n : nghbrs) {
+      if(is_valid(s.cut_by_which_moving_boundary(n))) {
+        // if the nghbr is a mb cell, add its surface centroid to stencil
+        // xs.push_back(s.grid().cut_surface_centroid(s.node_idx(n), g));
+        // vs.push_back(value_srfc(n));
+      } else {
+        xs.push_back(s.cells().x_center.row(n));
+        vs.push_back(cell_values(n));
+      }
+    }
+
+    NumA<std::decay_t<S>::nd> x_gc = s.cells().x_center.row(ghostIdx);
+    auto v_gc = s.interpolate(x_gc, xs, vs);
+    return v_gc;
+#endif
+#ifdef ACCURATE_SP
+    // note to future self:
+    // the surface centroids of other mb neighbors are added to the stencil with their
+    // surface values, but these depend on the values of another solver if the
+    // dirichlet mb condition is called from a coupling condition
+    // using this approach computing them requires the value of this boundary,
+    // so this variant should not be used for coupling conditions
     /// cut surface:
     auto cs = s.grid().cut_surface(s.node_idx(ghostIdx), g);
 
@@ -152,6 +243,7 @@ template<class BC> struct Condition {
     NumA<std::decay_t<S>::nd> x_gc = s.cells().x_center.row(ghostIdx);
     auto v_gc = s.interpolate(x_gc, xs, vs);
     return v_gc;
+    #endif
   }
 
   template<class CV, class S, class G, class V>
@@ -161,9 +253,10 @@ template<class BC> struct Condition {
     //#define SIMPLE
     // #define ITERATIVE
     // #define ACCURATE
+    //*g;
 
     #ifdef NAIVE
-    std::vector<CellIdx> nghbrs; nghbrs.reserve(6);
+    memory::stack::vector<CellIdx, 30> nghbrs; nghbrs.reserve(6);
     for (auto nghbr_pos : s.grid().neighbor_positions()) {
       const auto nghbrIdx = s.cells().neighbors(ghostIdx, nghbr_pos);
       if (is_valid(nghbrIdx) && !s.is_ghost_cell(nghbrIdx)

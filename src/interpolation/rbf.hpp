@@ -54,9 +54,9 @@ struct ThinPlate {
 
 namespace detail {
 
-template<class Vector, class Kernel>
+template<class Samples, class Kernel>
 inline Eigen::JacobiSVD<Eigen::MatrixXd> build_system
-(const std::vector<Vector>& x_samples, const Kernel kernel) {
+(const Samples& x_samples, const Kernel kernel) {
   const auto length = x_samples.size();
   Eigen::MatrixXd m(length, length);
   for (std::size_t i = 0; i < length; ++i)  {
@@ -67,8 +67,9 @@ inline Eigen::JacobiSVD<Eigen::MatrixXd> build_system
   return {m, Eigen::ComputeThinU | Eigen::ComputeThinV};
 }
 
+template<class Values>
 inline Eigen::MatrixXd build_weights
-(Eigen::JacobiSVD<Eigen::MatrixXd> system, const std::vector<Num>& values) {
+(Eigen::JacobiSVD<Eigen::MatrixXd> system, const Values& values) {
   const Eigen::Map<const Eigen::VectorXd> valuesWrapper(values.data(),
                                                         values.size());
   return system.solve(valuesWrapper);
@@ -76,10 +77,13 @@ inline Eigen::MatrixXd build_weights
 
 }  // namespace detail
 
+struct single_t {}; static constexpr single_t single{};
+struct multi_t {}; static constexpr multi_t multi{};
+
 /// \brief Returns weights for a single variable
-template<class Vector, class Kernel = kernel::Gaussian>
+template<class Samples, class Values, class Kernel = kernel::Gaussian>
 Eigen::MatrixXd build_weights
-(const std::vector<Vector>& x_samples, const std::vector<Num>& values,
+(single_t, const Samples& x_samples, const Values& values,
  const Kernel kernel = Kernel()) {
   ASSERT(x_samples.size() > 0, "Zero samples!");
   ASSERT(values.size() > 0, "Zero values!");
@@ -87,23 +91,26 @@ Eigen::MatrixXd build_weights
 }
 
 /// \brief Returns weights for multiple variables
-template<class Vector, class Kernel = kernel::Gaussian>
-std::vector<Eigen::MatrixXd> build_weights
-(const std::vector<Vector>& x_samples,
- const std::vector<std::vector<Num>>& vector_values,
+template<class Samples, class ValueVectors, class Kernel = kernel::Gaussian>
+auto build_weights
+(multi_t, const Samples& x_samples,
+ const ValueVectors& vector_values,
  const Kernel kernel = Kernel()) {
   ASSERT(vector_values.size() > 0, "Zero vector values!");
-  std::vector<Eigen::MatrixXd> result;
+  memory::stack::vector<Eigen::MatrixXd, 12> result;
   result.reserve(vector_values.size());
   for (auto&& values : vector_values) {
-    result.push_back(build_weights(x_samples, values, kernel));
+    result.push_back(build_weights(single, x_samples, values, kernel));
   }
   return result;
 }
 
+
+
 /// \brief Interpolates a single variable at \p point
-template<class Vector, class Kernel = kernel::Gaussian>
-Num interpolate(const Vector& point, const std::vector<Vector>& x_samples,
+template<class Point, class Samples, class Kernel = kernel::Gaussian>
+Num interpolate(single_t, const Point& point,
+                const Samples& x_samples,
                 const Eigen::MatrixXd& weights,
                 const Kernel kernel = Kernel()) {
   ASSERT(x_samples.size() > 0, "Zero samples!");
@@ -116,16 +123,17 @@ Num interpolate(const Vector& point, const std::vector<Vector>& x_samples,
 }
 
 /// \brief Interpolates multiple variables at \p point
-template<class Vector, class Kernel = kernel::Gaussian>
-std::vector<Num> interpolate(const Vector& point,
-                             const std::vector<Vector>& x_samples,
-                             const std::vector<Eigen::MatrixXd>& weights,
-                             const Kernel kernel = Kernel()) {
+template<class Point, class Samples, class Weights,
+         class Kernel = kernel::Gaussian>
+auto interpolate(multi_t, const Point& point,
+                 const Samples& x_samples,
+                 const Weights& weights,
+                 const Kernel kernel = Kernel()) {
   ASSERT(x_samples.size() > 0, "Zero samples!");
   ASSERT(weights.size() > 0, "Zero weights!");
   const auto length = x_samples.size();
   const auto nvars = weights.size();
-  std::vector<Num> results(nvars, 0.0);
+  memory::stack::vector<Num, 30> results(nvars, 0.0);
   for (std::size_t i = 0; i < length; ++i) {
     const auto k = kernel((point - x_samples[i]).norm());
     for (std::size_t w = 0; w < nvars; ++w) {

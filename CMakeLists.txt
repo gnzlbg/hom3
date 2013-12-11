@@ -45,7 +45,7 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     "-Wno-attributes" "-DTHRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_TBB"
     )
   set(CMAKE_CXX_FLAGS_DEBUG_LIST
-    "-O1" "-g3" "-fstack-protector-all" "-D_FORTIFY_SOURCE=2"
+    "-O1" "-fno-inline" "-g3" "-fstack-protector-all" "-D_FORTIFY_SOURCE=2"
     ) # -D_LIBCPP_DEBUG2=1
   set(CMAKE_CXX_FLAGS_RELEASE_LIST
     "-O3" "-DNDEBUG" "-march=native" "-mtune=native" "-fstrict-aliasing"

@@ -38,9 +38,14 @@ template<class Solver> struct Dirichlet : fv::bc::Condition<Dirichlet<Solver>> {
   /// \brief Applies the boundary condition to a range of ghost cells
   template<class _>
   void operator()(_, const CellIdx ghostIdx) const noexcept {
-    s.T(_(), ghostIdx)
-      = this->mb_dirichlet([&](const CellIdx i) { return s.T(_(), i); },
-                           s, g, ghostIdx, T_srfc);
+
+    auto T_gc = this->mb_dirichlet([&](const CellIdx i) { return s.T(_(), i); },
+                                   s, g, ghostIdx, T_srfc);
+
+    if(ghostIdx == CellIdx{9323}) {
+      DBGV_ON((ghostIdx)(T_gc));
+    }
+    s.T(_(), ghostIdx) = T_gc;
   }
 
   bool is_moving() const noexcept { return true; }

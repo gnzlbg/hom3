@@ -260,8 +260,7 @@ struct AdiabaticNoSlip : fv::bc::Condition<AdiabaticNoSlip<Solver>> {
     }
     gCellVars(V::p()) = this->mb_neumann(p, s, g, ghostIdx, [&](CellIdx) { return p_n_srfc; });
 
-
-    /// density gradient normal to surface = 0
+    /// density gradient normal
     auto rho = [&](const CellIdx i) {
       const auto pvars = s.pv(_(), i);
       return pvars(V::rho());
@@ -285,6 +284,163 @@ struct AdiabaticNoSlip : fv::bc::Condition<AdiabaticNoSlip<Solver>> {
 };
 
 
+/// \brief Dirichlet boundary condition for the temperature
+template<class Solver>
+struct IsothermalNoSlip : fv::bc::Condition<AdiabaticNoSlip<Solver>> {
+  static const SInd nd = Solver::nd;
+  static const SInd nvars = Solver::nvars;
+  using V = Indices<nd>;
+
+  template<class G, class V, class A, class T>
+  IsothermalNoSlip(Solver& solver, G&& geometry, V&& vel, A&& acc, T&& t) noexcept
+    : s(solver)
+    , g([=](const NumA<Solver::nd> x) { return (*geometry)(x); })
+      , velocity(vel), acceleration(acc), T_srfc(t) {}
+
+
+  /// \brief Applies the boundary condition to a range of ghost cells
+  template<class _>
+  void operator()(_, const CellIdx ghostIdx) const noexcept {
+    NumA<nvars> gCellVars;  /// PV of ghost cell:
+
+    auto u_d = [&](const CellIdx i, const SInd d) {
+      const auto pvars = s.pv(_(), i);
+      return pvars(V::u(d));
+    };
+
+    for (auto d : s.grid().dimensions()) {  /// velocity_srfc = 0
+      gCellVars(V::u(d)) = this->mb_dirichlet([&](CellIdx i) { return u_d(i, d); }, s,
+                                              g, ghostIdx, [&](CellIdx) {
+          return velocity(d);
+      });
+    }
+
+    /// pressure gradient normal to surface = 0
+    auto p = [&](const CellIdx i) {
+      const auto pvars = s.pv(_(), i);
+      return pvars(V::p());
+    };
+    Num p_n_srfc = 0.;
+    Num p_srfc = 0.;
+    Num rho_srfc = 0.;
+    Num p_bndry = 0;
+    {  // compute p_n_srfc
+      std::vector<CellIdx> nghbrs; nghbrs.reserve(6);
+      for (auto nghbr_pos : s.grid().neighbor_positions()) {
+        const auto nghbrIdx = s.cells().neighbors(ghostIdx, nghbr_pos);
+        if (is_valid(nghbrIdx) && !s.is_ghost_cell(nghbrIdx)
+            && !is_valid(s.cut_by_which_moving_boundary(nghbrIdx))) {
+          nghbrs.push_back(nghbrIdx);
+        }
+      }
+
+      auto cs = s.grid().cut_surface(s.node_idx(ghostIdx), g);
+      auto n = cs.normal;
+
+      /// normal velocity
+      NumA<nd> u_body = NumA<nd>::Constant(0.);
+      for(SInd d = 0; d < Solver::nd; ++d) {
+        u_body(d) = velocity(d);
+      }
+      Num u_n = u_body.dot(n);
+
+      /// normal acceleration
+      NumA<nd> a_body = NumA<nd>::Constant(0.);
+      for(SInd d = 0; d < Solver::nd; ++d) {
+        a_body(d) = acceleration(d);
+      }
+      Num a_n = a_body.dot(n);
+
+      Num dx = 0;
+      Num u_mp_n = 0;
+      Num rho = 0;
+      //Num p_bndry = 0;
+      if (!(nghbrs.size() == 0)) {
+        if (nghbrs.size() == 1) {
+          auto bndryIdx = nghbrs[0];
+          dx = s.cell_dx(bndryIdx, ghostIdx);
+          NumA<nd> u_bndry = NumA<nd>::Constant(0.);
+          for(SInd d = 0; d < Solver::nd; ++d) {
+            u_bndry(d) = u_d(bndryIdx, d);
+          }
+          u_mp_n = u_bndry.dot(n);
+          rho = s.pv(_(), bndryIdx)(V::rho());
+          p_bndry = s.pv(_(), bndryIdx)(V::p());
+        } else if (nghbrs.size() == 2) {
+          auto bndryIdx0 = nghbrs[0];
+          auto bndryIdx1 = nghbrs[1];
+          auto dx0 = s.cell_dx(bndryIdx0, ghostIdx);
+          auto dx1 = s.cell_dx(bndryIdx1, ghostIdx);
+          NumA<nd> u_bndry0 = NumA<nd>::Constant(0.);
+          for(SInd d = 0; d < Solver::nd; ++d) {
+            u_bndry0(d) = u_d(bndryIdx0, d);
+          }
+          NumA<nd> u_bndry1 = NumA<nd>::Constant(0.);
+          for(SInd d = 0; d < Solver::nd; ++d) {
+            u_bndry1(d) = u_d(bndryIdx1, d);
+          }
+          auto u0 = u_bndry0.dot(n);
+          auto u1 = u_bndry1.dot(n);
+          u_mp_n = 0.5 * (u0 + u1);
+          dx = 0.5 * (dx0 + dx1);
+          auto rho0 = s.pv(_(), bndryIdx0)(V::rho());
+          auto rho1 = s.pv(_(), bndryIdx1)(V::rho());
+          rho = 0.5 * (rho0 + rho1);
+          auto p0 = s.pv(_(), bndryIdx0)(V::p());
+          auto p1 = s.pv(_(), bndryIdx1)(V::p());
+          p_bndry = 0.5 * (p0 + p1);
+        }
+
+        /// (u_n)_n
+        auto u_n_n = dx > 1e-5? (u_mp_n - u_n) / dx : 0.;
+        p_srfc = p_bndry;
+        //Num tmp = p_srfc *  s.quantities.gamma() / T_srfc(ghostIdx);
+        //rho_srfc = T_srfc(ghostIdx) > 1e-3? tmp : rho;
+        Num p_n = - (rho * a_n + 2 * rho * u_n * u_n_n);
+        p_n_srfc = p_n;
+        p_n_srfc = p_bndry;
+        // std::cerr << "gIdx: " << ghostIdx << "  p_n: " << p_n
+        //           << " u_n: " << u_n << " us_mp_n: " << u_mp_n
+
+        //           << " a_n: " << a_n << " u_n_n: " << u_n_n
+        //           << " rho: " << rho << " rho_s: " << rho_srfc
+        //           << " p_s: " << p_srfc
+        //           << " rho_n: " <<  p_n_srfc * rho_srfc / p_srfc
+        //           << " dx: " << dx << "\n";
+      }
+    }
+    gCellVars(V::p()) = this->mb_neumann(p, s, g, ghostIdx, [&](CellIdx) { return p_n_srfc; });
+
+    /// density gradient normal
+    // auto rho = [&](const CellIdx i) {
+    //   const auto pvars = s.pv(_(), i);
+    //   return pvars(V::rho());
+    // };
+
+    // Num p_infty = s.quantities.p_infinity();
+    //p_srfc = gCellVars(V::p());
+    //   if (std::abs(p_srfc) < 1e-3) { TERMINATE("ZERO PRESSURE AT SURFACE!"); }
+    // rho_srfc = p_srfc *  s.quantities.gamma() / T_srfc(ghostIdx);
+
+    gCellVars(V::rho()) = gCellVars(V::p()) *  s.quantities.gamma() / T_srfc(ghostIdx);
+    // his->mb_dirichlet(rho, s, g, ghostIdx, [&](CellIdx) {
+    //   return rho_srfc;
+    // });
+    if(ghostIdx == CellIdx{9322}) {
+      DBGV_ON((ghostIdx)(rho_srfc)(T_srfc(ghostIdx))(gCellVars(V::rho())));
+    }
+    s.Q(_(), ghostIdx) = s.cv(gCellVars);
+  }
+
+  bool is_moving() const noexcept { return true; }
+
+  Solver& s;
+  const std::function<Num(NumA<Solver::nd>)> g;
+  const std::function<Num(SInd d)> velocity;
+  const std::function<Num(SInd d)> acceleration;
+  const std::function<Num(CellIdx)> T_srfc;
+};
+
 }  // namespace moving_wall
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -293,5 +449,7 @@ struct AdiabaticNoSlip : fv::bc::Condition<AdiabaticNoSlip<Solver>> {
 }  // namespace fv
 }  // namespace solver
 }  // namespace hom3
+////////////////////////////////////////////////////////////////////////////////
+#undef NAIVE
 ////////////////////////////////////////////////////////////////////////////////
 #endif

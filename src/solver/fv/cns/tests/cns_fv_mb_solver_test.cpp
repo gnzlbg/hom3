@@ -15,11 +15,12 @@
 using namespace hom3;
 
 /// General properties:
-static const Ind outputInterval = 1;
+static const Ind outputInterval = 25;
 static const Ind maxNoTimeSteps = 40000;
 
 /// General Physical properties:
 static const SInd nd = 2;  ///< #of spatial dimensions
+static const Num T_scaling = 2.0;
 
 /// CNS Solver properties:
 
@@ -122,7 +123,7 @@ TEST(cns_fv_solver, flow_past_sphere) {
   std::function<NumA<nd>()> x_center = [&]() {
     NumA<nd> tmp = NumA<nd>::Constant(0.0);
     tmp(0) = -3.;
-    tmp(1) = 0.5 + amplitude * std::sin(angular_frequency * cnsSolver.time());
+    tmp(1) = amplitude * std::sin(angular_frequency * cnsSolver.time());
     return tmp;
   };
   std::function<Num(SInd)> velocity = [&](SInd d) {
@@ -143,11 +144,16 @@ TEST(cns_fv_solver, flow_past_sphere) {
       geometry::make_geometry<geometry::implicit::moving::Sphere<nd>>(x_center, radius);
 
   /// Define initial condition
-  auto ic = [&](const NumA<nd>) {
+  auto ic = [&](const NumA<nd> x) {
     NumA<nvars> pv = NumA<nvars>::Zero();
     pv(V::u(0))  = cnsSolver.quantities.u_infinity();
     pv(V::p())   = cnsSolver.quantities.p_infinity();
     pv(V::rho()) = cnsSolver.quantities.rho_infinity();
+    if (x(1) > -0.25 && x(1) < 0.25) {
+      Num T_wall = T_scaling * cnsSolver.quantities.T_infinity();
+      pv(V::rho()) = cnsSolver.quantities.gamma()
+                     * cnsSolver.quantities.p_infinity() / T_wall;
+    }
 
     return cnsSolver.cv(pv);
   };
@@ -157,6 +163,23 @@ TEST(cns_fv_solver, flow_past_sphere) {
   auto nBc = cns_physics::bc::Neumann<CNSSolver<nd>>(cnsSolver);
 
   /// Create inflow-outflow boundary conditions
+  auto inflow_with_hot_jet = [&](const CellIdx g, const SInd v) {
+    NumA<nvars> pv = NumA<nvars>::Zero();
+    pv(V::u(0))  = cnsSolver.quantities.u_infinity();
+    pv(V::p())   = cnsSolver.quantities.p_infinity();
+     pv(V::rho()) = cnsSolver.quantities.rho_infinity();
+    NumA<nd> x = cnsSolver.cells().x_center.row(g);
+    if (x(1) > -0.25 && x(1) < 0.25) {
+      /// rho = gamma * p / T
+      Num T_wall = T_scaling * cnsSolver.quantities.T_infinity();
+      pv(V::rho()) = cnsSolver.quantities.gamma()
+                     * cnsSolver.quantities.p_infinity() / T_wall;
+    }
+    return pv(v);
+  };
+  auto iBc = cns_physics::bc::external::Inflow<CNSSolver<nd>>
+             (cnsSolver, inflow_with_hot_jet);
+
   auto free_stream = [&](const CellIdx, const SInd v) {
     NumA<nvars> pv = NumA<nvars>::Zero();
     pv(V::u(0))  = cnsSolver.quantities.u_infinity();
@@ -164,8 +187,6 @@ TEST(cns_fv_solver, flow_past_sphere) {
     pv(V::rho()) = cnsSolver.quantities.rho_infinity();
     return pv(v);
   };
-  auto iBc = cns_physics::bc::external::Inflow<CNSSolver<nd>>
-             (cnsSolver, free_stream);
   auto oBc = cns_physics::bc::external::Outflow<CNSSolver<nd>>
              (cnsSolver, free_stream);
 

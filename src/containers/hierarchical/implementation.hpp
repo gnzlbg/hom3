@@ -478,8 +478,7 @@ template<SInd nd_> struct Implementation {
     }
 
     // Vector of traversed positions
-    memory::stack::arena<SInd, max_no_levels()> stackMemory;
-    auto traversedPositions = memory::stack::make<std::vector>(stackMemory);
+    auto traversedPositions = memory::stack::vector<SInd, max_no_levels()>{};
 
     /// Travel up the tree until a node i is found, s.t. the previously
     /// traversed node is a child of i in the position that is "opposite" to pos
