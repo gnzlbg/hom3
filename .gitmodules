@@ -1,0 +1,4 @@
+[submodule "site"]
+	path = site
+	url = https://git@github.com/gnzlbg/hom3.git
+	branch = gh-pages
