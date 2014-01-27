@@ -1,0 +1,21 @@
+markdown: redcarpet
+baseurl: /hom3
+pygments: true
+timezone: Europe/Berlin
+
+scholar:
+  style: apa
+  locale: en
+
+  sort_by: none
+  order: ascending
+
+  source: ./_bibliography
+  bibliography: references.bib
+  bibliography_template: "%{reference}"
+
+  details_dir:    bibliography
+  details_layout: bibtex.html
+  details_link:   Details
+
+  query: "@*"
