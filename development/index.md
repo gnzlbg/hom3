@@ -93,8 +93,8 @@ DBG_ON("this is always printed");
 DBGV_ON((var)(f())(3)); // prints: "var : value | function() : value | 3 : 3"
 ```
 
-For "long" functions (i.e. not one liners), we also have a trace back system
-that is used with the `TRACE_IN`/`TRACE_OUT` macros:
+**Deprecated**: For "long" functions (i.e. not one liners), we also have a trace
+back system that is used with the `TRACE_IN`/`TRACE_OUT` macros:
 
 ```c++
 int fun(int a) {
@@ -112,6 +112,11 @@ By enabling debug for a module with `ENABLE_DBG_ == 1` you'll get the entry and
 exit points of every function in that module as well as the input parameters and
 return values of every function call.
 
+**Note:** the above functionality is deprecated but hasn't been completely
+removed yet. To generate traces the preferred method is to use the
+instrumentation utilities with `-finstrument-functions` (GCC only, clang has a
+bug here).
+
 ### <a id="UTILITIES_DEFENSIVE"></a>Defensive programming
 
 Check pre-conditions, post-conditions, invariants:
@@ -125,8 +130,18 @@ ASSERT([&]() -> bool { /* executes in debug mode */ }(), message);
 
 ```c++
 TERMINATE(message); // exits the program
+```
+
+There is also basic support for exceptions:
+
+```C++
 error::exception(message); // throws run-time error
 ```
+
+For the moment there just hasn't been any exceptional behavior to handle. Most
+of the time if an error occurs there is absolutely nothing that we can do about
+it so hard errors (using `TERMINATE`) have been the preferred way of dealing
+with these situations.
 
 ### <a id="UTILITIES_MEMORY"></a>Memory
 
@@ -141,6 +156,8 @@ error::exception(message); // throws run-time error
     auto myList = memory::stack::make<std::list>(stackMemory); // std::list<double> shares memory pool with vector
     ```
   - **Note**: `TERMINATE` is called if you run out of memory.
+  - **TODO**: document `memory::stack::vector` which is a drop in replacement
+    for `std::vector` and contains its own arena.
 - Heap vs stack?
   - read and understand [everything you need to know about
     memory](http://www.akkadia.org/drepper/cpumemory.pdf), and [copying and
