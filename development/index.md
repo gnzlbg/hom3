@@ -134,7 +134,7 @@ TERMINATE(message); // exits the program
 
 There is also basic support for exceptions:
 
-```C++
+```c++
 error::exception(message); // throws run-time error
 ```
 
@@ -184,7 +184,7 @@ with these situations.
   io::insert_property<Num>(ps, "dx", 3.0); // inserts property of type Num and name "dx"
   auto dx = io::read<Num>ps,"dx"); // reads property of type Num and name "dx"
   io::read(ps, "dx", dx); // reads property "dx" into dx
-```
+  ```
 
 ### <a id="UTILITIES_RANGES"></a>Ranges
 - for an overview see
